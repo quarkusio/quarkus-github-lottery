@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.quarkus.github.lottery</groupId>
   <artifactId>quarkus-github-lottery</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>${revision}</version>
 
   <name>Quarkus GitHub Lottery</name>
   <url>https://github.com/quarkusio/quarkus-github-lottery</url>
@@ -27,6 +27,7 @@
   </scm>
 
   <properties>
+    <revision>999-SNAPSHOT</revision>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -36,6 +37,7 @@
     <quarkus.platform.version>2.12.0.Final</quarkus.platform.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
+    <version.buildnumber.plugin>3.0.0</version.buildnumber.plugin>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -75,6 +77,27 @@
   </dependencies>
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>buildnumber-maven-plugin</artifactId>
+        <version>${version.buildnumber.plugin}</version>
+        <executions>
+          <execution>
+            <id>get-scm-revision</id>
+            <phase>initialize</phase>
+            <goals>
+              <goal>create</goal>
+            </goals>
+            <configuration>
+              <doCheck>false</doCheck>
+              <doUpdate>false</doUpdate>
+              <revisionOnScmFailure>UNKNOWN</revisionOnScmFailure>
+              <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
+              <shortRevisionLength>7</shortRevisionLength>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
