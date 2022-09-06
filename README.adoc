@@ -1,0 +1,19 @@
+= Quarkus GitHub Lottery
+
+> A Quarkus-powered application that regularly sends short lists of GitHub issues for triagers/maintainers to consider.
+
+== How to use/configure
+
+TODO: this is work in progress
+
+== Contributing
+
+TODO: this is work in progress
+
+== Deployment
+
+TODO: this is work in progress
+
+== License
+
+This project is licensed under the Apache License Version 2.0.
