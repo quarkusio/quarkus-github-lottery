@@ -5,6 +5,27 @@
   <groupId>io.quarkus.github.lottery</groupId>
   <artifactId>quarkus-github-lottery</artifactId>
   <version>1.0.0-SNAPSHOT</version>
+
+  <name>Quarkus GitHub Lottery</name>
+  <url>https://github.com/quarkusio/quarkus-github-lottery</url>
+  <inceptionYear>2022</inceptionYear>
+
+  <organization>
+    <name>QuarkusIO</name>
+    <url>https://quarkus.io/</url>
+  </organization>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/quarkusio/quarkus-github-lottery/issues</url>
+  </issueManagement>
+  <scm>
+    <connection>scm:git:git@github.com:quarkusio/quarkus-github-lottery.git</connection>
+    <developerConnection>scm:git:git@github.com:quarkusio/quarkus-github-lottery.git</developerConnection>
+    <url>https://github.com/quarkusio/quarkus-github-lottery</url>
+    <tag>HEAD</tag>
+  </scm>
+
   <properties>
     <compiler-plugin.version>3.8.1</compiler-plugin.version>
     <maven.compiler.release>17</maven.compiler.release>
