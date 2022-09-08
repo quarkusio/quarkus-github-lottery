@@ -61,9 +61,9 @@
       <artifactId>quarkus-resteasy-reactive</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.quarkiverse.githubapi</groupId>
-      <artifactId>quarkus-github-api</artifactId>
-      <version>1.308.0</version>
+      <groupId>io.quarkiverse.githubapp</groupId>
+      <artifactId>quarkus-github-app</artifactId>
+      <version>1.11.0</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>

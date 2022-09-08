@@ -1,6 +1,10 @@
 = Quarkus GitHub Lottery
 
-> A Quarkus-powered application that regularly sends short lists of GitHub issues for triagers/maintainers to consider.
+> A Quarkus-powered GitHub App that regularly sends short lists of GitHub issues for triagers/maintainers to consider.
+
+== Introduction
+
+This GitHub App is based on the https://github.com/quarkiverse/quarkus-github-app[Quarkus GitHub App framework].
 
 == How to use/configure
 
