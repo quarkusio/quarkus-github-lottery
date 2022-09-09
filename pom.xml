@@ -62,6 +62,10 @@
       <artifactId>quarkus-resteasy-reactive</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-scheduler</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.quarkiverse.githubapp</groupId>
       <artifactId>quarkus-github-app</artifactId>
       <version>999-SNAPSHOT</version>
