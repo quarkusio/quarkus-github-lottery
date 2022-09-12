@@ -36,6 +36,7 @@
     <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
     <quarkus.version>2.12.1.Final</quarkus.version>
     <assertj.version>3.23.1</assertj.version>
+    <quarkus-github-app.version>999-SNAPSHOT</quarkus-github-app.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.0.0-M7</surefire-plugin.version>
     <version.buildnumber.plugin>3.0.0</version.buildnumber.plugin>
@@ -68,7 +69,7 @@
     <dependency>
       <groupId>io.quarkiverse.githubapp</groupId>
       <artifactId>quarkus-github-app</artifactId>
-      <version>999-SNAPSHOT</version>
+      <version>${quarkus-github-app.version}</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
