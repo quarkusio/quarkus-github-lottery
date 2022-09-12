@@ -33,7 +33,7 @@ final class LotteryBucket {
     void draw(Iterator<Issue> prizeIterator) {
         while (prizeIterator.hasNext() && !tickets.isEmpty()) {
             // We proceed in rounds, each round yielding
-            // at most one prize to each participant (if there are enough prizes),
+            // at most one prize to each ticket (if there are enough prizes),
             // so that prizes are spread evenly.
             List<LotteryTicket> roundTickets = new ArrayList<>(tickets);
             do {
@@ -46,12 +46,12 @@ final class LotteryBucket {
                 winner.winnings.add(prize);
                 if (winner.winnings.size() >= winner.maxWinnings) {
                     // This ticket got its expected winnings:
-                    // they won't participate in the next round(s).
+                    // it won't participate in the next round(s).
                     tickets.remove(winner);
                 }
             } while (prizeIterator.hasNext() && !roundTickets.isEmpty());
         }
-        // The remaining tickets just lost: there are no more prizes to win.
+        // The remaining tickets cannot win anymore: we're out of prizes.
         tickets.clear();
     }
 }
