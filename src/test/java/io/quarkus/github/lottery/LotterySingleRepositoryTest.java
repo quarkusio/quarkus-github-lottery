@@ -1,13 +1,14 @@
 package io.quarkus.github.lottery;
 
 import static io.quarkus.github.lottery.MockHelper.url;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
@@ -19,9 +20,11 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -111,6 +114,39 @@ public class LotterySingleRepositoryTest {
                 issueNeedingTriage.subList(0, 3)));
 
         verifyNoMoreInteractions(gitHubServiceMock, installationMock);
+    }
+
+    @RepeatedTest(100) // Just to be reasonably certain that issues are spread evenly
+    void multiParticipants_evenSpread() throws IOException {
+        when(installationMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
+                new LotteryConfig.LabelsConfig("needs-triage"),
+                List.of(
+                        new LotteryConfig.ParticipantConfig(
+                                "yrodiere",
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.ParticipationConfig(10)),
+                        new LotteryConfig.ParticipantConfig(
+                                "gsmet",
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.ParticipationConfig(10))))));
+
+        List<Issue> issueNeedingTriage = List.of(
+                new Issue(1, "Hibernate ORM works too well", url(1)),
+                new Issue(2, "Where can I find documentation?", url(2)));
+        when(installationMock.issuesWithLabel("needs-triage"))
+                .thenAnswer(ignored -> issueNeedingTriage.iterator());
+
+        lotteryService.draw();
+
+        var reportCaptor = ArgumentCaptor.forClass(LotteryReport.class);
+        verify(notificationServiceMock).notify(same(installationMock), eq("yrodiere"), reportCaptor.capture());
+        var yrodiereReport = reportCaptor.getValue();
+        verify(notificationServiceMock).notify(same(installationMock), eq("gsmet"), reportCaptor.capture());
+        var gsmetReport = reportCaptor.getValue();
+        verifyNoMoreInteractions(gitHubServiceMock, installationMock);
+
+        assertThat(yrodiereReport.issuesToTriage()).hasSize(1);
+        assertThat(gsmetReport.issuesToTriage()).hasSize(1);
     }
 
 }

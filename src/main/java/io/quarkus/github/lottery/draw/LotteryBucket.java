@@ -32,13 +32,24 @@ final class LotteryBucket {
 
     void draw(Iterator<Issue> prizeIterator) {
         while (prizeIterator.hasNext() && !tickets.isEmpty()) {
-            Issue prize = prizeIterator.next();
-            int winnerIndex = random.nextInt(tickets.size());
-            LotteryTicket winner = tickets.get(winnerIndex);
-            winner.winnings.add(prize);
-            if (winner.winnings.size() >= winner.maxWinnings) {
-                tickets.remove(winner);
-            }
+            // We proceed in rounds, each round yielding
+            // at most one prize to each participant (if there are enough prizes),
+            // so that prizes are spread evenly.
+            List<LotteryTicket> roundTickets = new ArrayList<>(tickets);
+            do {
+                Issue prize = prizeIterator.next();
+                int winnerIndex = random.nextInt(roundTickets.size());
+                // We remove the winner ticket from the list
+                // to ensure the next prizes in the same round will
+                // be won by different tickets.
+                LotteryTicket winner = roundTickets.remove(winnerIndex);
+                winner.winnings.add(prize);
+                if (winner.winnings.size() >= winner.maxWinnings) {
+                    // This ticket got its expected winnings:
+                    // they won't participate in the next round(s).
+                    tickets.remove(winner);
+                }
+            } while (prizeIterator.hasNext() && !roundTickets.isEmpty());
         }
         // The remaining tickets just lost: there are no more prizes to win.
         tickets.clear();
