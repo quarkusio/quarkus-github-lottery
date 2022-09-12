@@ -6,7 +6,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
@@ -14,8 +14,8 @@ import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.Lottery;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.draw.Participant;
-import io.quarkus.github.lottery.github.Installation;
 import io.quarkus.github.lottery.github.GitHubService;
+import io.quarkus.github.lottery.github.Installation;
 import io.quarkus.github.lottery.github.InstallationRef;
 import io.quarkus.github.lottery.notification.NotificationService;
 import io.quarkus.logging.Log;
@@ -48,11 +48,12 @@ public class LotteryService {
 
     private void drawForInstallation(InstallationRef ref) throws IOException {
         Installation installation = gitHubService.installation(ref);
-        LotteryConfig lotteryConfig = installation.fetchLotteryConfig();
-        if (lotteryConfig == null) {
+        var optionalLotteryConfig = installation.fetchLotteryConfig();
+        if (optionalLotteryConfig.isEmpty()) {
             Log.infof("No lottery configuration found for %s; not drawing lottery.", ref);
             return;
         }
+        LotteryConfig lotteryConfig = optionalLotteryConfig.get();
 
         List<Participant> participants = new ArrayList<>();
 

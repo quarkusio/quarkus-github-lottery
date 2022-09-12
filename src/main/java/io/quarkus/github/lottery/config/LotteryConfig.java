@@ -12,6 +12,8 @@ public record LotteryConfig(
         @JsonProperty(required = true) LabelsConfig labels,
         List<ParticipantConfig> participants) {
 
+    public static final String FILE_NAME = "quarkus-github-lottery.yaml";
+
     public record LabelsConfig(
             @JsonProperty(required = true) String needsTriage) {
     }

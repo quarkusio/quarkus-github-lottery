@@ -7,6 +7,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.quarkiverse.githubapp.GitHubClientProvider;
+import io.quarkiverse.githubapp.GitHubConfigFileProvider;
 import org.kohsuke.github.GHAppInstallation;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
@@ -16,6 +17,8 @@ public class GitHubService {
 
     @Inject
     GitHubClientProvider clientProvider;
+    @Inject
+    GitHubConfigFileProvider configFileProvider;
 
     public List<InstallationRef> listInstallations() throws IOException {
         List<InstallationRef> result = new ArrayList<>();
@@ -29,6 +32,6 @@ public class GitHubService {
     }
 
     public Installation installation(InstallationRef ref) {
-        return new Installation(clientProvider, ref);
+        return new Installation(clientProvider, configFileProvider, ref);
     }
 }

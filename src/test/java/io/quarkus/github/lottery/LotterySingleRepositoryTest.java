@@ -1,5 +1,6 @@
 package io.quarkus.github.lottery;
 
+import static io.quarkus.github.lottery.MockHelper.url;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -12,6 +13,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -63,7 +65,7 @@ public class LotterySingleRepositoryTest {
 
     @Test
     void noConfig() throws IOException {
-        when(installationMock.fetchLotteryConfig()).thenReturn(null);
+        when(installationMock.fetchLotteryConfig()).thenReturn(Optional.empty());
 
         lotteryService.draw();
 
@@ -72,12 +74,12 @@ public class LotterySingleRepositoryTest {
 
     @Test
     void participant_when_differentDay() throws IOException {
-        when(installationMock.fetchLotteryConfig()).thenReturn(new LotteryConfig(
+        when(installationMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.TUESDAY),
-                        new LotteryConfig.ParticipationConfig(3)))));
+                        new LotteryConfig.ParticipationConfig(3))))));
 
         lotteryService.draw();
 
@@ -88,12 +90,12 @@ public class LotterySingleRepositoryTest {
 
     @Test
     void singleParticipant() throws IOException {
-        when(installationMock.fetchLotteryConfig()).thenReturn(new LotteryConfig(
+        when(installationMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY),
-                        new LotteryConfig.ParticipationConfig(3)))));
+                        new LotteryConfig.ParticipationConfig(3))))));
 
         List<Issue> issueNeedingTriage = List.of(
                 new Issue(1, "Hibernate ORM works too well", url(1)),
@@ -109,14 +111,6 @@ public class LotterySingleRepositoryTest {
                 issueNeedingTriage.subList(0, 3)));
 
         verifyNoMoreInteractions(gitHubServiceMock, installationMock);
-    }
-
-    private URL url(int id) {
-        try {
-            return new URL("http://github.com/quarkus/issues/" + (id + 1000));
-        } catch (MalformedURLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }
