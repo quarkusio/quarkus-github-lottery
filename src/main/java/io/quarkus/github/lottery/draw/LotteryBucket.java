@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery.draw;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -31,27 +32,28 @@ final class LotteryBucket {
     }
 
     void draw(Iterator<Issue> prizeIterator) {
-        while (prizeIterator.hasNext() && !tickets.isEmpty()) {
+        // Shuffle tickets so that prizes are not always assigned in the same order.
+        List<LotteryTicket> shuffledTickets = new ArrayList<>(tickets);
+        Collections.shuffle(shuffledTickets, random);
+
+        while (prizeIterator.hasNext() && !shuffledTickets.isEmpty()) {
             // We proceed in rounds, each round yielding
             // at most one prize to each ticket (if there are enough prizes),
-            // so that prizes are spread evenly.
-            List<LotteryTicket> roundTickets = new ArrayList<>(tickets);
-            do {
+            // so that prizes are spread evenly across tickets.
+            var ticketIterator = shuffledTickets.iterator();
+            while (prizeIterator.hasNext() && ticketIterator.hasNext()) {
                 Issue prize = prizeIterator.next();
-                int winnerIndex = random.nextInt(roundTickets.size());
-                // We remove the winner ticket from the list
-                // to ensure the next prizes in the same round will
-                // be won by different tickets.
-                LotteryTicket winner = roundTickets.remove(winnerIndex);
+                LotteryTicket winner = ticketIterator.next();
                 winner.winnings.add(prize);
                 if (winner.winnings.size() >= winner.maxWinnings) {
                     // This ticket got its expected winnings:
                     // it won't participate in the next round(s).
-                    tickets.remove(winner);
+                    ticketIterator.remove();
                 }
-            } while (prizeIterator.hasNext() && !roundTickets.isEmpty());
+            }
         }
-        // The remaining tickets cannot win anymore: we're out of prizes.
+
+        // The draw is done; new draws would require new tickets.
         tickets.clear();
     }
 }
