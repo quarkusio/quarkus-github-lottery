@@ -93,9 +93,9 @@ public class GitHubServiceTest {
                     assertThat(gitHubService.listRepositories())
                             .containsExactlyInAnyOrder(repoRef);
 
-                    var installation = gitHubService.repository(repoRef);
+                    var repo = gitHubService.repository(repoRef);
 
-                    assertThat(installation.fetchLotteryConfig())
+                    assertThat(repo.fetchLotteryConfig())
                             .isNotEmpty()
                             .get().usingRecursiveComparison().isEqualTo(new LotteryConfig(
                                     new LotteryConfig.LabelsConfig("triage/needs-triage"),
@@ -111,7 +111,7 @@ public class GitHubServiceTest {
                                                     new LotteryConfig.ParticipationConfig(
                                                             10)))));
 
-                    assertThat(installation.issuesWithLabel("triage/needs-triage"))
+                    assertThat(repo.issuesWithLabel("triage/needs-triage"))
                             .toIterable().containsExactly(
                                     new Issue(1, "Hibernate ORM works too well", url(1)),
                                     new Issue(3, "Hibernate Search needs Solr support", url(3)),
