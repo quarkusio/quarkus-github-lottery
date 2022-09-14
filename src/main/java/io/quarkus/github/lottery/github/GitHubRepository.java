@@ -34,6 +34,10 @@ public class GitHubRepository {
         this.ref = ref;
     }
 
+    public GitHubRepositoryRef ref() {
+        return ref;
+    }
+
     private GitHub client() {
         return clientProvider.getInstallationClient(ref.installationId());
     }
@@ -52,6 +56,30 @@ public class GitHubRepository {
                 .direction(GHDirection.DESC)
                 .pageSize(20)
                 .list());
+    }
+
+    public void commentOnDedicatedNotificationIssue(String username, String markdownBody) throws IOException {
+        var issue = getOrCreateDedicatedNotificationIssue(username);
+        issue.comment(markdownBody);
+    }
+
+    private GHIssue getOrCreateDedicatedNotificationIssue(String username) throws IOException {
+        var repo = client().getRepository(ref.repositoryName());
+        String expectedTitle = username + "'s notifications";
+        GHIssue result = null;
+        for (var issue : repo.queryIssues().assignee(username).list()) {
+            if (issue.getTitle().equals(expectedTitle)) {
+                result = issue;
+                break;
+            }
+        }
+        if (result == null) {
+            result = repo.createIssue(expectedTitle)
+                    .assignee(username)
+                    .body("This is where @" + username + " will get periodically notified of issues.")
+                    .create();
+        }
+        return result;
     }
 
     private Iterator<Issue> toIterator(PagedIterable<GHIssue> iterable) {

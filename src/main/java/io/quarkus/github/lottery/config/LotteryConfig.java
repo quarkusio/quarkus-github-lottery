@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 public record LotteryConfig(
+        @JsonProperty(required = true) NotificationsConfig notifications,
         @JsonProperty(required = true) LabelsConfig labels,
         List<ParticipantConfig> participants) {
 
@@ -16,6 +17,10 @@ public record LotteryConfig(
 
     public record LabelsConfig(
             @JsonProperty(required = true) String needsTriage) {
+    }
+
+    public record NotificationsConfig(
+            @JsonProperty(required = true) String repository) {
     }
 
     public record ParticipantConfig(

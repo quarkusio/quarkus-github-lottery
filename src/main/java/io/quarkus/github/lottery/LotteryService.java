@@ -12,11 +12,10 @@ import javax.inject.Inject;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.Lottery;
-import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.draw.Participant;
 import io.quarkus.github.lottery.github.GitHubRepository;
-import io.quarkus.github.lottery.github.GitHubService;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
+import io.quarkus.github.lottery.github.GitHubService;
 import io.quarkus.github.lottery.notification.NotificationService;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
@@ -70,7 +69,7 @@ public class LotteryService {
                 continue;
             }
 
-            var participant = new Participant(participantConfig);
+            var participant = new Participant(ref.repositoryName(), participantConfig);
             participants.add(participant);
 
             participant.participate(lottery);
@@ -80,9 +79,15 @@ public class LotteryService {
 
         lottery.draw(repo);
 
-        for (Participant participant : participants) {
-            LotteryReport report = participant.report();
-            notificationService.notify(repo, participant.username, report);
+        var notifier = notificationService.notifier(repo, lotteryConfig.notifications());
+        for (var participant : participants) {
+            var report = participant.report();
+            try {
+                notifier.send(report);
+            } catch (IOException | RuntimeException e) {
+                Log.errorf(e, "Failed to send lottery report with content %s", report);
+            }
+            // TODO persist the information "these issues were notified on that day to that person"
         }
     }
 

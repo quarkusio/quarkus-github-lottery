@@ -2,8 +2,7 @@ package io.quarkus.github.lottery;
 
 import static io.quarkus.github.lottery.MockHelper.url;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.same;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -24,17 +23,18 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.quarkus.github.lottery.github.GitHubRepository;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.LotteryReport;
-import io.quarkus.github.lottery.github.GitHubService;
+import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
+import io.quarkus.github.lottery.github.GitHubService;
 import io.quarkus.github.lottery.github.Issue;
 import io.quarkus.github.lottery.notification.NotificationService;
+import io.quarkus.github.lottery.notification.Notifier;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -46,18 +46,20 @@ public class LotterySingleRepositoryTest {
     Clock clockMock;
     NotificationService notificationServiceMock;
 
+    GitHubRepositoryRef repoRef;
+
     @Inject
-    LotteryService lotteryService;
+    LotteryService lotteryService;;
 
     @BeforeEach
     void setup() throws IOException {
         gitHubServiceMock = Mockito.mock(GitHubService.class);
         QuarkusMock.installMockForType(gitHubServiceMock, GitHubService.class);
-        var ref1 = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
-        when(gitHubServiceMock.listRepositories()).thenReturn(List.of(ref1));
+        repoRef = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
+        when(gitHubServiceMock.listRepositories()).thenReturn(List.of(repoRef));
 
         repoMock = Mockito.mock(GitHubRepository.class);
-        when(gitHubServiceMock.repository(ref1)).thenReturn(repoMock);
+        when(gitHubServiceMock.repository(repoRef)).thenReturn(repoMock);
 
         clockMock = Clock.fixed(LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC), ZoneOffset.UTC);
         QuarkusMock.installMockForType(clockMock, Clock.class);
@@ -78,6 +80,7 @@ public class LotterySingleRepositoryTest {
     @Test
     void participant_when_differentDay() throws IOException {
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
+                new LotteryConfig.NotificationsConfig("quarkusio/quarkus-lottery-reports"),
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
@@ -93,12 +96,14 @@ public class LotterySingleRepositoryTest {
 
     @Test
     void singleParticipant() throws IOException {
-        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
+        var config = new LotteryConfig(
+                new LotteryConfig.NotificationsConfig("quarkusio/quarkus-lottery-reports"),
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY),
-                        new LotteryConfig.ParticipationConfig(3))))));
+                        new LotteryConfig.ParticipationConfig(3))));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
         List<Issue> issueNeedingTriage = List.of(
                 new Issue(1, "Hibernate ORM works too well", url(1)),
@@ -108,17 +113,21 @@ public class LotterySingleRepositoryTest {
         when(repoMock.issuesWithLabel("needs-triage"))
                 .thenAnswer(ignored -> issueNeedingTriage.iterator());
 
+        var notifierMock = mock(Notifier.class);
+        when(notificationServiceMock.notifier(repoMock, config.notifications())).thenReturn(notifierMock);
+
         lotteryService.draw();
 
-        verify(notificationServiceMock).notify(repoMock, "yrodiere", new LotteryReport(
+        verify(notifierMock).send(new LotteryReport("yrodiere", repoRef.repositoryName(),
                 issueNeedingTriage.subList(0, 3)));
 
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock);
+        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock);
     }
 
     @RepeatedTest(100) // Just to be reasonably certain that issues are spread evenly
     void multiParticipants_evenSpread() throws IOException {
-        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
+        var config = new LotteryConfig(
+                new LotteryConfig.NotificationsConfig("quarkusio/quarkus-lottery-reports"),
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(
                         new LotteryConfig.ParticipantConfig(
@@ -128,7 +137,8 @@ public class LotterySingleRepositoryTest {
                         new LotteryConfig.ParticipantConfig(
                                 "gsmet",
                                 Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.ParticipationConfig(10))))));
+                                new LotteryConfig.ParticipationConfig(10))));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
         List<Issue> issueNeedingTriage = List.of(
                 new Issue(1, "Hibernate ORM works too well", url(1)),
@@ -136,17 +146,20 @@ public class LotterySingleRepositoryTest {
         when(repoMock.issuesWithLabel("needs-triage"))
                 .thenAnswer(ignored -> issueNeedingTriage.iterator());
 
+        var notifierMock = mock(Notifier.class);
+        when(notificationServiceMock.notifier(repoMock, config.notifications())).thenReturn(notifierMock);
+
         lotteryService.draw();
 
         var reportCaptor = ArgumentCaptor.forClass(LotteryReport.class);
-        verify(notificationServiceMock).notify(same(repoMock), eq("yrodiere"), reportCaptor.capture());
-        var yrodiereReport = reportCaptor.getValue();
-        verify(notificationServiceMock).notify(same(repoMock), eq("gsmet"), reportCaptor.capture());
-        var gsmetReport = reportCaptor.getValue();
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock);
+        verify(notifierMock, Mockito.times(2)).send(reportCaptor.capture());
+        var reports = reportCaptor.getAllValues();
 
-        assertThat(yrodiereReport.issuesToTriage()).hasSize(1);
-        assertThat(gsmetReport.issuesToTriage()).hasSize(1);
+        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock);
+
+        for (var report : reports) {
+            assertThat(report.issuesToTriage()).hasSize(1);
+        }
     }
 
 }

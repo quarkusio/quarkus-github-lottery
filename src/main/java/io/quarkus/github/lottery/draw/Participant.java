@@ -6,11 +6,13 @@ import io.quarkus.github.lottery.config.LotteryConfig;
  * A participant in the {@link Lottery}.
  */
 public final class Participant {
-    public final String username;
+    private final String repositoryName;
+    private final String username;
 
     private final Participation triage;
 
-    public Participant(LotteryConfig.ParticipantConfig config) {
+    public Participant(String repositoryName, LotteryConfig.ParticipantConfig config) {
+        this.repositoryName = repositoryName;
         username = config.username();
         triage = new Participation(config.triage());
     }
@@ -21,6 +23,6 @@ public final class Participant {
     }
 
     public LotteryReport report() {
-        return new LotteryReport(triage.result());
+        return new LotteryReport(username, repositoryName, triage.result());
     }
 }

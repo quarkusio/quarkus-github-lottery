@@ -42,11 +42,17 @@ class MockHelper {
         }
     }
 
-    public static GHIssue mockIssue(GitHubMockContext context, long id, String title) {
+    public static GHIssue mockIssueForLottery(GitHubMockContext context, long id, String title) {
         GHIssue mock = context.issue(id);
         when(mock.getId()).thenReturn(id);
         when(mock.getTitle()).thenReturn(title);
         when(mock.getHtmlUrl()).thenReturn(url(id));
+        return mock;
+    }
+
+    public static GHIssue mockIssueForNotification(GitHubMockContext context, long id, String title) {
+        GHIssue mock = context.issue(id);
+        when(mock.getTitle()).thenReturn(title);
         return mock;
     }
 
