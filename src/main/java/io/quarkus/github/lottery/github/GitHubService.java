@@ -20,18 +20,18 @@ public class GitHubService {
     @Inject
     GitHubConfigFileProvider configFileProvider;
 
-    public List<InstallationRef> listInstallations() throws IOException {
-        List<InstallationRef> result = new ArrayList<>();
+    public List<GitHubRepositoryRef> listRepositories() throws IOException {
+        List<GitHubRepositoryRef> result = new ArrayList<>();
         GitHub client = clientProvider.getApplicationClient();
         for (GHAppInstallation installation : client.getApp().listInstallations().withPageSize(20)) {
             for (GHRepository repository : installation.listRepositories().withPageSize(20)) {
-                result.add(new InstallationRef(installation.getId(), repository.getFullName()));
+                result.add(new GitHubRepositoryRef(installation.getId(), repository.getFullName()));
             }
         }
         return result;
     }
 
-    public Installation installation(InstallationRef ref) {
-        return new Installation(clientProvider, configFileProvider, ref);
+    public GitHubRepository repository(GitHubRepositoryRef ref) {
+        return new GitHubRepository(clientProvider, configFileProvider, ref);
     }
 }

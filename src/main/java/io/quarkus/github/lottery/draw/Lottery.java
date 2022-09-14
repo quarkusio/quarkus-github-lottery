@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
-import io.quarkus.github.lottery.github.Installation;
+import io.quarkus.github.lottery.github.GitHubRepository;
 
 /**
  * A lottery, with a {@link LotteryBucket buckets} for each pool of issues.
@@ -25,9 +25,9 @@ public final class Lottery {
         return triageBucket;
     }
 
-    public void draw(Installation installation) throws IOException {
+    public void draw(GitHubRepository repo) throws IOException {
         if (triageBucket.hasTickets()) {
-            triageBucket.draw(installation.issuesWithLabel(labels.needsTriage()));
+            triageBucket.draw(repo.issuesWithLabel(labels.needsTriage()));
         }
         // TODO draw for other buckets
     }

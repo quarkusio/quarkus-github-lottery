@@ -14,9 +14,9 @@ import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.Lottery;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.draw.Participant;
+import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubService;
-import io.quarkus.github.lottery.github.Installation;
-import io.quarkus.github.lottery.github.InstallationRef;
+import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.notification.NotificationService;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
@@ -38,17 +38,17 @@ public class LotteryService {
      */
     @Scheduled(cron = "0 0 8 ? * *") // Every day at 8 AM
     public void draw() throws IOException {
-        List<InstallationRef> refs = gitHubService.listInstallations();
+        List<GitHubRepositoryRef> refs = gitHubService.listRepositories();
 
         // TODO parallelize
-        for (InstallationRef ref : refs) {
-            drawForInstallation(ref);
+        for (GitHubRepositoryRef ref : refs) {
+            drawForRepository(ref);
         }
     }
 
-    private void drawForInstallation(InstallationRef ref) throws IOException {
-        Installation installation = gitHubService.installation(ref);
-        var optionalLotteryConfig = installation.fetchLotteryConfig();
+    private void drawForRepository(GitHubRepositoryRef ref) throws IOException {
+        GitHubRepository repo = gitHubService.repository(ref);
+        var optionalLotteryConfig = repo.fetchLotteryConfig();
         if (optionalLotteryConfig.isEmpty()) {
             Log.infof("No lottery configuration found for %s; not drawing lottery.", ref);
             return;
@@ -78,11 +78,11 @@ public class LotteryService {
             // TODO also handle maintainers
         }
 
-        lottery.draw(installation);
+        lottery.draw(repo);
 
         for (Participant participant : participants) {
             LotteryReport report = participant.report();
-            notificationService.notify(installation, participant.username, report);
+            notificationService.notify(repo, participant.username, report);
         }
     }
 

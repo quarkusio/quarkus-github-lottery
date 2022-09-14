@@ -19,16 +19,16 @@ import io.quarkiverse.githubapp.GitHubConfigFileProvider;
 import io.quarkus.github.lottery.config.LotteryConfig;
 
 /**
- * An installation of the application on a GitHub repository.
+ * A GitHub repository as viewed from a GitHub App installation.
  */
-public class Installation {
+public class GitHubRepository {
 
     private final GitHubClientProvider clientProvider;
     private final GitHubConfigFileProvider configFileProvider;
-    private final InstallationRef ref;
+    private final GitHubRepositoryRef ref;
 
-    public Installation(GitHubClientProvider clientProvider, GitHubConfigFileProvider configFileProvider,
-            InstallationRef ref) {
+    public GitHubRepository(GitHubClientProvider clientProvider, GitHubConfigFileProvider configFileProvider,
+            GitHubRepositoryRef ref) {
         this.clientProvider = clientProvider;
         this.configFileProvider = configFileProvider;
         this.ref = ref;

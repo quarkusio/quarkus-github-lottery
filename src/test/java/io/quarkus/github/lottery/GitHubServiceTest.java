@@ -30,7 +30,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import io.quarkiverse.githubapp.testing.GitHubAppTest;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.github.GitHubService;
-import io.quarkus.github.lottery.github.InstallationRef;
+import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.Issue;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -89,11 +89,11 @@ public class GitHubServiceTest {
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
-                    InstallationRef installationRef = new InstallationRef(1234L, "quarkusio/quarkus");
-                    assertThat(gitHubService.listInstallations())
-                            .containsExactlyInAnyOrder(installationRef);
+                    GitHubRepositoryRef repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus");
+                    assertThat(gitHubService.listRepositories())
+                            .containsExactlyInAnyOrder(repoRef);
 
-                    var installation = gitHubService.installation(installationRef);
+                    var installation = gitHubService.repository(repoRef);
 
                     assertThat(installation.fetchLotteryConfig())
                             .isNotEmpty()
