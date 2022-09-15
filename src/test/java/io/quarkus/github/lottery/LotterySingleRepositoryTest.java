@@ -77,6 +77,8 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
+        verify(repoMock).close();
+
         verifyNoMoreInteractions(gitHubServiceMock, repoMock);
     }
 
@@ -90,8 +92,11 @@ public class LotterySingleRepositoryTest {
                         "yrodiere",
                         Set.of(DayOfWeek.TUESDAY),
                         new LotteryConfig.ParticipationConfig(3))))));
+        when(repoMock.ref()).thenReturn(repoRef);
 
         lotteryService.draw();
+
+        verify(repoMock).close();
 
         // Today is Monday, but the subscription requests notifications on Tuesday.
         // Nothing to do.
@@ -109,6 +114,7 @@ public class LotterySingleRepositoryTest {
                         Set.of(DayOfWeek.MONDAY),
                         new LotteryConfig.ParticipationConfig(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+        when(repoMock.ref()).thenReturn(repoRef);
 
         List<Issue> issueNeedingTriage = List.of(
                 new Issue(1, "Hibernate ORM works too well", url(1)),
@@ -125,6 +131,9 @@ public class LotterySingleRepositoryTest {
 
         verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere",
                 issueNeedingTriage.subList(0, 3)));
+
+        verify(notifierMock).close();
+        verify(repoMock).close();
 
         verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock);
     }
@@ -145,6 +154,7 @@ public class LotterySingleRepositoryTest {
                                 Set.of(DayOfWeek.MONDAY),
                                 new LotteryConfig.ParticipationConfig(10))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+        when(repoMock.ref()).thenReturn(repoRef);
 
         List<Issue> issueNeedingTriage = List.of(
                 new Issue(1, "Hibernate ORM works too well", url(1)),
@@ -160,6 +170,9 @@ public class LotterySingleRepositoryTest {
         var reportCaptor = ArgumentCaptor.forClass(LotteryReport.class);
         verify(notifierMock, Mockito.times(2)).send(reportCaptor.capture());
         var reports = reportCaptor.getAllValues();
+
+        verify(notifierMock).close();
+        verify(repoMock).close();
 
         verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock);
 

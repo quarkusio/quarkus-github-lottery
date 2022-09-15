@@ -26,11 +26,15 @@ import io.quarkus.github.lottery.config.LotteryConfig;
 /**
  * A GitHub repository as viewed from a GitHub App installation.
  */
-public class GitHubRepository {
+public class GitHubRepository implements AutoCloseable {
 
     private final GitHubClientProvider clientProvider;
     private final GitHubConfigFileProvider configFileProvider;
     private final GitHubRepositoryRef ref;
+
+    private GitHub client;
+    private GHRepository repository;
+    private DynamicGraphQLClient graphQLClient;
 
     public GitHubRepository(GitHubClientProvider clientProvider, GitHubConfigFileProvider configFileProvider,
             GitHubRepositoryRef ref) {
@@ -39,27 +43,49 @@ public class GitHubRepository {
         this.ref = ref;
     }
 
+    @Override
+    public void close() {
+        if (graphQLClient != null) {
+            try {
+                graphQLClient.close();
+            } catch (Exception e) {
+                Log.errorf(e, "Could not close GraphQL client");
+            }
+        }
+    }
+
     public GitHubRepositoryRef ref() {
         return ref;
     }
 
     private GitHub client() {
-        return clientProvider.getInstallationClient(ref.installationId());
+        if (client == null) {
+            client = clientProvider.getInstallationClient(ref.installationId());
+        }
+        return client;
+    }
+
+    private GHRepository repository() throws IOException {
+        if (repository == null) {
+            repository = client().getRepository(ref.repositoryName());
+        }
+        return repository;
     }
 
     private DynamicGraphQLClient graphQLClient() {
-        return clientProvider.getInstallationGraphQLClient(ref.installationId());
+        if (graphQLClient == null) {
+            graphQLClient = clientProvider.getInstallationGraphQLClient(ref.installationId());
+        }
+        return graphQLClient;
     }
 
     public Optional<LotteryConfig> fetchLotteryConfig() throws IOException {
-        GHRepository repo = client().getRepository(ref.repositoryName());
-        return configFileProvider.fetchConfigFile(repo, LotteryConfig.FILE_NAME, ConfigFile.Source.DEFAULT,
+        return configFileProvider.fetchConfigFile(repository(), LotteryConfig.FILE_NAME, ConfigFile.Source.DEFAULT,
                 LotteryConfig.class);
     }
 
     public Iterator<Issue> issuesWithLabel(String label) throws IOException {
-        GHRepository repo = client().getRepository(ref.repositoryName());
-        return toIterator(repo.queryIssues().label(label)
+        return toIterator(repository().queryIssues().label(label)
                 .state(GHIssueState.OPEN)
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
@@ -67,8 +93,7 @@ public class GitHubRepository {
     }
 
     public void commentOnDedicatedNotificationIssue(String username, String topic, String markdownBody) throws IOException {
-        GHRepository repo = client().getRepository(ref.repositoryName());
-        var existingIssue = getDedicatedNotificationIssue(repo, username, topic);
+        var existingIssue = getDedicatedNotificationIssue(username, topic);
         GHIssue issue;
         if (existingIssue.isPresent()) {
             issue = existingIssue.get();
@@ -81,14 +106,14 @@ public class GitHubRepository {
                 Log.errorf(e, "Failed to minimize last notification for issue %s#%s", ref.repositoryName(), issue.getNumber());
             }
         } else {
-            issue = createDedicatedNotificationIssue(repo, username, topic);
+            issue = createDedicatedNotificationIssue(username, topic);
         }
 
         issue.comment(markdownBody);
     }
 
-    private Optional<GHIssue> getDedicatedNotificationIssue(GHRepository repo, String username, String topic) {
-        for (var issue : repo.queryIssues().assignee(username).list()) {
+    private Optional<GHIssue> getDedicatedNotificationIssue(String username, String topic) throws IOException {
+        for (var issue : repository().queryIssues().assignee(username).list()) {
             if (issue.getTitle().equals(topic)) {
                 return Optional.of(issue);
             }
@@ -96,8 +121,8 @@ public class GitHubRepository {
         return Optional.empty();
     }
 
-    private GHIssue createDedicatedNotificationIssue(GHRepository repo, String username, String topic) throws IOException {
-        return repo.createIssue(topic)
+    private GHIssue createDedicatedNotificationIssue(String username, String topic) throws IOException {
+        return repository().createIssue(topic)
                 .assignee(username)
                 .body("This issue is dedicated to " + topic + ".")
                 .create();
@@ -118,10 +143,10 @@ public class GitHubRepository {
     }
 
     private void minimizeOutdatedComment(GHIssueComment comment) {
-        try (var graphQLClient = graphQLClient()) {
+        try {
             Map<String, Object> variables = new HashMap<>();
             variables.put("subjectId", comment.getNodeId());
-            graphQLClient.executeSync("""
+            graphQLClient().executeSync("""
                     mutation MinimizeOutdatedContent($subjectId: ID!) {
                       minimizeComment(input: {
                         subjectId: $subjectId,

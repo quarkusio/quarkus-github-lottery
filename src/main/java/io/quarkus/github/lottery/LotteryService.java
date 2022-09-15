@@ -19,6 +19,7 @@ import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
 import io.quarkus.github.lottery.notification.NotificationService;
+import io.quarkus.github.lottery.notification.Notifier;
 import io.quarkus.logging.Log;
 import io.quarkus.scheduler.Scheduled;
 
@@ -48,26 +49,39 @@ public class LotteryService {
     }
 
     private void drawForRepository(GitHubRepositoryRef repoRef) throws IOException {
-        GitHubRepository repo = gitHubService.repository(repoRef);
-        var optionalLotteryConfig = repo.fetchLotteryConfig();
-        if (optionalLotteryConfig.isEmpty()) {
-            Log.infof("No lottery configuration found for %s; not drawing lottery.", repoRef);
-            return;
+        try (GitHubRepository repo = gitHubService.repository(repoRef)) {
+            var optionalLotteryConfig = repo.fetchLotteryConfig();
+            if (optionalLotteryConfig.isEmpty()) {
+                Log.infof("No lottery configuration found for %s; not drawing lottery.", repoRef);
+                return;
+            }
+            doDrawForRepository(repo, optionalLotteryConfig.get());
         }
-        LotteryConfig lotteryConfig = optionalLotteryConfig.get();
+    }
 
+    private void doDrawForRepository(GitHubRepository repo, LotteryConfig lotteryConfig) throws IOException {
+        Lottery lottery = new Lottery(lotteryConfig.labels());
+
+        var drawRef = new DrawRef(repo.ref().repositoryName(), Instant.now(clock));
+        List<Participant> participants = registerParticipants(drawRef, lottery, lotteryConfig.participants());
+
+        lottery.draw(repo);
+
+        try (var notifier = notificationService.notifier(repo, lotteryConfig.notifications())) {
+            notifyParticipants(notifier, participants);
+        }
+    }
+
+    private List<Participant> registerParticipants(DrawRef drawRef, Lottery lottery,
+            List<LotteryConfig.ParticipantConfig> participantConfigs) {
         List<Participant> participants = new ArrayList<>();
-
-        var drawRef = new DrawRef(repoRef.repositoryName(), Instant.now(clock));
 
         // TODO handle user timezones. That implies running the draw multiple times per day,
         // which implies persistence to remember whether a user was already notified (and thus must not be notified again that day).
         DayOfWeek dayOfWeek = drawRef.instant().atZone(ZoneOffset.UTC).getDayOfWeek();
 
-        Lottery lottery = new Lottery(lotteryConfig.labels());
-
         // Add participants to the lottery as necessary.
-        for (LotteryConfig.ParticipantConfig participantConfig : lotteryConfig.participants()) {
+        for (LotteryConfig.ParticipantConfig participantConfig : participantConfigs) {
             if (!participantConfig.when().contains(dayOfWeek)) {
                 // Not notifying this user today.
                 continue;
@@ -81,9 +95,10 @@ public class LotteryService {
             // TODO also handle maintainers
         }
 
-        lottery.draw(repo);
+        return participants;
+    }
 
-        var notifier = notificationService.notifier(repo, lotteryConfig.notifications());
+    private void notifyParticipants(Notifier notifier, List<Participant> participants) {
         for (var participant : participants) {
             var report = participant.report();
             try {

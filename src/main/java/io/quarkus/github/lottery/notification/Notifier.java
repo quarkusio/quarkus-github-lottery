@@ -5,7 +5,7 @@ import java.io.IOException;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.GitHubRepository;
 
-public class Notifier {
+public class Notifier implements AutoCloseable {
 
     private final NotificationFormatter formatter;
     private final GitHubRepository targetRepo;
@@ -13,6 +13,11 @@ public class Notifier {
     public Notifier(NotificationFormatter formatter, GitHubRepository targetRepo) {
         this.formatter = formatter;
         this.targetRepo = targetRepo;
+    }
+
+    @Override
+    public void close() {
+        targetRepo.close();
     }
 
     public void send(LotteryReport report) throws IOException {
