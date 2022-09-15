@@ -77,6 +77,8 @@ public class GitHubRepository {
                     .assignee(username)
                     .body("This issue is dedicated to " + topic + ".")
                     .create();
+        } else if (GHIssueState.CLOSED.equals(result.getState())) {
+            result.reopen();
         }
         return result;
     }
