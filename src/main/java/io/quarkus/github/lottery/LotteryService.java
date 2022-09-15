@@ -2,6 +2,7 @@ package io.quarkus.github.lottery;
 
 import java.io.IOException;
 import java.time.Clock;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -41,12 +42,21 @@ public class LotteryService {
      */
     @Scheduled(cron = "0 0 * ? * *") // Every hour
     public void draw() throws IOException {
+        Log.info("Starting draw...");
         List<GitHubRepositoryRef> refs = gitHubService.listRepositories();
+        Log.infof("Will draw for the following repositories: %s", refs);
 
         // TODO parallelize
         for (GitHubRepositoryRef ref : refs) {
-            drawForRepository(ref);
+            Log.infof("Starting draw for repository %s...", ref);
+            try {
+                drawForRepository(ref);
+                Log.infof("End of draw for repository %s.", ref);
+            } catch (Exception e) {
+                Log.errorf(e, "Error drawing for repository %s", ref);
+            }
         }
+        Log.info("End of draw.");
     }
 
     private void drawForRepository(GitHubRepositoryRef repoRef) throws IOException {
@@ -82,15 +92,22 @@ public class LotteryService {
 
         // Add participants to the lottery as necessary.
         for (LotteryConfig.ParticipantConfig participantConfig : participantConfigs) {
+            String username = participantConfig.username();
             LocalDate drawDate = drawRef.instant().atZone(zone).toLocalDate();
-            if (!participantConfig.when().contains(drawDate.getDayOfWeek())) {
-                // This user does not participate to the draw on this day of the week.
+
+            var participationDays = participantConfig.when();
+            DayOfWeek dayOfWeek = drawDate.getDayOfWeek();
+            if (!participationDays.contains(dayOfWeek)) {
+                Log.debugf("Skipping user %s who wants to be notified on %s, because today is %s",
+                        username, participationDays, dayOfWeek);
                 continue;
             }
-            Optional<LocalDate> lastNotificationDate = notifier.lastNotificationInstant(drawRef, participantConfig.username())
-                    .map(instant -> instant.atZone(zone).toLocalDate());
-            if (lastNotificationDate.isPresent() && lastNotificationDate.get().equals(drawDate)) {
-                // This user already participated in a draw today.
+
+            Optional<Instant> lastNotificationInstant = notifier.lastNotificationInstant(drawRef, username);
+            if (lastNotificationInstant.isPresent()
+                    && drawDate.equals(lastNotificationInstant.get().atZone(zone).toLocalDate())) {
+                Log.debugf("Skipping user %s who has already been notified today (on %s)",
+                        username, lastNotificationInstant.get());
                 continue;
             }
 
@@ -109,6 +126,7 @@ public class LotteryService {
         for (var participant : participants) {
             var report = participant.report();
             try {
+                Log.debugf("Sending report: %s", report);
                 notifier.send(report);
             } catch (IOException | RuntimeException e) {
                 Log.errorf(e, "Failed to send lottery report with content %s", report);
