@@ -54,7 +54,6 @@ public class GitHubRepository {
                 .state(GHIssueState.OPEN)
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
-                .pageSize(20)
                 .list());
     }
 

@@ -23,8 +23,8 @@ public class GitHubService {
     public List<GitHubRepositoryRef> listRepositories() throws IOException {
         List<GitHubRepositoryRef> result = new ArrayList<>();
         GitHub client = clientProvider.getApplicationClient();
-        for (GHAppInstallation installation : client.getApp().listInstallations().withPageSize(20)) {
-            for (GHRepository repository : installation.listRepositories().withPageSize(20)) {
+        for (GHAppInstallation installation : client.getApp().listInstallations()) {
+            for (GHRepository repository : installation.listRepositories()) {
                 result.add(new GitHubRepositoryRef(installation.getId(), repository.getFullName()));
             }
         }

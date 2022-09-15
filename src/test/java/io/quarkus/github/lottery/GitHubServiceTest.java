@@ -6,7 +6,6 @@ import static io.quarkus.github.lottery.MockHelper.mockIssueForNotification;
 import static io.quarkus.github.lottery.MockHelper.mockPagedIterable;
 import static io.quarkus.github.lottery.MockHelper.url;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -183,7 +182,6 @@ public class GitHubServiceTest {
                     verify(queryIssuesBuilderMock).state(GHIssueState.OPEN);
                     verify(queryIssuesBuilderMock).sort(GHIssueQueryBuilder.Sort.UPDATED);
                     verify(queryIssuesBuilderMock).direction(GHDirection.DESC);
-                    verify(queryIssuesBuilderMock).pageSize(anyInt());
                     verify(queryIssuesBuilderMock).label("triage/needs-triage");
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
