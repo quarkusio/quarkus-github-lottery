@@ -3,7 +3,8 @@ package io.quarkus.github.lottery;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.DayOfWeek;
-import java.time.LocalDate;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
+import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.Lottery;
 import io.quarkus.github.lottery.draw.Participant;
 import io.quarkus.github.lottery.github.GitHubRepository;
@@ -45,20 +47,22 @@ public class LotteryService {
         }
     }
 
-    private void drawForRepository(GitHubRepositoryRef ref) throws IOException {
-        GitHubRepository repo = gitHubService.repository(ref);
+    private void drawForRepository(GitHubRepositoryRef repoRef) throws IOException {
+        GitHubRepository repo = gitHubService.repository(repoRef);
         var optionalLotteryConfig = repo.fetchLotteryConfig();
         if (optionalLotteryConfig.isEmpty()) {
-            Log.infof("No lottery configuration found for %s; not drawing lottery.", ref);
+            Log.infof("No lottery configuration found for %s; not drawing lottery.", repoRef);
             return;
         }
         LotteryConfig lotteryConfig = optionalLotteryConfig.get();
 
         List<Participant> participants = new ArrayList<>();
 
+        var drawRef = new DrawRef(repoRef.repositoryName(), Instant.now(clock));
+
         // TODO handle user timezones. That implies running the draw multiple times per day,
         // which implies persistence to remember whether a user was already notified (and thus must not be notified again that day).
-        DayOfWeek dayOfWeek = LocalDate.now(clock).getDayOfWeek();
+        DayOfWeek dayOfWeek = drawRef.instant().atZone(ZoneOffset.UTC).getDayOfWeek();
 
         Lottery lottery = new Lottery(lotteryConfig.labels());
 
@@ -69,7 +73,7 @@ public class LotteryService {
                 continue;
             }
 
-            var participant = new Participant(ref.repositoryName(), participantConfig);
+            var participant = new Participant(drawRef, participantConfig);
             participants.add(participant);
 
             participant.participate(lottery);

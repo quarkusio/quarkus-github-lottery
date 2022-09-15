@@ -23,6 +23,7 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.quarkus.github.lottery.draw.DrawRef;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -47,6 +48,7 @@ public class LotterySingleRepositoryTest {
     NotificationService notificationServiceMock;
 
     GitHubRepositoryRef repoRef;
+    DrawRef drawRef;
 
     @Inject
     LotteryService lotteryService;;
@@ -61,7 +63,8 @@ public class LotterySingleRepositoryTest {
         repoMock = Mockito.mock(GitHubRepository.class);
         when(gitHubServiceMock.repository(repoRef)).thenReturn(repoMock);
 
-        clockMock = Clock.fixed(LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC), ZoneOffset.UTC);
+        drawRef = new DrawRef(repoRef.repositoryName(), LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC));
+        clockMock = Clock.fixed(drawRef.instant(), ZoneOffset.UTC);
         QuarkusMock.installMockForType(clockMock, Clock.class);
 
         notificationServiceMock = Mockito.mock(NotificationService.class);
@@ -118,7 +121,7 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        verify(notifierMock).send(new LotteryReport("yrodiere", repoRef.repositoryName(),
+        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere",
                 issueNeedingTriage.subList(0, 3)));
 
         verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock);

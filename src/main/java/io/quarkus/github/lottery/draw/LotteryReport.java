@@ -5,7 +5,7 @@ import java.util.List;
 import io.quarkus.github.lottery.github.Issue;
 
 public record LotteryReport(
+        DrawRef drawRef,
         String username,
-        String repositoryName,
         List<Issue> issuesToTriage) {
 }
