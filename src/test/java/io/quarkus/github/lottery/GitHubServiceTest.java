@@ -6,6 +6,8 @@ import static io.quarkus.github.lottery.MockHelper.mockIssueForNotification;
 import static io.quarkus.github.lottery.MockHelper.mockPagedIterable;
 import static io.quarkus.github.lottery.MockHelper.url;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -14,6 +16,7 @@ import static org.mockito.Mockito.withSettings;
 import java.io.IOException;
 import java.time.DayOfWeek;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -27,8 +30,11 @@ import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssueBuilder;
 import org.kohsuke.github.GHIssueQueryBuilder;
 import org.kohsuke.github.GHIssueState;
+import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GHUser;
 import org.mockito.Answers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -188,9 +194,12 @@ public class GitHubServiceTest {
                 });
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    void commentOnDedicatedNotificationIssue_notificationIssueExists_open() throws IOException {
+    void commentOnDedicatedNotificationIssue_notificationIssueExists_open() throws Exception {
         var repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus-lottery-reports");
+        var commentToMinimizeNodeId = "MDM6Qm90NzUwNjg0Mzg=";
+
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
 
@@ -206,6 +215,25 @@ public class GitHubServiceTest {
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
                     when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
+
+                    var clientMock = mocks.installationClient(repoRef.installationId());
+                    var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
+                    when(clientMock.getMyself()).thenReturn(mySelfMock);
+                    when(mySelfMock.getId()).thenReturn(1L);
+
+                    var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
+                    when(someoneElseMock.getId()).thenReturn(2L);
+
+                    var issue2Comment1Mock = mocks.issueComment(201);
+                    when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
+                    var issue2Comment2Mock = mocks.issueComment(202);
+                    when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
+                    var issue2Comment3Mock = mocks.issueComment(203);
+                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
+                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
+                    when(issue2Mock.listComments()).thenReturn(issue2CommentMocks);
+
+                    when(issue2Comment2Mock.getNodeId()).thenReturn(commentToMinimizeNodeId);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -215,15 +243,26 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+
+                    var mapCaptor = ArgumentCaptor.forClass(Map.class);
+                    verify(mocks.installationGraphQLClient(repoRef.installationId()))
+                            .executeSync(anyString(), mapCaptor.capture());
+
                     verify(mocks.issue(2)).comment("Some content");
+
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
+
+                    assertThat(mapCaptor.getValue()).containsValue(commentToMinimizeNodeId);
                 });
     }
 
+    @SuppressWarnings("unchecked")
     @Test
-    void commentOnDedicatedNotificationIssue_notificationIssueExists_closed() throws IOException {
+    void commentOnDedicatedNotificationIssue_notificationIssueExists_closed() throws Exception {
         var repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus-lottery-reports");
+        var commentToMinimizeNodeId = "MDM6Qm90NzUwNjg0Mzg=";
+
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
 
@@ -239,6 +278,25 @@ public class GitHubServiceTest {
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
                     when(issue2Mock.getState()).thenReturn(GHIssueState.CLOSED);
+
+                    var clientMock = mocks.installationClient(repoRef.installationId());
+                    var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
+                    when(clientMock.getMyself()).thenReturn(mySelfMock);
+                    when(mySelfMock.getId()).thenReturn(1L);
+
+                    var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
+                    when(someoneElseMock.getId()).thenReturn(2L);
+
+                    var issue2Comment1Mock = mocks.issueComment(201);
+                    when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
+                    var issue2Comment2Mock = mocks.issueComment(202);
+                    when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
+                    var issue2Comment3Mock = mocks.issueComment(203);
+                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
+                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
+                    when(issue2Mock.listComments()).thenReturn(issue2CommentMocks);
+
+                    when(issue2Comment2Mock.getNodeId()).thenReturn(commentToMinimizeNodeId);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -248,10 +306,19 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+
                     verify(mocks.issue(2)).reopen();
+
+                    var mapCaptor = ArgumentCaptor.forClass(Map.class);
+                    verify(mocks.installationGraphQLClient(repoRef.installationId()))
+                            .executeSync(anyString(), mapCaptor.capture());
+
                     verify(mocks.issue(2)).comment("Some content");
+
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
+
+                    assertThat(mapCaptor.getValue()).containsValue(commentToMinimizeNodeId);
                 });
     }
 
