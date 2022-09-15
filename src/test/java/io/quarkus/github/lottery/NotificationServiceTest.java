@@ -78,22 +78,24 @@ public class NotificationServiceTest {
         var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", List.of(
                 new Issue(1, "Hibernate ORM works too well", url(1)),
                 new Issue(3, "Hibernate Search needs Solr support", url(3))));
-        var markdownNotification1 = new MarkdownNotification("yrodiere", "yrodiere's report for quarkusio/quarkus",
-                "Notif 1");
+        var markdownNotification1 = new MarkdownNotification("yrodiere", "Notif 1");
+        when(notificationFormatterMock.formatToTopicText(drawRef, "yrodiere"))
+                .thenReturn("yrodiere's report for quarkusio/quarkus");
         when(notificationFormatterMock.formatToMarkdown(lotteryReport1)).thenReturn(markdownNotification1);
         notifier.send(lotteryReport1);
-        verify(notificationRepoMock).commentOnDedicatedNotificationIssue("yrodiere", markdownNotification1.topic(),
+        verify(notificationRepoMock).commentOnDedicatedNotificationIssue("yrodiere", "yrodiere's report for quarkusio/quarkus",
                 markdownNotification1.body());
         verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, notificationFormatterMock);
 
         var lotteryReport2 = new LotteryReport(drawRef, "gsmet", List.of(
                 new Issue(4, "Hibernate Search and Validator are on a boat", url(4)),
                 new Issue(5, "Hibernate Validator needs Scala support", url(5))));
-        var markdownNotification2 = new MarkdownNotification("gsmet", "gsmet's report for quarkusio/quarkus",
-                "Notif 2");
+        var markdownNotification2 = new MarkdownNotification("gsmet", "Notif 2");
+        when(notificationFormatterMock.formatToTopicText(drawRef, "gsmet"))
+                .thenReturn("gsmet's report for quarkusio/quarkus");
         when(notificationFormatterMock.formatToMarkdown(lotteryReport2)).thenReturn(markdownNotification2);
         notifier.send(lotteryReport2);
-        verify(notificationRepoMock).commentOnDedicatedNotificationIssue("gsmet", markdownNotification2.topic(),
+        verify(notificationRepoMock).commentOnDedicatedNotificationIssue("gsmet", "gsmet's report for quarkusio/quarkus",
                 markdownNotification2.body());
         verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, notificationFormatterMock);
     }

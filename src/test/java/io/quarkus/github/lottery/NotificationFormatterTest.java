@@ -40,10 +40,17 @@ public class NotificationFormatterTest {
     }
 
     @Test
-    void empty() {
+    void formatToTopicText() {
+
+        assertThat(notificationFormatter.formatToTopicText(drawRef, "yrodiere"))
+                .isEqualTo("yrodiere's report for quarkusio/quarkus");
+    }
+
+    @Test
+    void formatToMarkdown_empty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", List.of());
         assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
-                .isEqualTo(new MarkdownNotification("yrodiere", "yrodiere's report for quarkusio/quarkus",
+                .isEqualTo(new MarkdownNotification("yrodiere",
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
                                 # Triage
@@ -52,12 +59,12 @@ public class NotificationFormatterTest {
     }
 
     @Test
-    void simple() {
+    void formatToMarkdown_simple() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", List.of(
                 new Issue(1, "Hibernate ORM works too well", url(1)),
                 new Issue(3, "Hibernate Search needs Solr support", url(3))));
         assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
-                .isEqualTo(new MarkdownNotification("yrodiere", "yrodiere's report for quarkusio/quarkus",
+                .isEqualTo(new MarkdownNotification("yrodiere",
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
                                 # Triage

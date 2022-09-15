@@ -1,14 +1,17 @@
 package io.quarkus.github.lottery.github;
 
+import static io.quarkus.github.lottery.util.UncheckedIOFunction.checkedIO;
+import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
+
 import java.io.IOException;
+import java.time.Instant;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
-import io.quarkus.logging.Log;
-import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
@@ -22,6 +25,8 @@ import io.quarkiverse.githubapp.ConfigFile;
 import io.quarkiverse.githubapp.GitHubClientProvider;
 import io.quarkiverse.githubapp.GitHubConfigFileProvider;
 import io.quarkus.github.lottery.config.LotteryConfig;
+import io.quarkus.logging.Log;
+import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
 
 /**
  * A GitHub repository as viewed from a GitHub App installation.
@@ -90,6 +95,13 @@ public class GitHubRepository implements AutoCloseable {
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
                 .list());
+    }
+
+    public Optional<Instant> lastNotificationInstant(String username, String topic) throws IOException {
+        return checkedIO(() -> getDedicatedNotificationIssue(username, topic)
+                .flatMap(uncheckedIO(this::getLastNotificationComment))
+                .map(uncheckedIO(GHIssueComment::getCreatedAt))
+                .map(Date::toInstant));
     }
 
     public void commentOnDedicatedNotificationIssue(String username, String topic, String markdownBody) throws IOException {

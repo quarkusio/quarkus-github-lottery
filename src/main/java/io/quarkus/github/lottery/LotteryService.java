@@ -2,11 +2,12 @@ package io.quarkus.github.lottery;
 
 import java.io.IOException;
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -38,7 +39,7 @@ public class LotteryService {
     /**
      * Draws the lottery and sends lists of tickets to participants as necessary.
      */
-    @Scheduled(cron = "0 0 8 ? * *") // Every day at 8 AM
+    @Scheduled(cron = "0 0 * ? * *") // Every hour
     public void draw() throws IOException {
         List<GitHubRepositoryRef> refs = gitHubService.listRepositories();
 
@@ -63,27 +64,33 @@ public class LotteryService {
         Lottery lottery = new Lottery(lotteryConfig.labels());
 
         var drawRef = new DrawRef(repo.ref().repositoryName(), Instant.now(clock));
-        List<Participant> participants = registerParticipants(drawRef, lottery, lotteryConfig.participants());
-
-        lottery.draw(repo);
-
         try (var notifier = notificationService.notifier(repo, lotteryConfig.notifications())) {
+            List<Participant> participants = registerParticipants(drawRef, lottery, notifier, lotteryConfig.participants());
+
+            lottery.draw(repo);
+
             notifyParticipants(notifier, participants);
         }
     }
 
     private List<Participant> registerParticipants(DrawRef drawRef, Lottery lottery,
-            List<LotteryConfig.ParticipantConfig> participantConfigs) {
+            Notifier notifier, List<LotteryConfig.ParticipantConfig> participantConfigs) throws IOException {
         List<Participant> participants = new ArrayList<>();
 
-        // TODO handle user timezones. That implies running the draw multiple times per day,
-        // which implies persistence to remember whether a user was already notified (and thus must not be notified again that day).
-        DayOfWeek dayOfWeek = drawRef.instant().atZone(ZoneOffset.UTC).getDayOfWeek();
+        // TODO handle (configurable) user timezones
+        ZoneOffset zone = ZoneOffset.UTC;
 
         // Add participants to the lottery as necessary.
         for (LotteryConfig.ParticipantConfig participantConfig : participantConfigs) {
-            if (!participantConfig.when().contains(dayOfWeek)) {
-                // Not notifying this user today.
+            LocalDate drawDate = drawRef.instant().atZone(zone).toLocalDate();
+            if (!participantConfig.when().contains(drawDate.getDayOfWeek())) {
+                // This user does not participate to the draw on this day of the week.
+                continue;
+            }
+            Optional<LocalDate> lastNotificationDate = notifier.lastNotificationInstant(drawRef, participantConfig.username())
+                    .map(instant -> instant.atZone(zone).toLocalDate());
+            if (lastNotificationDate.isPresent() && lastNotificationDate.get().equals(drawDate)) {
+                // This user already participated in a draw today.
                 continue;
             }
 
