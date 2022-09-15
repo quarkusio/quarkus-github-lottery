@@ -16,9 +16,11 @@ import java.io.IOException;
 import java.sql.Date;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -105,11 +107,12 @@ public class GitHubServiceTest {
                                       needsTriage: "triage/needs-triage"
                                     participants:
                                       - username: "yrodiere"
-                                        when: ["MONDAY"]
+                                        days: ["MONDAY"]
                                         triage:
                                           maxIssues: 3
                                       - username: "gsmet"
-                                        when: ["MONDAY", "WEDNESDAY", "FRIDAY"]
+                                        days: ["MONDAY", "WEDNESDAY", "FRIDAY"]
+                                        timezone: "Europe/Paris"
                                         triage:
                                           maxIssues: 10
                                     """);
@@ -128,11 +131,13 @@ public class GitHubServiceTest {
                                             new LotteryConfig.ParticipantConfig(
                                                     "yrodiere",
                                                     Set.of(DayOfWeek.MONDAY),
+                                                    Optional.empty(),
                                                     new LotteryConfig.ParticipationConfig(
                                                             3)),
                                             new LotteryConfig.ParticipantConfig(
                                                     "gsmet",
                                                     Set.of(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+                                                    Optional.of(ZoneId.of("Europe/Paris")),
                                                     new LotteryConfig.ParticipationConfig(
                                                             10)))));
                 })

@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -66,7 +67,7 @@ public class LotterySingleRepositoryTest {
         when(gitHubServiceMock.repository(repoRef)).thenReturn(repoMock);
 
         // Note tests below assume this is at least 1AM
-        Instant now = LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC);
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         drawRef = new DrawRef(repoRef.repositoryName(), now);
         clockMock = Clock.fixed(drawRef.instant(), ZoneOffset.UTC);
         QuarkusMock.installMockForType(clockMock, Clock.class);
@@ -87,14 +88,14 @@ public class LotterySingleRepositoryTest {
     }
 
     @Test
-    void participant_when_differentDay() throws IOException {
+    void participant_days_differentDay_defaultTimezone() throws IOException {
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
-                        Set.of(DayOfWeek.TUESDAY),
+                        Set.of(DayOfWeek.TUESDAY), Optional.empty(),
                         new LotteryConfig.ParticipationConfig(3))))));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -102,7 +103,29 @@ public class LotterySingleRepositoryTest {
 
         verify(repoMock).close();
 
-        // Today is Monday, but the participant wants notifications on Tuesday.
+        // The participant wants notifications on Tuesday, but we're Monday in UTC.
+        // Nothing to do.
+        verifyNoMoreInteractions(gitHubServiceMock, repoMock);
+    }
+
+    @Test
+    void participant_days_differentDay_explicitTimezone() throws IOException {
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
+                new LotteryConfig.NotificationsConfig(
+                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.LabelsConfig("needs-triage"),
+                List.of(new LotteryConfig.ParticipantConfig(
+                        "yrodiere",
+                        Set.of(DayOfWeek.MONDAY), Optional.of(ZoneId.of("America/Los_Angeles")),
+                        new LotteryConfig.ParticipationConfig(3))))));
+        when(repoMock.ref()).thenReturn(repoRef);
+
+        lotteryService.draw();
+
+        verify(repoMock).close();
+
+        // The participant wants notifications on Monday, and we're Monday in UTC,
+        // but still Sunday in Los Angeles.
         // Nothing to do.
         verifyNoMoreInteractions(gitHubServiceMock, repoMock);
     }
@@ -115,7 +138,7 @@ public class LotterySingleRepositoryTest {
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
-                        Set.of(DayOfWeek.MONDAY),
+                        Set.of(DayOfWeek.MONDAY), Optional.empty(),
                         new LotteryConfig.ParticipationConfig(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
@@ -134,7 +157,7 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere",
+        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
                 issueNeedingTriage.subList(0, 3)));
 
         verify(notifierMock).close();
@@ -151,7 +174,7 @@ public class LotterySingleRepositoryTest {
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
-                        Set.of(DayOfWeek.MONDAY),
+                        Set.of(DayOfWeek.MONDAY), Optional.empty(),
                         new LotteryConfig.ParticipationConfig(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
@@ -171,7 +194,7 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere",
+        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
                 issueNeedingTriage.subList(0, 3)));
 
         verify(notifierMock).close();
@@ -188,7 +211,7 @@ public class LotterySingleRepositoryTest {
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
-                        Set.of(DayOfWeek.MONDAY),
+                        Set.of(DayOfWeek.MONDAY), Optional.empty(),
                         new LotteryConfig.ParticipationConfig(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
@@ -217,11 +240,11 @@ public class LotterySingleRepositoryTest {
                 List.of(
                         new LotteryConfig.ParticipantConfig(
                                 "yrodiere",
-                                Set.of(DayOfWeek.MONDAY),
+                                Set.of(DayOfWeek.MONDAY), Optional.empty(),
                                 new LotteryConfig.ParticipationConfig(10)),
                         new LotteryConfig.ParticipantConfig(
                                 "gsmet",
-                                Set.of(DayOfWeek.MONDAY),
+                                Set.of(DayOfWeek.MONDAY), Optional.empty(),
                                 new LotteryConfig.ParticipationConfig(10))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);

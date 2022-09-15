@@ -75,7 +75,7 @@ public class NotificationServiceTest {
         Notifier notifier = notificationService.notifier(sourceRepoMock, config);
         verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, notificationFormatterMock);
 
-        var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", List.of(
+        var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC, List.of(
                 new Issue(1, "Hibernate ORM works too well", url(1)),
                 new Issue(3, "Hibernate Search needs Solr support", url(3))));
         var markdownNotification1 = new MarkdownNotification("yrodiere", "Notif 1");
@@ -87,7 +87,7 @@ public class NotificationServiceTest {
                 markdownNotification1.body());
         verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, notificationFormatterMock);
 
-        var lotteryReport2 = new LotteryReport(drawRef, "gsmet", List.of(
+        var lotteryReport2 = new LotteryReport(drawRef, "gsmet", ZoneOffset.UTC, List.of(
                 new Issue(4, "Hibernate Search and Validator are on a boat", url(4)),
                 new Issue(5, "Hibernate Validator needs Scala support", url(5))));
         var markdownNotification2 = new MarkdownNotification("gsmet", "Notif 2");

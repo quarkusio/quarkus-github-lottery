@@ -1,7 +1,11 @@
 package io.quarkus.github.lottery.config;
 
 import java.time.DayOfWeek;
+import java.time.OffsetTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -28,7 +32,8 @@ public record LotteryConfig(
 
     public record ParticipantConfig(
             @JsonProperty(required = true) String username,
-            @JsonProperty(required = true) @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> when,
+            @JsonProperty(required = true) @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
+            Optional<ZoneId> timezone,
             ParticipationConfig triage) {
 
     }

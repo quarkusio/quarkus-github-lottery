@@ -5,6 +5,7 @@ import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
@@ -87,15 +88,13 @@ public class LotteryService {
             Notifier notifier, List<LotteryConfig.ParticipantConfig> participantConfigs) throws IOException {
         List<Participant> participants = new ArrayList<>();
 
-        // TODO handle (configurable) user timezones
-        ZoneOffset zone = ZoneOffset.UTC;
-
         // Add participants to the lottery as necessary.
         for (LotteryConfig.ParticipantConfig participantConfig : participantConfigs) {
             String username = participantConfig.username();
-            LocalDate drawDate = drawRef.instant().atZone(zone).toLocalDate();
+            ZoneId timezone = participantConfig.timezone().orElse(ZoneOffset.UTC);
+            LocalDate drawDate = drawRef.instant().atZone(timezone).toLocalDate();
 
-            var participationDays = participantConfig.when();
+            var participationDays = participantConfig.days();
             DayOfWeek dayOfWeek = drawDate.getDayOfWeek();
             if (!participationDays.contains(dayOfWeek)) {
                 Log.debugf("Skipping user %s who wants to be notified on %s, because today is %s",
@@ -105,7 +104,7 @@ public class LotteryService {
 
             Optional<Instant> lastNotificationInstant = notifier.lastNotificationInstant(drawRef, username);
             if (lastNotificationInstant.isPresent()
-                    && drawDate.equals(lastNotificationInstant.get().atZone(zone).toLocalDate())) {
+                    && drawDate.equals(lastNotificationInstant.get().atZone(timezone).toLocalDate())) {
                 Log.debugf("Skipping user %s who has already been notified today (on %s)",
                         username, lastNotificationInstant.get());
                 continue;

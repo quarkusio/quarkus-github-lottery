@@ -4,6 +4,7 @@ import static io.quarkus.github.lottery.MockHelper.url;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
 
@@ -36,7 +37,8 @@ public class NotificationFormatterTest {
     @BeforeEach
     void setup() {
         repoRef = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
-        drawRef = new DrawRef(repoRef.repositoryName(), LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC));
+        var now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        drawRef = new DrawRef(repoRef.repositoryName(), now);
     }
 
     @Test
@@ -48,7 +50,7 @@ public class NotificationFormatterTest {
 
     @Test
     void formatToMarkdown_empty() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", List.of());
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC, List.of());
         assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
                 .isEqualTo(new MarkdownNotification("yrodiere",
                         """
@@ -60,13 +62,28 @@ public class NotificationFormatterTest {
 
     @Test
     void formatToMarkdown_simple() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", List.of(
-                new Issue(1, "Hibernate ORM works too well", url(1)),
-                new Issue(3, "Hibernate Search needs Solr support", url(3))));
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+                List.of(new Issue(1, "Hibernate ORM works too well", url(1)),
+                        new Issue(3, "Hibernate Search needs Solr support", url(3))));
         assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
                 .isEqualTo(new MarkdownNotification("yrodiere",
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
+                                # Triage
+                                 - http://github.com/quarkus/issues/1001
+                                 - http://github.com/quarkus/issues/1003
+                                """));
+    }
+
+    @Test
+    void formatToMarkdown_exoticTimezone() {
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneId.of("America/Los_Angeles"),
+                List.of(new Issue(1, "Hibernate ORM works too well", url(1)),
+                        new Issue(3, "Hibernate Search needs Solr support", url(3))));
+        assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
+                .isEqualTo(new MarkdownNotification("yrodiere",
+                        """
+                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-05.
                                 # Triage
                                  - http://github.com/quarkus/issues/1001
                                  - http://github.com/quarkus/issues/1003
