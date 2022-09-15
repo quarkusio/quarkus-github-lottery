@@ -208,7 +208,7 @@ public class LotterySingleRepositoryTest {
         verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock);
     }
 
-    @RepeatedTest(100) // Just to be reasonably certain that issues are spread evenly
+    @RepeatedTest(10) // Just to be reasonably certain that issues are spread evenly
     void multiParticipants_evenSpread() throws IOException {
         var config = new LotteryConfig(
                 new LotteryConfig.NotificationsConfig(
@@ -228,7 +228,9 @@ public class LotterySingleRepositoryTest {
 
         List<Issue> issueNeedingTriage = List.of(
                 new Issue(1, "Hibernate ORM works too well", url(1)),
-                new Issue(2, "Where can I find documentation?", url(2)));
+                new Issue(3, "Hibernate Search needs Solr support", url(3)),
+                new Issue(2, "Where can I find documentation?", url(2)),
+                new Issue(4, "Hibernate ORM works too well", url(4)));
         when(repoMock.issuesWithLabel("needs-triage"))
                 .thenAnswer(ignored -> issueNeedingTriage.iterator());
 
@@ -249,7 +251,7 @@ public class LotterySingleRepositoryTest {
         verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock);
 
         for (var report : reports) {
-            assertThat(report.issuesToTriage()).hasSize(1);
+            assertThat(report.issuesToTriage()).hasSize(2);
         }
     }
 
