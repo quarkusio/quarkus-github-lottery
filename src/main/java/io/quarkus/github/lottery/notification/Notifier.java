@@ -17,7 +17,8 @@ public class Notifier {
 
     public void send(LotteryReport report) throws IOException {
         MarkdownNotification notification = formatter.formatToMarkdown(report);
-        targetRepo.commentOnDedicatedNotificationIssue(notification.username(), notification.body());
+        targetRepo.commentOnDedicatedNotificationIssue(notification.username(), notification.topic(),
+                notification.body());
     }
 
 }

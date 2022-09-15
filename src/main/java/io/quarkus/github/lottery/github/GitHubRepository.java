@@ -58,25 +58,24 @@ public class GitHubRepository {
                 .list());
     }
 
-    public void commentOnDedicatedNotificationIssue(String username, String markdownBody) throws IOException {
-        var issue = getOrCreateDedicatedNotificationIssue(username);
+    public void commentOnDedicatedNotificationIssue(String username, String topic, String markdownBody) throws IOException {
+        var issue = getOrCreateDedicatedNotificationIssue(username, topic);
         issue.comment(markdownBody);
     }
 
-    private GHIssue getOrCreateDedicatedNotificationIssue(String username) throws IOException {
+    private GHIssue getOrCreateDedicatedNotificationIssue(String username, String topic) throws IOException {
         var repo = client().getRepository(ref.repositoryName());
-        String expectedTitle = username + "'s notifications";
         GHIssue result = null;
         for (var issue : repo.queryIssues().assignee(username).list()) {
-            if (issue.getTitle().equals(expectedTitle)) {
+            if (issue.getTitle().equals(topic)) {
                 result = issue;
                 break;
             }
         }
         if (result == null) {
-            result = repo.createIssue(expectedTitle)
+            result = repo.createIssue(topic)
                     .assignee(username)
-                    .body("This is where @" + username + " will get periodically notified of issues.")
+                    .body("This issue is dedicated to " + topic + ".")
                     .create();
         }
         return result;

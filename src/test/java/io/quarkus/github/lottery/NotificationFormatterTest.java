@@ -43,11 +43,12 @@ public class NotificationFormatterTest {
     void empty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", List.of());
         assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
-                .isEqualTo(new MarkdownNotification("yrodiere", """
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T08:00:00Z
-                        # Triage
-                        No issues in this category this time.
-                        """));
+                .isEqualTo(new MarkdownNotification("yrodiere", "yrodiere's report for quarkusio/quarkus",
+                        """
+                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
+                                # Triage
+                                No issues in this category this time.
+                                """));
     }
 
     @Test
@@ -56,12 +57,13 @@ public class NotificationFormatterTest {
                 new Issue(1, "Hibernate ORM works too well", url(1)),
                 new Issue(3, "Hibernate Search needs Solr support", url(3))));
         assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
-                .isEqualTo(new MarkdownNotification("yrodiere", """
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T08:00:00Z
-                        # Triage
-                         - http://github.com/quarkus/issues/1001
-                         - http://github.com/quarkus/issues/1003
-                        """));
+                .isEqualTo(new MarkdownNotification("yrodiere", "yrodiere's report for quarkusio/quarkus",
+                        """
+                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
+                                # Triage
+                                 - http://github.com/quarkus/issues/1001
+                                 - http://github.com/quarkus/issues/1003
+                                """));
     }
 
 }

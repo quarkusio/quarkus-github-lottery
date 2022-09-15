@@ -1,5 +1,7 @@
 package io.quarkus.github.lottery.notification;
 
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -13,10 +15,12 @@ public class NotificationFormatter {
 
     public MarkdownNotification formatToMarkdown(LotteryReport report) {
         // TODO produce better output, maybe with Qute templates?
-        return new MarkdownNotification(report.username(),
-                "Hey @" + report.username() + ", here's your report for " + report.drawRef().repositoryName()
-                // TODO apply user timezone if possible
-                        + " on " + report.drawRef().instant() + "\n"
+        String repoName = report.drawRef().repositoryName();
+        String topic = report.username() + "'s report for " + repoName;
+        // TODO apply user timezone if possible
+        LocalDate date = report.drawRef().instant().atZone(ZoneOffset.UTC).toLocalDate();
+        return new MarkdownNotification(report.username(), topic,
+                "Hey @" + report.username() + ", here's your report for " + repoName + " on " + date + ".\n"
                         + renderCategory("Triage", report.issuesToTriage()));
     }
 
