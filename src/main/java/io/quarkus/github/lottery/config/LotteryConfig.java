@@ -20,7 +20,10 @@ public record LotteryConfig(
     }
 
     public record NotificationsConfig(
-            @JsonProperty(required = true) String repository) {
+            @JsonProperty(required = true) CreateIssuesConfig createIssues) {
+        public record CreateIssuesConfig(
+                @JsonProperty(required = true) String repository) {
+        }
     }
 
     public record ParticipantConfig(

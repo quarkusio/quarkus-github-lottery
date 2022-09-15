@@ -66,9 +66,10 @@ public class NotificationServiceTest {
 
     @Test
     void simple() throws IOException {
-        var config = new LotteryConfig.NotificationsConfig("quarkusio/quarkus-lottery-reports");
+        var config = new LotteryConfig.NotificationsConfig(
+                new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports"));
 
-        var notificationRepoRef = new GitHubRepositoryRef(repoRef.installationId(), config.repository());
+        var notificationRepoRef = new GitHubRepositoryRef(repoRef.installationId(), config.createIssues().repository());
         when(gitHubServiceMock.repository(notificationRepoRef)).thenReturn(notificationRepoMock);
 
         Notifier notifier = notificationService.notifier(sourceRepoMock, config);

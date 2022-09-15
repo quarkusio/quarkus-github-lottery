@@ -18,7 +18,7 @@ public class NotificationService {
 
     public Notifier notifier(GitHubRepository sourceRepo, LotteryConfig.NotificationsConfig config) {
         GitHubRepository notificationRepo = gitHubService
-                .repository(new GitHubRepositoryRef(sourceRepo.ref().installationId(), config.repository()));
+                .repository(new GitHubRepositoryRef(sourceRepo.ref().installationId(), config.createIssues().repository()));
         // TODO check that the repo exists and we have access to it right now, to fail fast?
         //  Might be useful for config linting as well.
         return new Notifier(formatter, notificationRepo);

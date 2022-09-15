@@ -71,7 +71,8 @@ public class GitHubServiceTest {
                     mocks.configFile(repositoryMock, "quarkus-github-lottery.yaml")
                             .fromString("""
                                     notifications:
-                                      repository: "quarkusio/quarkus-lottery-reports"
+                                      createIssues:
+                                        repository: "quarkusio/quarkus-lottery-reports"
                                     labels:
                                       needsTriage: "triage/needs-triage"
                                     participants:
@@ -104,7 +105,9 @@ public class GitHubServiceTest {
                     assertThat(repo.fetchLotteryConfig())
                             .isNotEmpty()
                             .get().usingRecursiveComparison().isEqualTo(new LotteryConfig(
-                                    new LotteryConfig.NotificationsConfig("quarkusio/quarkus-lottery-reports"),
+                                    new LotteryConfig.NotificationsConfig(
+                                            new LotteryConfig.NotificationsConfig.CreateIssuesConfig(
+                                                    "quarkusio/quarkus-lottery-reports")),
                                     new LotteryConfig.LabelsConfig("triage/needs-triage"),
                                     List.of(
                                             new LotteryConfig.ParticipantConfig(

@@ -83,7 +83,8 @@ public class LotterySingleRepositoryTest {
     @Test
     void participant_when_differentDay() throws IOException {
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
-                new LotteryConfig.NotificationsConfig("quarkusio/quarkus-lottery-reports"),
+                new LotteryConfig.NotificationsConfig(
+                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
@@ -100,7 +101,8 @@ public class LotterySingleRepositoryTest {
     @Test
     void singleParticipant() throws IOException {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig("quarkusio/quarkus-lottery-reports"),
+                new LotteryConfig.NotificationsConfig(
+                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
@@ -130,7 +132,8 @@ public class LotterySingleRepositoryTest {
     @RepeatedTest(100) // Just to be reasonably certain that issues are spread evenly
     void multiParticipants_evenSpread() throws IOException {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig("quarkusio/quarkus-lottery-reports"),
+                new LotteryConfig.NotificationsConfig(
+                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.LabelsConfig("needs-triage"),
                 List.of(
                         new LotteryConfig.ParticipantConfig(
