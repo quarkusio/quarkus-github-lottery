@@ -11,11 +11,11 @@ import io.quarkus.github.lottery.github.GitHubRepository;
  */
 public final class Lottery {
 
-    private final LotteryConfig.LabelsConfig labels;
+    private final LotteryConfig.BucketsConfig buckets;
     private final LotteryBucket triageBucket;
 
-    public Lottery(LotteryConfig.LabelsConfig labels) {
-        this.labels = labels;
+    public Lottery(LotteryConfig.BucketsConfig buckets) {
+        this.buckets = buckets;
         Random random = new Random();
         this.triageBucket = new LotteryBucket(random);
         // TODO add more buckets for maintenance, ...
@@ -27,7 +27,7 @@ public final class Lottery {
 
     public void draw(GitHubRepository repo) throws IOException {
         if (triageBucket.hasTickets()) {
-            triageBucket.draw(repo.issuesWithLabel(labels.needsTriage()));
+            triageBucket.draw(repo.issuesWithLabel(buckets.triage().needsTriageLabel()));
         }
         // TODO draw for other buckets
     }

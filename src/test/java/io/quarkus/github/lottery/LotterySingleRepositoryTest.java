@@ -92,7 +92,7 @@ public class LotterySingleRepositoryTest {
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.LabelsConfig("needs-triage"),
+                new LotteryConfig.BucketsConfig(new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.TUESDAY), Optional.empty(),
@@ -113,7 +113,7 @@ public class LotterySingleRepositoryTest {
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(new LotteryConfig(
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.LabelsConfig("needs-triage"),
+                new LotteryConfig.BucketsConfig(new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.of(ZoneId.of("America/Los_Angeles")),
@@ -135,7 +135,7 @@ public class LotterySingleRepositoryTest {
         var config = new LotteryConfig(
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.LabelsConfig("needs-triage"),
+                new LotteryConfig.BucketsConfig(new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
@@ -158,7 +158,7 @@ public class LotterySingleRepositoryTest {
         lotteryService.draw();
 
         verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
-                issueNeedingTriage.subList(0, 3)));
+                new LotteryReport.Bucket(issueNeedingTriage.subList(0, 3))));
 
         verify(notifierMock).close();
         verify(repoMock).close();
@@ -171,7 +171,7 @@ public class LotterySingleRepositoryTest {
         var config = new LotteryConfig(
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.LabelsConfig("needs-triage"),
+                new LotteryConfig.BucketsConfig(new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
@@ -195,7 +195,7 @@ public class LotterySingleRepositoryTest {
         lotteryService.draw();
 
         verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
-                issueNeedingTriage.subList(0, 3)));
+                new LotteryReport.Bucket(issueNeedingTriage.subList(0, 3))));
 
         verify(notifierMock).close();
         verify(repoMock).close();
@@ -208,7 +208,7 @@ public class LotterySingleRepositoryTest {
         var config = new LotteryConfig(
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.LabelsConfig("needs-triage"),
+                new LotteryConfig.BucketsConfig(new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
@@ -236,7 +236,7 @@ public class LotterySingleRepositoryTest {
         var config = new LotteryConfig(
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.LabelsConfig("needs-triage"),
+                new LotteryConfig.BucketsConfig(new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
                 List.of(
                         new LotteryConfig.ParticipantConfig(
                                 "yrodiere",
@@ -274,7 +274,7 @@ public class LotterySingleRepositoryTest {
         verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock);
 
         for (var report : reports) {
-            assertThat(report.issuesToTriage()).hasSize(2);
+            assertThat(report.triage().issues()).hasSize(2);
         }
     }
 

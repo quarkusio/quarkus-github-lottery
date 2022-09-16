@@ -50,7 +50,8 @@ public class NotificationFormatterTest {
 
     @Test
     void formatToMarkdown_empty() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC, List.of());
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+                new LotteryReport.Bucket(List.of()));
         assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
                 .isEqualTo(new MarkdownNotification("yrodiere",
                         """
@@ -63,8 +64,9 @@ public class NotificationFormatterTest {
     @Test
     void formatToMarkdown_simple() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
-                List.of(new Issue(1, "Hibernate ORM works too well", url(1)),
-                        new Issue(3, "Hibernate Search needs Solr support", url(3))));
+                new LotteryReport.Bucket(List.of(
+                        new Issue(1, "Hibernate ORM works too well", url(1)),
+                        new Issue(3, "Hibernate Search needs Solr support", url(3)))));
         assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
                 .isEqualTo(new MarkdownNotification("yrodiere",
                         """
@@ -78,8 +80,9 @@ public class NotificationFormatterTest {
     @Test
     void formatToMarkdown_exoticTimezone() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneId.of("America/Los_Angeles"),
-                List.of(new Issue(1, "Hibernate ORM works too well", url(1)),
-                        new Issue(3, "Hibernate Search needs Solr support", url(3))));
+                new LotteryReport.Bucket(List.of(
+                        new Issue(1, "Hibernate ORM works too well", url(1)),
+                        new Issue(3, "Hibernate Search needs Solr support", url(3)))));
         assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
                 .isEqualTo(new MarkdownNotification("yrodiere",
                         """

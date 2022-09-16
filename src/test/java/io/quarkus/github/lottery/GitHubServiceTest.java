@@ -103,8 +103,9 @@ public class GitHubServiceTest {
                                     notifications:
                                       createIssues:
                                         repository: "quarkusio/quarkus-lottery-reports"
-                                    labels:
-                                      needsTriage: "triage/needs-triage"
+                                    buckets:
+                                      triage:
+                                        needsTriageLabel: "triage/needs-triage"
                                     participants:
                                       - username: "yrodiere"
                                         days: ["MONDAY"]
@@ -126,7 +127,8 @@ public class GitHubServiceTest {
                                     new LotteryConfig.NotificationsConfig(
                                             new LotteryConfig.NotificationsConfig.CreateIssuesConfig(
                                                     "quarkusio/quarkus-lottery-reports")),
-                                    new LotteryConfig.LabelsConfig("triage/needs-triage"),
+                                    new LotteryConfig.BucketsConfig(
+                                            new LotteryConfig.BucketsConfig.TriageBucketConfig("triage/needs-triage")),
                                     List.of(
                                             new LotteryConfig.ParticipantConfig(
                                                     "yrodiere",

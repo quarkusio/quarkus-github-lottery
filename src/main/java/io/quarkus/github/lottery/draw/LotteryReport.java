@@ -9,5 +9,9 @@ public record LotteryReport(
         DrawRef drawRef,
         String username,
         ZoneId timezone,
-        List<Issue> issuesToTriage) {
+        Bucket triage) {
+
+    public record Bucket(
+            List<Issue> issues) {
+    }
 }

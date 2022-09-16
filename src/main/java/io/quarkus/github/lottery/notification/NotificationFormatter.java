@@ -1,14 +1,12 @@
 package io.quarkus.github.lottery.notification;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
-import io.quarkus.github.lottery.github.Issue;
 
 @ApplicationScoped
 public class NotificationFormatter {
@@ -23,10 +21,11 @@ public class NotificationFormatter {
         LocalDate date = report.drawRef().instant().atZone(report.timezone()).toLocalDate();
         return new MarkdownNotification(report.username(),
                 "Hey @" + report.username() + ", here's your report for " + repoName + " on " + date + ".\n"
-                        + renderCategory("Triage", report.issuesToTriage()));
+                        + renderBucket("Triage", report.triage()));
     }
 
-    private String renderCategory(String title, List<Issue> issues) {
+    private String renderBucket(String title, LotteryReport.Bucket bucket) {
+        var issues = bucket.issues();
         StringBuilder builder = new StringBuilder("# ").append(title).append('\n');
         if (issues.isEmpty()) {
             builder.append("No issues in this category this time.\n");

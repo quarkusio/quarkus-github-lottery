@@ -72,7 +72,7 @@ public class LotteryService {
     }
 
     private void doDrawForRepository(GitHubRepository repo, LotteryConfig lotteryConfig) throws IOException {
-        Lottery lottery = new Lottery(lotteryConfig.labels());
+        Lottery lottery = new Lottery(lotteryConfig.buckets());
 
         var drawRef = new DrawRef(repo.ref().repositoryName(), Instant.now(clock));
         try (var notifier = notificationService.notifier(repo, lotteryConfig.notifications())) {
