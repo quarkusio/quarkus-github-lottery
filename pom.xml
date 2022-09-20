@@ -75,6 +75,7 @@
       <groupId>io.quarkiverse.githubapp</groupId>
       <artifactId>quarkus-github-app-testing</artifactId>
       <version>${quarkus-github-app.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <!-- To deserialize Optional -->
