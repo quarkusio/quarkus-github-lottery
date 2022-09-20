@@ -12,27 +12,29 @@ import io.quarkus.github.lottery.message.MessageFormatter;
 public class Notifier implements AutoCloseable {
 
     private final MessageFormatter formatter;
-    private final GitHubRepository targetRepo;
+    private final DrawRef drawRef;
+    private final GitHubRepository notificationRepository;
 
-    public Notifier(MessageFormatter formatter, GitHubRepository targetRepo) {
+    public Notifier(MessageFormatter formatter, DrawRef drawRef, GitHubRepository notificationRepository) {
         this.formatter = formatter;
-        this.targetRepo = targetRepo;
+        this.drawRef = drawRef;
+        this.notificationRepository = notificationRepository;
     }
 
     @Override
     public void close() {
-        targetRepo.close();
+        notificationRepository.close();
     }
 
-    public Optional<Instant> lastNotificationInstant(DrawRef drawRef, String username) throws IOException {
+    public Optional<Instant> lastNotificationInstant(String username) throws IOException {
         String topic = formatter.formatNotificationTopicText(drawRef, username);
-        return targetRepo.lastNotificationInstant(username, topic);
+        return notificationRepository.lastNotificationInstant(username, topic);
     }
 
     public void send(LotteryReport report) throws IOException {
         String topic = formatter.formatNotificationTopicText(report.drawRef(), report.username());
         String body = formatter.formatNotificationBodyMarkdown(report);
-        targetRepo.commentOnDedicatedNotificationIssue(report.username(), topic, body);
+        notificationRepository.commentOnDedicatedNotificationIssue(report.username(), topic, body);
     }
 
 }

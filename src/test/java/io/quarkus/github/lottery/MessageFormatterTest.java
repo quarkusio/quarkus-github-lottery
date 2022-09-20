@@ -37,7 +37,7 @@ public class MessageFormatterTest {
     void setup() {
         repoRef = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
         var now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
-        drawRef = new DrawRef(repoRef.repositoryName(), now);
+        drawRef = new DrawRef(repoRef, now);
     }
 
     @Test

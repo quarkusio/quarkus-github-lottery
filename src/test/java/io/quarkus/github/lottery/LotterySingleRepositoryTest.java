@@ -68,7 +68,7 @@ public class LotterySingleRepositoryTest {
 
         // Note tests below assume this is at least 1AM
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
-        drawRef = new DrawRef(repoRef.repositoryName(), now);
+        drawRef = new DrawRef(repoRef, now);
         clockMock = Clock.fixed(drawRef.instant(), ZoneOffset.UTC);
         QuarkusMock.installMockForType(clockMock, Clock.class);
 
@@ -152,8 +152,8 @@ public class LotterySingleRepositoryTest {
                 .thenAnswer(ignored -> issueNeedingTriage.iterator());
 
         var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(repoMock, config.notifications())).thenReturn(notifierMock);
-        when(notifierMock.lastNotificationInstant(drawRef, "yrodiere")).thenReturn(Optional.empty());
+        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
+        when(notifierMock.lastNotificationInstant("yrodiere")).thenReturn(Optional.empty());
 
         lotteryService.draw();
 
@@ -188,8 +188,8 @@ public class LotterySingleRepositoryTest {
                 .thenAnswer(ignored -> issueNeedingTriage.iterator());
 
         var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(repoMock, config.notifications())).thenReturn(notifierMock);
-        when(notifierMock.lastNotificationInstant(drawRef, "yrodiere"))
+        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
+        when(notifierMock.lastNotificationInstant("yrodiere"))
                 .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.DAYS)));
 
         lotteryService.draw();
@@ -217,8 +217,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.ref()).thenReturn(repoRef);
 
         var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(repoMock, config.notifications())).thenReturn(notifierMock);
-        when(notifierMock.lastNotificationInstant(drawRef, "yrodiere"))
+        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
+        when(notifierMock.lastNotificationInstant("yrodiere"))
                 .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.HOURS)));
 
         lotteryService.draw();
@@ -258,9 +258,9 @@ public class LotterySingleRepositoryTest {
                 .thenAnswer(ignored -> issueNeedingTriage.iterator());
 
         var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(repoMock, config.notifications())).thenReturn(notifierMock);
-        when(notifierMock.lastNotificationInstant(drawRef, "yrodiere")).thenReturn(Optional.empty());
-        when(notifierMock.lastNotificationInstant(drawRef, "gsmet")).thenReturn(Optional.empty());
+        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
+        when(notifierMock.lastNotificationInstant("yrodiere")).thenReturn(Optional.empty());
+        when(notifierMock.lastNotificationInstant("gsmet")).thenReturn(Optional.empty());
 
         lotteryService.draw();
 

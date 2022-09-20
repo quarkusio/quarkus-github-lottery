@@ -74,8 +74,8 @@ public class LotteryService {
     private void doDrawForRepository(GitHubRepository repo, LotteryConfig lotteryConfig) throws IOException {
         Lottery lottery = new Lottery(lotteryConfig.buckets());
 
-        var drawRef = new DrawRef(repo.ref().repositoryName(), Instant.now(clock));
-        try (var notifier = notificationService.notifier(repo, lotteryConfig.notifications())) {
+        var drawRef = new DrawRef(repo.ref(), Instant.now(clock));
+        try (var notifier = notificationService.notifier(drawRef, lotteryConfig.notifications())) {
             List<Participant> participants = registerParticipants(drawRef, lottery, notifier, lotteryConfig.participants());
 
             lottery.draw(repo);
@@ -102,7 +102,7 @@ public class LotteryService {
                 continue;
             }
 
-            Optional<Instant> lastNotificationInstant = notifier.lastNotificationInstant(drawRef, username);
+            Optional<Instant> lastNotificationInstant = notifier.lastNotificationInstant(username);
             if (lastNotificationInstant.isPresent()
                     && drawDate.equals(lastNotificationInstant.get().atZone(timezone).toLocalDate())) {
                 Log.debugf("Skipping user %s who has already been notified today (on %s)",

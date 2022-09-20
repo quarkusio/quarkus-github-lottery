@@ -12,12 +12,12 @@ import io.quarkus.github.lottery.draw.LotteryReport;
 public class MessageFormatter {
 
     public String formatNotificationTopicText(DrawRef drawRef, String username) {
-        return username + "'s report for " + drawRef.repositoryName();
+        return username + "'s report for " + drawRef.repositoryRef().repositoryName();
     }
 
     public String formatNotificationBodyMarkdown(LotteryReport report) {
         // TODO produce better output, maybe with Qute templates?
-        String repoName = report.drawRef().repositoryName();
+        String repoName = report.drawRef().repositoryRef().repositoryName();
         LocalDate date = report.drawRef().instant().atZone(report.timezone()).toLocalDate();
         return "Hey @" + report.username() + ", here's your report for " + repoName + " on " + date + ".\n"
                 + formatNotificationBodyBucket("Triage", report.triage());

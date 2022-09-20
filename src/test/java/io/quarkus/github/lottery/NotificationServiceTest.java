@@ -36,7 +36,6 @@ import io.quarkus.test.junit.QuarkusTest;
 @ExtendWith(MockitoExtension.class)
 public class NotificationServiceTest {
     GitHubService gitHubServiceMock;
-    GitHubRepository sourceRepoMock;
     GitHubRepository notificationRepoMock;
 
     MessageFormatter messageFormatterMock;
@@ -53,11 +52,9 @@ public class NotificationServiceTest {
         QuarkusMock.installMockForType(gitHubServiceMock, GitHubService.class);
         repoRef = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
 
-        sourceRepoMock = Mockito.mock(GitHubRepository.class);
-        when(sourceRepoMock.ref()).thenReturn(repoRef);
         notificationRepoMock = Mockito.mock(GitHubRepository.class);
 
-        drawRef = new DrawRef(repoRef.repositoryName(), LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC));
+        drawRef = new DrawRef(repoRef, LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC));
 
         messageFormatterMock = Mockito.mock(MessageFormatter.class);
         QuarkusMock.installMockForType(messageFormatterMock, MessageFormatter.class);
@@ -71,8 +68,8 @@ public class NotificationServiceTest {
         var notificationRepoRef = new GitHubRepositoryRef(repoRef.installationId(), config.createIssues().repository());
         when(gitHubServiceMock.repository(notificationRepoRef)).thenReturn(notificationRepoMock);
 
-        Notifier notifier = notificationService.notifier(sourceRepoMock, config);
-        verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, messageFormatterMock);
+        Notifier notifier = notificationService.notifier(drawRef, config);
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
                 new LotteryReport.Bucket(List.of(
@@ -85,7 +82,7 @@ public class NotificationServiceTest {
         notifier.send(lotteryReport1);
         verify(notificationRepoMock).commentOnDedicatedNotificationIssue("yrodiere", "yrodiere's report for quarkusio/quarkus",
                 markdownNotification1);
-        verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, messageFormatterMock);
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport2 = new LotteryReport(drawRef, "gsmet", ZoneOffset.UTC,
                 new LotteryReport.Bucket(List.of(
@@ -98,7 +95,7 @@ public class NotificationServiceTest {
         notifier.send(lotteryReport2);
         verify(notificationRepoMock).commentOnDedicatedNotificationIssue("gsmet", "gsmet's report for quarkusio/quarkus",
                 markdownNotification2);
-        verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, messageFormatterMock);
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
     }
 
 }

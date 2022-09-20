@@ -4,6 +4,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
+import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
@@ -17,12 +18,12 @@ public class NotificationService {
     @Inject
     GitHubService gitHubService;
 
-    public Notifier notifier(GitHubRepository sourceRepo, LotteryConfig.NotificationsConfig config) {
-        GitHubRepository notificationRepo = gitHubService
-                .repository(new GitHubRepositoryRef(sourceRepo.ref().installationId(), config.createIssues().repository()));
+    public Notifier notifier(DrawRef drawRef, LotteryConfig.NotificationsConfig config) {
+        GitHubRepository notificationRepo = gitHubService.repository(
+                new GitHubRepositoryRef(drawRef.repositoryRef().installationId(), config.createIssues().repository()));
         // TODO check that the repo exists and we have access to it right now, to fail fast?
         //  Might be useful for config linting as well.
-        return new Notifier(formatter, notificationRepo);
+        return new Notifier(formatter, drawRef, notificationRepo);
     }
 
 }
