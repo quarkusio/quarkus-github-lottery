@@ -26,7 +26,7 @@ public class HistoryService {
 
     public LotteryHistory fetch(DrawRef drawRef, LotteryConfig config) throws IOException {
         var persistenceRepo = persistenceRepo(drawRef, config);
-        var history = new LotteryHistory(drawRef.instant());
+        var history = new LotteryHistory(drawRef.instant(), config.buckets());
         String historyTopic = messageFormatter.formatHistoryTopicText(drawRef);
         persistenceRepo.extractCommentsFromDedicatedIssue(persistenceRepo.selfUsername(), historyTopic, history.since())
                 .flatMap(uncheckedIO(message -> messageFormatter.extractPayloadFromHistoryBodyMarkdown(message).stream()))

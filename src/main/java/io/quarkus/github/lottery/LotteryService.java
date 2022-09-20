@@ -86,7 +86,7 @@ public class LotteryService {
             var history = historyService.fetch(drawRef, lotteryConfig);
             List<Participant> participants = registerParticipants(drawRef, lottery, history, lotteryConfig.participants());
 
-            lottery.draw(repo);
+            lottery.draw(repo, history);
 
             var sent = notifyParticipants(notifier, participants);
             if (!sent.isEmpty()) {

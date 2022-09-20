@@ -5,7 +5,6 @@ import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -92,14 +91,13 @@ public class GitHubRepository implements AutoCloseable {
                 LotteryConfig.class);
     }
 
-    public Iterator<Issue> issuesWithLabel(String label) throws IOException {
+    public Stream<Issue> issuesWithLabel(String label) throws IOException {
         return toStream(repository().queryIssues().label(label)
                 .state(GHIssueState.OPEN)
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
                 .list())
-                .map(ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getHtmlUrl()))
-                .iterator();
+                .map(ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getHtmlUrl()));
     }
 
     public void commentOnDedicatedIssue(String username, String topic, String markdownBody) throws IOException {

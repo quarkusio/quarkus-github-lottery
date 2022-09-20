@@ -3,6 +3,7 @@ package io.quarkus.github.lottery;
 import static io.quarkus.github.lottery.MockHelper.url;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -28,19 +30,19 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.quarkus.github.lottery.draw.DrawRef;
-import io.quarkus.github.lottery.history.HistoryService;
-import io.quarkus.github.lottery.history.LotteryHistory;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
+import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
 import io.quarkus.github.lottery.github.Issue;
+import io.quarkus.github.lottery.history.HistoryService;
+import io.quarkus.github.lottery.history.LotteryHistory;
 import io.quarkus.github.lottery.notification.NotificationService;
 import io.quarkus.github.lottery.notification.Notifier;
 import io.quarkus.test.junit.QuarkusMock;
@@ -101,7 +103,7 @@ public class LotterySingleRepositoryTest {
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
+                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.TUESDAY), Optional.empty(),
@@ -129,7 +131,7 @@ public class LotterySingleRepositoryTest {
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
+                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.of(ZoneId.of("America/Los_Angeles")),
@@ -158,7 +160,7 @@ public class LotterySingleRepositoryTest {
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
+                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
@@ -172,13 +174,16 @@ public class LotterySingleRepositoryTest {
                 new Issue(2, "Where can I find documentation?", url(2)),
                 new Issue(4, "Hibernate ORM works too well", url(4)));
         when(repoMock.issuesWithLabel("needs-triage"))
-                .thenAnswer(ignored -> issueNeedingTriage.iterator());
+                .thenAnswer(ignored -> issueNeedingTriage.stream());
 
         var notifierMock = mock(Notifier.class);
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
         var historyMock = mock(LotteryHistory.class);
         when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
         when(historyMock.lastNotificationInstantForUsername("yrodiere")).thenReturn(Optional.empty());
+        var historyTriageMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.triage()).thenReturn(historyTriageMock);
+        when(historyTriageMock.lastNotificationExpiredForIssueNumber(anyInt())).thenReturn(true);
 
         lotteryService.draw();
 
@@ -202,7 +207,7 @@ public class LotterySingleRepositoryTest {
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
+                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
@@ -216,7 +221,7 @@ public class LotterySingleRepositoryTest {
                 new Issue(2, "Where can I find documentation?", url(2)),
                 new Issue(4, "Hibernate ORM works too well", url(4)));
         when(repoMock.issuesWithLabel("needs-triage"))
-                .thenAnswer(ignored -> issueNeedingTriage.iterator());
+                .thenAnswer(ignored -> issueNeedingTriage.stream());
 
         var notifierMock = mock(Notifier.class);
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
@@ -224,6 +229,9 @@ public class LotterySingleRepositoryTest {
         when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
         when(historyMock.lastNotificationInstantForUsername("yrodiere"))
                 .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.DAYS)));
+        var historyTriageMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.triage()).thenReturn(historyTriageMock);
+        when(historyTriageMock.lastNotificationExpiredForIssueNumber(anyInt())).thenReturn(true);
 
         lotteryService.draw();
 
@@ -238,7 +246,59 @@ public class LotterySingleRepositoryTest {
         verify(repoMock).close();
 
         verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock,
-                historyServiceMock, historyMock);
+                historyServiceMock, historyMock, historyTriageMock);
+    }
+
+    @Test
+    void singleParticipant_notifiedYesterday_issueAlreadyHasNonExpiredNotification() throws IOException {
+        var config = new LotteryConfig(
+                new LotteryConfig.NotificationsConfig(
+                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.BucketsConfig(
+                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
+                List.of(new LotteryConfig.ParticipantConfig(
+                        "yrodiere",
+                        Set.of(DayOfWeek.MONDAY), Optional.empty(),
+                        new LotteryConfig.ParticipationConfig(3))));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+        when(repoMock.ref()).thenReturn(repoRef);
+
+        List<Issue> issueNeedingTriage = List.of(
+                new Issue(1, "Hibernate ORM works too well", url(1)),
+                new Issue(3, "Hibernate Search needs Solr support", url(3)),
+                new Issue(2, "Where can I find documentation?", url(2)),
+                new Issue(4, "Hibernate ORM works too well", url(4)));
+        when(repoMock.issuesWithLabel("needs-triage"))
+                .thenAnswer(ignored -> issueNeedingTriage.stream());
+
+        var notifierMock = mock(Notifier.class);
+        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
+        var historyMock = mock(LotteryHistory.class);
+        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
+        when(historyMock.lastNotificationInstantForUsername("yrodiere"))
+                .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.DAYS)));
+        var historyTriageMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.triage()).thenReturn(historyTriageMock);
+        when(historyTriageMock.lastNotificationExpiredForIssueNumber(anyInt())).thenReturn(true);
+        when(historyTriageMock.lastNotificationExpiredForIssueNumber(3)).thenReturn(false);
+
+        lotteryService.draw();
+
+        // Since the last notification for issue with number 3 didn't expire yet,
+        // it will be skipped and we'll notify about another issue.
+        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+                new LotteryReport.Bucket(
+                        List.of(issueNeedingTriage.get(0), issueNeedingTriage.get(2), issueNeedingTriage.get(3)))));
+
+        verify(historyServiceMock).append(drawRef, config, List.of(
+                new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
+                        new LotteryReport.Bucket.Serialized(List.of(1, 2, 4)))));
+
+        verify(notifierMock).close();
+        verify(repoMock).close();
+
+        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock,
+                historyServiceMock, historyMock, historyTriageMock);
     }
 
     @Test
@@ -247,7 +307,7 @@ public class LotterySingleRepositoryTest {
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
+                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of(new LotteryConfig.ParticipantConfig(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
@@ -279,7 +339,7 @@ public class LotterySingleRepositoryTest {
                 new LotteryConfig.NotificationsConfig(
                         new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
                 new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage")),
+                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of(
                         new LotteryConfig.ParticipantConfig(
                                 "yrodiere",
@@ -298,7 +358,7 @@ public class LotterySingleRepositoryTest {
                 new Issue(2, "Where can I find documentation?", url(2)),
                 new Issue(4, "Hibernate ORM works too well", url(4)));
         when(repoMock.issuesWithLabel("needs-triage"))
-                .thenAnswer(ignored -> issueNeedingTriage.iterator());
+                .thenAnswer(ignored -> issueNeedingTriage.stream());
 
         var notifierMock = mock(Notifier.class);
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
@@ -306,6 +366,9 @@ public class LotterySingleRepositoryTest {
         when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
         when(historyMock.lastNotificationInstantForUsername("yrodiere")).thenReturn(Optional.empty());
         when(historyMock.lastNotificationInstantForUsername("gsmet")).thenReturn(Optional.empty());
+        var historyTriageMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.triage()).thenReturn(historyTriageMock);
+        when(historyTriageMock.lastNotificationExpiredForIssueNumber(anyInt())).thenReturn(true);
 
         lotteryService.draw();
 

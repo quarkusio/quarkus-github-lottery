@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery.config;
 
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +22,8 @@ public record LotteryConfig(
             @JsonProperty(required = true) TriageBucketConfig triage) {
 
         public record TriageBucketConfig(
-                @JsonProperty(required = true) String needsTriageLabel) {
+                @JsonProperty(required = true) String needsTriageLabel,
+                @JsonProperty(required = true) Duration notificationExpiration) {
         }
     }
 

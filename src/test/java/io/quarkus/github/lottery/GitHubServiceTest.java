@@ -15,6 +15,7 @@ import static org.mockito.Mockito.withSettings;
 import java.io.IOException;
 import java.sql.Date;
 import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -107,6 +108,7 @@ public class GitHubServiceTest {
                                     buckets:
                                       triage:
                                         needsTriageLabel: "triage/needs-triage"
+                                        notificationExpiration: P3D
                                     participants:
                                       - username: "yrodiere"
                                         days: ["MONDAY"]
@@ -129,7 +131,8 @@ public class GitHubServiceTest {
                                             new LotteryConfig.NotificationsConfig.CreateIssuesConfig(
                                                     "quarkusio/quarkus-lottery-reports")),
                                     new LotteryConfig.BucketsConfig(
-                                            new LotteryConfig.BucketsConfig.TriageBucketConfig("triage/needs-triage")),
+                                            new LotteryConfig.BucketsConfig.TriageBucketConfig("triage/needs-triage",
+                                                    Duration.ofDays(3))),
                                     List.of(
                                             new LotteryConfig.ParticipantConfig(
                                                     "yrodiere",
@@ -188,7 +191,7 @@ public class GitHubServiceTest {
                     var repo = gitHubService.repository(repoRef);
 
                     assertThat(repo.issuesWithLabel("triage/needs-triage"))
-                            .toIterable().containsExactly(
+                            .containsExactly(
                                     new Issue(1, "Hibernate ORM works too well", url(1)),
                                     new Issue(3, "Hibernate Search needs Solr support", url(3)),
                                     new Issue(2, "Where can I find documentation?", url(2)),
