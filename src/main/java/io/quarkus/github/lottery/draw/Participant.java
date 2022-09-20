@@ -28,6 +28,6 @@ public final class Participant {
     }
 
     public LotteryReport report() {
-        return new LotteryReport(drawRef, username, timezone, triage.result());
+        return new LotteryReport(drawRef, username, timezone, new LotteryReport.Bucket(triage.result()));
     }
 }

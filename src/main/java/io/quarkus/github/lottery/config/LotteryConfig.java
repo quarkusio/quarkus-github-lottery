@@ -1,9 +1,8 @@
 package io.quarkus.github.lottery.config;
 
 import java.time.DayOfWeek;
-import java.time.OffsetTime;
+import java.time.Duration;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -14,13 +13,18 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 public record LotteryConfig(
         @JsonProperty(required = true) NotificationsConfig notifications,
-        @JsonProperty(required = true) LabelsConfig labels,
+        @JsonProperty(required = true) BucketsConfig buckets,
         List<ParticipantConfig> participants) {
 
     public static final String FILE_NAME = "quarkus-github-lottery.yaml";
 
-    public record LabelsConfig(
-            @JsonProperty(required = true) String needsTriage) {
+    public record BucketsConfig(
+            @JsonProperty(required = true) TriageBucketConfig triage) {
+
+        public record TriageBucketConfig(
+                @JsonProperty(required = true) String needsTriageLabel,
+                @JsonProperty(required = true) Duration notificationExpiration) {
+        }
     }
 
     public record NotificationsConfig(

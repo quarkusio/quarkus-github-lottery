@@ -17,10 +17,13 @@ import javax.inject.Inject;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.Lottery;
+import io.quarkus.github.lottery.history.LotteryHistory;
+import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.draw.Participant;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
+import io.quarkus.github.lottery.history.HistoryService;
 import io.quarkus.github.lottery.notification.NotificationService;
 import io.quarkus.github.lottery.notification.Notifier;
 import io.quarkus.logging.Log;
@@ -31,6 +34,9 @@ public class LotteryService {
 
     @Inject
     GitHubService gitHubService;
+
+    @Inject
+    HistoryService historyService;
 
     @Inject
     NotificationService notificationService;
@@ -72,20 +78,29 @@ public class LotteryService {
     }
 
     private void doDrawForRepository(GitHubRepository repo, LotteryConfig lotteryConfig) throws IOException {
-        Lottery lottery = new Lottery(lotteryConfig.labels());
+        Lottery lottery = new Lottery(lotteryConfig.buckets());
 
-        var drawRef = new DrawRef(repo.ref().repositoryName(), Instant.now(clock));
-        try (var notifier = notificationService.notifier(repo, lotteryConfig.notifications())) {
-            List<Participant> participants = registerParticipants(drawRef, lottery, notifier, lotteryConfig.participants());
+        var now = Instant.now(clock);
+        var drawRef = new DrawRef(repo.ref(), now);
+        try (var notifier = notificationService.notifier(drawRef, lotteryConfig.notifications())) {
+            var history = historyService.fetch(drawRef, lotteryConfig);
+            List<Participant> participants = registerParticipants(drawRef, lottery, history, lotteryConfig.participants());
 
-            lottery.draw(repo);
+            lottery.draw(repo, history);
 
-            notifyParticipants(notifier, participants);
+            var sent = notifyParticipants(notifier, participants);
+            if (!sent.isEmpty()) {
+                try {
+                    historyService.append(drawRef, lotteryConfig, sent);
+                } catch (IOException | RuntimeException e) {
+                    Log.errorf(e, "Failed to save the following lottery report to history: %s", sent);
+                }
+            }
         }
     }
 
     private List<Participant> registerParticipants(DrawRef drawRef, Lottery lottery,
-            Notifier notifier, List<LotteryConfig.ParticipantConfig> participantConfigs) throws IOException {
+            LotteryHistory history, List<LotteryConfig.ParticipantConfig> participantConfigs) throws IOException {
         List<Participant> participants = new ArrayList<>();
 
         // Add participants to the lottery as necessary.
@@ -102,7 +117,7 @@ public class LotteryService {
                 continue;
             }
 
-            Optional<Instant> lastNotificationInstant = notifier.lastNotificationInstant(drawRef, username);
+            Optional<Instant> lastNotificationInstant = history.lastNotificationInstantForUsername(username);
             if (lastNotificationInstant.isPresent()
                     && drawDate.equals(lastNotificationInstant.get().atZone(timezone).toLocalDate())) {
                 Log.debugf("Skipping user %s who has already been notified today (on %s)",
@@ -121,17 +136,19 @@ public class LotteryService {
         return participants;
     }
 
-    private void notifyParticipants(Notifier notifier, List<Participant> participants) {
+    private List<LotteryReport.Serialized> notifyParticipants(Notifier notifier, List<Participant> participants) {
+        List<LotteryReport.Serialized> sent = new ArrayList<>();
         for (var participant : participants) {
             var report = participant.report();
             try {
                 Log.debugf("Sending report: %s", report);
                 notifier.send(report);
+                sent.add(report.serialized());
             } catch (IOException | RuntimeException e) {
                 Log.errorf(e, "Failed to send lottery report with content %s", report);
             }
-            // TODO persist the information "these issues were notified on that day to that person"
         }
+        return sent;
     }
 
 }

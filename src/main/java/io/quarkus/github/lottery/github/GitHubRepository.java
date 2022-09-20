@@ -1,15 +1,13 @@
 package io.quarkus.github.lottery.github;
 
-import static io.quarkus.github.lottery.util.UncheckedIOFunction.checkedIO;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.kohsuke.github.GHDirection;
@@ -63,6 +61,10 @@ public class GitHubRepository implements AutoCloseable {
         return ref;
     }
 
+    public String selfUsername() throws IOException {
+        return client().getMyself().getLogin();
+    }
+
     private GitHub client() {
         if (client == null) {
             client = clientProvider.getInstallationClient(ref.installationId());
@@ -89,23 +91,17 @@ public class GitHubRepository implements AutoCloseable {
                 LotteryConfig.class);
     }
 
-    public Iterator<Issue> issuesWithLabel(String label) throws IOException {
-        return toIterator(repository().queryIssues().label(label)
+    public Stream<Issue> issuesWithLabel(String label) throws IOException {
+        return toStream(repository().queryIssues().label(label)
                 .state(GHIssueState.OPEN)
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
-                .list());
+                .list())
+                .map(ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getHtmlUrl()));
     }
 
-    public Optional<Instant> lastNotificationInstant(String username, String topic) throws IOException {
-        return checkedIO(() -> getDedicatedNotificationIssue(username, topic)
-                .flatMap(uncheckedIO(this::getLastNotificationComment))
-                .map(uncheckedIO(GHIssueComment::getCreatedAt))
-                .map(Date::toInstant));
-    }
-
-    public void commentOnDedicatedNotificationIssue(String username, String topic, String markdownBody) throws IOException {
-        var existingIssue = getDedicatedNotificationIssue(username, topic);
+    public void commentOnDedicatedIssue(String username, String topic, String markdownBody) throws IOException {
+        var existingIssue = getDedicatedIssue(username, topic);
         GHIssue issue;
         if (existingIssue.isPresent()) {
             issue = existingIssue.get();
@@ -113,18 +109,26 @@ public class GitHubRepository implements AutoCloseable {
                 issue.reopen();
             }
             try {
-                getLastNotificationComment(issue).ifPresent(this::minimizeOutdatedComment);
+                getLastAppComment(issue).ifPresent(this::minimizeOutdatedComment);
             } catch (Exception e) {
                 Log.errorf(e, "Failed to minimize last notification for issue %s#%s", ref.repositoryName(), issue.getNumber());
             }
         } else {
-            issue = createDedicatedNotificationIssue(username, topic);
+            issue = createDedicatedIssue(username, topic);
         }
 
         issue.comment(markdownBody);
     }
 
-    private Optional<GHIssue> getDedicatedNotificationIssue(String username, String topic) throws IOException {
+    public Stream<String> extractCommentsFromDedicatedIssue(String username, String topic, Instant since)
+            throws IOException {
+        return getDedicatedIssue(username, topic)
+                .map(uncheckedIO(issue -> getAppCommentsSince(issue, since)))
+                .orElse(Stream.of())
+                .map(GHIssueComment::getBody);
+    }
+
+    private Optional<GHIssue> getDedicatedIssue(String username, String topic) throws IOException {
         for (var issue : repository().queryIssues().assignee(username).list()) {
             if (issue.getTitle().equals(topic)) {
                 return Optional.of(issue);
@@ -133,16 +137,17 @@ public class GitHubRepository implements AutoCloseable {
         return Optional.empty();
     }
 
-    private GHIssue createDedicatedNotificationIssue(String username, String topic) throws IOException {
+    private GHIssue createDedicatedIssue(String username, String topic) throws IOException {
         return repository().createIssue(topic)
                 .assignee(username)
                 .body("This issue is dedicated to " + topic + ".")
                 .create();
     }
 
-    private Optional<GHIssueComment> getLastNotificationComment(GHIssue issue) throws IOException {
+    private Optional<GHIssueComment> getLastAppComment(GHIssue issue) throws IOException {
         long selfId = client().getMyself().getId();
-        // TODO ideally we'd use "since" to ignore older comments (e.g. 1+ year old) that are unlikely to be relevant
+        // TODO ideally we'd use the "since" API parameter to ignore
+        //  older comments (e.g. 1+ year old) that are unlikely to be relevant
         //  (see 'since' in https://docs.github.com/en/rest/issues/comments#list-issue-comments)
         //  but that's not supported yet in the library we're using...
         GHIssueComment lastNotificationComment = null;
@@ -152,6 +157,16 @@ public class GitHubRepository implements AutoCloseable {
             }
         }
         return Optional.ofNullable(lastNotificationComment);
+    }
+
+    private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) throws IOException {
+        long selfId = client().getMyself().getId();
+        // TODO ideally we'd use the "since" API parameter to ignore older comments
+        //  (see 'since' in https://docs.github.com/en/rest/issues/comments#list-issue-comments)
+        //  but that's not supported yet in the library we're using...
+        return toStream(issue.listComments())
+                .filter(uncheckedIO((GHIssueComment comment) -> selfId == comment.getUser().getId()
+                        && !comment.getCreatedAt().toInstant().isBefore(since))::apply);
     }
 
     private void minimizeOutdatedComment(GHIssueComment comment) {
@@ -174,9 +189,7 @@ public class GitHubRepository implements AutoCloseable {
         }
     }
 
-    private Iterator<Issue> toIterator(PagedIterable<GHIssue> iterable) {
-        return StreamSupport.stream(iterable.spliterator(), false)
-                .map(ghIssue -> new Issue(ghIssue.getId(), ghIssue.getTitle(), ghIssue.getHtmlUrl()))
-                .iterator();
+    private <T> Stream<T> toStream(PagedIterable<T> iterable) {
+        return StreamSupport.stream(iterable.spliterator(), false);
     }
 }

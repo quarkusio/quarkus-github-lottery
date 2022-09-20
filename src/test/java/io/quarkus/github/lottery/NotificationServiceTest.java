@@ -26,8 +26,7 @@ import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
 import io.quarkus.github.lottery.github.Issue;
-import io.quarkus.github.lottery.notification.MarkdownNotification;
-import io.quarkus.github.lottery.notification.NotificationFormatter;
+import io.quarkus.github.lottery.message.MessageFormatter;
 import io.quarkus.github.lottery.notification.NotificationService;
 import io.quarkus.github.lottery.notification.Notifier;
 import io.quarkus.test.junit.QuarkusMock;
@@ -37,10 +36,9 @@ import io.quarkus.test.junit.QuarkusTest;
 @ExtendWith(MockitoExtension.class)
 public class NotificationServiceTest {
     GitHubService gitHubServiceMock;
-    GitHubRepository sourceRepoMock;
     GitHubRepository notificationRepoMock;
 
-    NotificationFormatter notificationFormatterMock;
+    MessageFormatter messageFormatterMock;
 
     GitHubRepositoryRef repoRef;
     DrawRef drawRef;
@@ -54,14 +52,12 @@ public class NotificationServiceTest {
         QuarkusMock.installMockForType(gitHubServiceMock, GitHubService.class);
         repoRef = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
 
-        sourceRepoMock = Mockito.mock(GitHubRepository.class);
-        when(sourceRepoMock.ref()).thenReturn(repoRef);
         notificationRepoMock = Mockito.mock(GitHubRepository.class);
 
-        drawRef = new DrawRef(repoRef.repositoryName(), LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC));
+        drawRef = new DrawRef(repoRef, LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC));
 
-        notificationFormatterMock = Mockito.mock(NotificationFormatter.class);
-        QuarkusMock.installMockForType(notificationFormatterMock, NotificationFormatter.class);
+        messageFormatterMock = Mockito.mock(MessageFormatter.class);
+        QuarkusMock.installMockForType(messageFormatterMock, MessageFormatter.class);
     }
 
     @Test
@@ -72,32 +68,34 @@ public class NotificationServiceTest {
         var notificationRepoRef = new GitHubRepositoryRef(repoRef.installationId(), config.createIssues().repository());
         when(gitHubServiceMock.repository(notificationRepoRef)).thenReturn(notificationRepoMock);
 
-        Notifier notifier = notificationService.notifier(sourceRepoMock, config);
-        verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, notificationFormatterMock);
+        Notifier notifier = notificationService.notifier(drawRef, config);
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
-        var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC, List.of(
-                new Issue(1, "Hibernate ORM works too well", url(1)),
-                new Issue(3, "Hibernate Search needs Solr support", url(3))));
-        var markdownNotification1 = new MarkdownNotification("yrodiere", "Notif 1");
-        when(notificationFormatterMock.formatToTopicText(drawRef, "yrodiere"))
+        var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+                new LotteryReport.Bucket(List.of(
+                        new Issue(1, "Hibernate ORM works too well", url(1)),
+                        new Issue(3, "Hibernate Search needs Solr support", url(3)))));
+        var markdownNotification1 = "Notif 1";
+        when(messageFormatterMock.formatNotificationTopicText(drawRef, "yrodiere"))
                 .thenReturn("yrodiere's report for quarkusio/quarkus");
-        when(notificationFormatterMock.formatToMarkdown(lotteryReport1)).thenReturn(markdownNotification1);
+        when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport1)).thenReturn(markdownNotification1);
         notifier.send(lotteryReport1);
-        verify(notificationRepoMock).commentOnDedicatedNotificationIssue("yrodiere", "yrodiere's report for quarkusio/quarkus",
-                markdownNotification1.body());
-        verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, notificationFormatterMock);
+        verify(notificationRepoMock).commentOnDedicatedIssue("yrodiere", "yrodiere's report for quarkusio/quarkus",
+                markdownNotification1);
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
-        var lotteryReport2 = new LotteryReport(drawRef, "gsmet", ZoneOffset.UTC, List.of(
-                new Issue(4, "Hibernate Search and Validator are on a boat", url(4)),
-                new Issue(5, "Hibernate Validator needs Scala support", url(5))));
-        var markdownNotification2 = new MarkdownNotification("gsmet", "Notif 2");
-        when(notificationFormatterMock.formatToTopicText(drawRef, "gsmet"))
+        var lotteryReport2 = new LotteryReport(drawRef, "gsmet", ZoneOffset.UTC,
+                new LotteryReport.Bucket(List.of(
+                        new Issue(4, "Hibernate Search and Validator are on a boat", url(4)),
+                        new Issue(5, "Hibernate Validator needs Scala support", url(5)))));
+        var markdownNotification2 = "Notif 2";
+        when(messageFormatterMock.formatNotificationTopicText(drawRef, "gsmet"))
                 .thenReturn("gsmet's report for quarkusio/quarkus");
-        when(notificationFormatterMock.formatToMarkdown(lotteryReport2)).thenReturn(markdownNotification2);
+        when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport2)).thenReturn(markdownNotification2);
         notifier.send(lotteryReport2);
-        verify(notificationRepoMock).commentOnDedicatedNotificationIssue("gsmet", "gsmet's report for quarkusio/quarkus",
-                markdownNotification2.body());
-        verifyNoMoreInteractions(gitHubServiceMock, sourceRepoMock, notificationRepoMock, notificationFormatterMock);
+        verify(notificationRepoMock).commentOnDedicatedIssue("gsmet", "gsmet's report for quarkusio/quarkus",
+                markdownNotification2);
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
     }
 
 }
