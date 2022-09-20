@@ -176,7 +176,7 @@ public class GitHubRepository implements AutoCloseable {
 
     private Iterator<Issue> toIterator(PagedIterable<GHIssue> iterable) {
         return StreamSupport.stream(iterable.spliterator(), false)
-                .map(ghIssue -> new Issue(ghIssue.getId(), ghIssue.getTitle(), ghIssue.getHtmlUrl()))
+                .map(ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getHtmlUrl()))
                 .iterator();
     }
 }

@@ -68,8 +68,8 @@ public class MessageFormatterTest {
                 .isEqualTo("""
                         Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
                         # Triage
-                         - http://github.com/quarkus/issues/1001
-                         - http://github.com/quarkus/issues/1003
+                         - http://github.com/quarkus/issues/1
+                         - http://github.com/quarkus/issues/3
                         """);
     }
 
@@ -83,8 +83,8 @@ public class MessageFormatterTest {
                 .isEqualTo("""
                         Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-05.
                         # Triage
-                         - http://github.com/quarkus/issues/1001
-                         - http://github.com/quarkus/issues/1003
+                         - http://github.com/quarkus/issues/1
+                         - http://github.com/quarkus/issues/3
                         """);
     }
 

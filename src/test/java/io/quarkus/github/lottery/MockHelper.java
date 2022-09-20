@@ -34,19 +34,19 @@ class MockHelper {
         return iterableMock;
     }
 
-    public static URL url(long id) {
+    public static URL url(int id) {
         try {
-            return new URL("http://github.com/quarkus/issues/" + (id + 1000));
+            return new URL("http://github.com/quarkus/issues/" + id);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static GHIssue mockIssueForLottery(GitHubMockContext context, long id, String title) {
-        GHIssue mock = context.issue(id);
-        when(mock.getId()).thenReturn(id);
+    public static GHIssue mockIssueForLottery(GitHubMockContext context, int number, String title) {
+        GHIssue mock = context.issue(10000L + number);
+        when(mock.getNumber()).thenReturn(number);
         when(mock.getTitle()).thenReturn(title);
-        when(mock.getHtmlUrl()).thenReturn(url(id));
+        when(mock.getHtmlUrl()).thenReturn(url(number));
         return mock;
     }
 
