@@ -24,7 +24,9 @@ public class GitHubService {
         List<GitHubRepositoryRef> result = new ArrayList<>();
         GitHub client = clientProvider.getApplicationClient();
         for (GHAppInstallation installation : client.getApp().listInstallations()) {
-            for (GHRepository repository : installation.listRepositories()) {
+            long installationId = installation.getId();
+            for (GHRepository repository : clientProvider.getInstallationClient(installationId).getApp()
+                    .getInstallationById(installationId).listRepositories()) {
                 result.add(new GitHubRepositoryRef(installation.getId(), repository.getFullName()));
             }
         }

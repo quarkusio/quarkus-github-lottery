@@ -71,17 +71,31 @@ public class GitHubServiceTest {
         given()
                 .github(mocks -> {
                     var applicationClient = mocks.applicationClient();
-                    var appMock = mocks.ghObject(GHApp.class, repoRef.installationId());
-                    when(applicationClient.getApp()).thenReturn(appMock);
+                    {
+                        // Scope: application client
+                        var appMock = mocks.ghObject(GHApp.class, 1);
+                        when(applicationClient.getApp()).thenReturn(appMock);
 
-                    var installationMock = mocks.ghObject(GHAppInstallation.class, repoRef.installationId());
-                    var installationsMocks = mockPagedIterable(installationMock);
-                    when(appMock.listInstallations()).thenReturn(installationsMocks);
-                    when(installationMock.getId()).thenReturn(repoRef.installationId());
-                    var installationRepositoryMock = Mockito.mock(GHRepository.class);
-                    var installationRepositoryMocks = mockPagedIterable(installationRepositoryMock);
-                    when(installationMock.listRepositories()).thenReturn(installationRepositoryMocks);
-                    when(installationRepositoryMock.getFullName()).thenReturn(repoRef.repositoryName());
+                        var installationMock = Mockito.mock(GHAppInstallation.class);
+                        when(installationMock.getId()).thenReturn(repoRef.installationId());
+                        var installationsMocks = mockPagedIterable(installationMock);
+                        when(appMock.listInstallations()).thenReturn(installationsMocks);
+                    }
+
+                    var installationClient = mocks.installationClient(repoRef.installationId());
+                    {
+                        // Scope: installation client
+                        var appMock = mocks.ghObject(GHApp.class, 2);
+                        when(installationClient.getApp()).thenReturn(appMock);
+
+                        var installationMock = Mockito.mock(GHAppInstallation.class);
+                        when(appMock.getInstallationById(repoRef.installationId())).thenReturn(installationMock);
+
+                        var installationRepositoryMock = Mockito.mock(GHRepository.class);
+                        var installationRepositoryMocks = mockPagedIterable(installationRepositoryMock);
+                        when(installationMock.listRepositories()).thenReturn(installationRepositoryMocks);
+                        when(installationRepositoryMock.getFullName()).thenReturn(repoRef.repositoryName());
+                    }
                 })
                 .when(() -> {
                     assertThat(gitHubService.listRepositories())
