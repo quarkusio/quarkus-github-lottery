@@ -80,7 +80,7 @@ public class NotificationServiceTest {
                 .thenReturn("yrodiere's report for quarkusio/quarkus");
         when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport1)).thenReturn(markdownNotification1);
         notifier.send(lotteryReport1);
-        verify(notificationRepoMock).commentOnDedicatedNotificationIssue("yrodiere", "yrodiere's report for quarkusio/quarkus",
+        verify(notificationRepoMock).commentOnDedicatedIssue("yrodiere", "yrodiere's report for quarkusio/quarkus",
                 markdownNotification1);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
@@ -93,7 +93,7 @@ public class NotificationServiceTest {
                 .thenReturn("gsmet's report for quarkusio/quarkus");
         when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport2)).thenReturn(markdownNotification2);
         notifier.send(lotteryReport2);
-        verify(notificationRepoMock).commentOnDedicatedNotificationIssue("gsmet", "gsmet's report for quarkusio/quarkus",
+        verify(notificationRepoMock).commentOnDedicatedIssue("gsmet", "gsmet's report for quarkusio/quarkus",
                 markdownNotification2);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
     }

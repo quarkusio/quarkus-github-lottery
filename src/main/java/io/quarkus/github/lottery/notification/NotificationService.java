@@ -13,14 +13,19 @@ import io.quarkus.github.lottery.message.MessageFormatter;
 @ApplicationScoped
 public class NotificationService {
 
+    public static GitHubRepository notificationRepository(GitHubService gitHubService, DrawRef drawRef,
+            LotteryConfig.NotificationsConfig config) {
+        return gitHubService.repository(new GitHubRepositoryRef(drawRef.repositoryRef().installationId(),
+                config.createIssues().repository()));
+    }
+
     @Inject
     MessageFormatter formatter;
     @Inject
     GitHubService gitHubService;
 
     public Notifier notifier(DrawRef drawRef, LotteryConfig.NotificationsConfig config) {
-        GitHubRepository notificationRepo = gitHubService.repository(
-                new GitHubRepositoryRef(drawRef.repositoryRef().installationId(), config.createIssues().repository()));
+        GitHubRepository notificationRepo = notificationRepository(gitHubService, drawRef, config);
         // TODO check that the repo exists and we have access to it right now, to fail fast?
         //  Might be useful for config linting as well.
         return new Notifier(formatter, drawRef, notificationRepo);

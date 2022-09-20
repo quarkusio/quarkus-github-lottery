@@ -1,8 +1,6 @@
 package io.quarkus.github.lottery.notification;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.Optional;
 
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
@@ -26,15 +24,9 @@ public class Notifier implements AutoCloseable {
         notificationRepository.close();
     }
 
-    public Optional<Instant> lastNotificationInstant(String username) throws IOException {
-        String topic = formatter.formatNotificationTopicText(drawRef, username);
-        return notificationRepository.lastNotificationInstant(username, topic);
-    }
-
     public void send(LotteryReport report) throws IOException {
         String topic = formatter.formatNotificationTopicText(report.drawRef(), report.username());
         String body = formatter.formatNotificationBodyMarkdown(report);
-        notificationRepository.commentOnDedicatedNotificationIssue(report.username(), topic, body);
+        notificationRepository.commentOnDedicatedIssue(report.username(), topic, body);
     }
-
 }
