@@ -1,4 +1,4 @@
-package io.quarkus.github.lottery.notification;
+package io.quarkus.github.lottery.message;
 
 import java.time.LocalDate;
 import java.util.stream.Collectors;
@@ -9,22 +9,21 @@ import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
 
 @ApplicationScoped
-public class NotificationFormatter {
+public class MessageFormatter {
 
-    public String formatToTopicText(DrawRef drawRef, String username) {
+    public String formatNotificationTopicText(DrawRef drawRef, String username) {
         return username + "'s report for " + drawRef.repositoryName();
     }
 
-    public MarkdownNotification formatToMarkdown(LotteryReport report) {
+    public String formatNotificationBodyMarkdown(LotteryReport report) {
         // TODO produce better output, maybe with Qute templates?
         String repoName = report.drawRef().repositoryName();
         LocalDate date = report.drawRef().instant().atZone(report.timezone()).toLocalDate();
-        return new MarkdownNotification(report.username(),
-                "Hey @" + report.username() + ", here's your report for " + repoName + " on " + date + ".\n"
-                        + renderBucket("Triage", report.triage()));
+        return "Hey @" + report.username() + ", here's your report for " + repoName + " on " + date + ".\n"
+                + formatNotificationBodyBucket("Triage", report.triage());
     }
 
-    private String renderBucket(String title, LotteryReport.Bucket bucket) {
+    private String formatNotificationBodyBucket(String title, LotteryReport.Bucket bucket) {
         var issues = bucket.issues();
         StringBuilder builder = new StringBuilder("# ").append(title).append('\n');
         if (issues.isEmpty()) {

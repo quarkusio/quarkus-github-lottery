@@ -7,12 +7,13 @@ import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
+import io.quarkus.github.lottery.message.MessageFormatter;
 
 @ApplicationScoped
 public class NotificationService {
 
     @Inject
-    NotificationFormatter formatter;
+    MessageFormatter formatter;
     @Inject
     GitHubService gitHubService;
 

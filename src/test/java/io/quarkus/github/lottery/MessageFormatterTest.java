@@ -20,19 +20,18 @@ import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.Issue;
-import io.quarkus.github.lottery.notification.MarkdownNotification;
-import io.quarkus.github.lottery.notification.NotificationFormatter;
+import io.quarkus.github.lottery.message.MessageFormatter;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
 @ExtendWith(MockitoExtension.class)
-public class NotificationFormatterTest {
+public class MessageFormatterTest {
 
     GitHubRepositoryRef repoRef;
     DrawRef drawRef;
 
     @Inject
-    NotificationFormatter notificationFormatter;
+    MessageFormatter messageFormatter;
 
     @BeforeEach
     void setup() {
@@ -42,55 +41,51 @@ public class NotificationFormatterTest {
     }
 
     @Test
-    void formatToTopicText() {
-
-        assertThat(notificationFormatter.formatToTopicText(drawRef, "yrodiere"))
+    void formatNotificationTopicText() {
+        assertThat(messageFormatter.formatNotificationTopicText(drawRef, "yrodiere"))
                 .isEqualTo("yrodiere's report for quarkusio/quarkus");
     }
 
     @Test
-    void formatToMarkdown_empty() {
+    void formatNotificationBodyMarkdown_empty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
                 new LotteryReport.Bucket(List.of()));
-        assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
-                .isEqualTo(new MarkdownNotification("yrodiere",
-                        """
-                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
-                                # Triage
-                                No issues in this category this time.
-                                """));
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
+                .isEqualTo("""
+                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
+                        # Triage
+                        No issues in this category this time.
+                        """);
     }
 
     @Test
-    void formatToMarkdown_simple() {
+    void formatNotificationBodyMarkdown_simple() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
                 new LotteryReport.Bucket(List.of(
                         new Issue(1, "Hibernate ORM works too well", url(1)),
                         new Issue(3, "Hibernate Search needs Solr support", url(3)))));
-        assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
-                .isEqualTo(new MarkdownNotification("yrodiere",
-                        """
-                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
-                                # Triage
-                                 - http://github.com/quarkus/issues/1001
-                                 - http://github.com/quarkus/issues/1003
-                                """));
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
+                .isEqualTo("""
+                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
+                        # Triage
+                         - http://github.com/quarkus/issues/1001
+                         - http://github.com/quarkus/issues/1003
+                        """);
     }
 
     @Test
-    void formatToMarkdown_exoticTimezone() {
+    void formatNotificationBodyMarkdown_exoticTimezone() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneId.of("America/Los_Angeles"),
                 new LotteryReport.Bucket(List.of(
                         new Issue(1, "Hibernate ORM works too well", url(1)),
                         new Issue(3, "Hibernate Search needs Solr support", url(3)))));
-        assertThat(notificationFormatter.formatToMarkdown(lotteryReport))
-                .isEqualTo(new MarkdownNotification("yrodiere",
-                        """
-                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-05.
-                                # Triage
-                                 - http://github.com/quarkus/issues/1001
-                                 - http://github.com/quarkus/issues/1003
-                                """));
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
+                .isEqualTo("""
+                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-05.
+                        # Triage
+                         - http://github.com/quarkus/issues/1001
+                         - http://github.com/quarkus/issues/1003
+                        """);
     }
 
 }
