@@ -49,6 +49,12 @@ jobs:
         # refresh cache every month to avoid unlimited growth
         key: maven-repo-pr-${{ runner.os }}-${{ steps.get-date.outputs.date }}
 
+    - name: Check out yrodiere:github-api i1082-listRepositories
+      run: git clone -b i1082-listRepositories https://github.com/yrodiere/github-api.git
+
+    - name: Build github-api SNAPSHOT
+      run: cd github-api && mvn -B clean install -DskipTests && cd -
+
     - name: Validate formatting
       run: mvn -B clean formatter:validate
 
