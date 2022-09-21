@@ -51,6 +51,11 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>org.kohsuke</groupId>
+        <artifactId>github-api</artifactId>
+        <version>1.309-SNAPSHOT</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
   <dependencies>
@@ -73,8 +78,14 @@
     </dependency>
     <dependency>
       <groupId>io.quarkiverse.githubapp</groupId>
+      <artifactId>quarkus-github-app-command-airline</artifactId>
+      <version>${quarkus-github-app.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkiverse.githubapp</groupId>
       <artifactId>quarkus-github-app-testing</artifactId>
       <version>${quarkus-github-app.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <!-- To deserialize Optional -->

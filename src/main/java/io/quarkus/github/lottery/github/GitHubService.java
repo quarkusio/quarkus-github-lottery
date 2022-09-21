@@ -8,6 +8,7 @@ import javax.inject.Inject;
 
 import io.quarkiverse.githubapp.GitHubClientProvider;
 import io.quarkiverse.githubapp.GitHubConfigFileProvider;
+import org.kohsuke.github.GHApp;
 import org.kohsuke.github.GHAppInstallation;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
@@ -23,9 +24,14 @@ public class GitHubService {
     public List<GitHubRepositoryRef> listRepositories() throws IOException {
         List<GitHubRepositoryRef> result = new ArrayList<>();
         GitHub client = clientProvider.getApplicationClient();
-        for (GHAppInstallation installation : client.getApp().listInstallations()) {
-            for (GHRepository repository : installation.listRepositories()) {
-                result.add(new GitHubRepositoryRef(installation.getId(), repository.getFullName()));
+        GHApp app = client.getApp();
+        String appName = app.getName();
+        for (GHAppInstallation installation : app.listInstallations()) {
+            long installationId = installation.getId();
+            var installationRef = new GitHubInstallationRef(appName, installationId);
+            for (GHRepository repository : clientProvider.getInstallationClient(installationId)
+                    .getInstallation().listRepositories()) {
+                result.add(new GitHubRepositoryRef(installationRef, repository.getFullName()));
             }
         }
         return result;

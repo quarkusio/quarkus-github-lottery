@@ -47,8 +47,8 @@ public class LotteryService {
     /**
      * Draws the lottery and sends lists of tickets to participants as necessary.
      */
-    @Scheduled(cron = "0 0 * ? * *") // Every hour
-    public void draw() throws IOException {
+    @Scheduled(every = "1H", concurrentExecution = Scheduled.ConcurrentExecution.SKIP) // Every hour
+    public synchronized void draw() throws IOException {
         Log.info("Starting draw...");
         List<GitHubRepositoryRef> refs = gitHubService.listRepositories();
         Log.infof("Will draw for the following repositories: %s", refs);
