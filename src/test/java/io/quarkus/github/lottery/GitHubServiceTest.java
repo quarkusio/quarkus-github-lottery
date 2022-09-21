@@ -114,7 +114,7 @@ public class GitHubServiceTest {
         given()
                 .github(mocks -> {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
-                    mocks.configFile(repositoryMock, "quarkus-github-lottery.yaml")
+                    mocks.configFile(repositoryMock, "quarkus-github-lottery.yml")
                             .fromString("""
                                     notifications:
                                       createIssues:
