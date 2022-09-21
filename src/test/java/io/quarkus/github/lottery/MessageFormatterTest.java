@@ -114,13 +114,13 @@ public class MessageFormatterTest {
 
                         # yrodiere
                         ## Triage
-                         - #1
-                         - #3
+                         - quarkusio/quarkus#1
+                         - quarkusio/quarkus#3
 
                         # gsmet
                         ## Triage
-                         - #2
-                         - #4
+                         - quarkusio/quarkus#2
+                         - quarkusio/quarkus#4
 
                         # rick
                         ## Triage

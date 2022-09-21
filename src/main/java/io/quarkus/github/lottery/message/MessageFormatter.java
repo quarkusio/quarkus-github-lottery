@@ -60,23 +60,24 @@ public class MessageFormatter {
             throws JsonProcessingException {
         // TODO produce better output, maybe with Qute templates?
         return "Here are the reports for " + drawRef.repositoryRef().repositoryName() + " on " + drawRef.instant() + ".\n\n"
-                + reports.stream().map(this::formatHistoryBodyReport)
+                + reports.stream().map(report -> this.formatHistoryBodyReport(drawRef, report))
                         .collect(Collectors.joining("\n"))
                 + "\n" + PAYLOAD_BEGIN + jsonObjectMapper.writeValueAsString(reports) + PAYLOAD_END;
     }
 
-    private String formatHistoryBodyReport(LotteryReport.Serialized report) {
+    private String formatHistoryBodyReport(DrawRef drawRef, LotteryReport.Serialized report) {
         StringBuilder builder = new StringBuilder("# ").append(report.username()).append('\n');
-        builder.append(formatHistoryBodyBucket("Triage", report.triage()));
+        builder.append(formatHistoryBodyBucket(drawRef, "Triage", report.triage()));
         return builder.toString();
     }
 
-    private String formatHistoryBodyBucket(String title, LotteryReport.Bucket.Serialized bucket) {
+    private String formatHistoryBodyBucket(DrawRef drawRef, String title, LotteryReport.Bucket.Serialized bucket) {
+        String repoName = drawRef.repositoryRef().repositoryName();
         StringBuilder builder = new StringBuilder("## ").append(title).append('\n');
         var issueNumbers = bucket.issueNumbers();
         if (!issueNumbers.isEmpty()) {
             builder.append(issueNumbers.stream()
-                    .map(issueId -> "#" + issueId)
+                    .map(issueId -> repoName + "#" + issueId)
                     .collect(MARKDOWN_BULLET_LIST_COLLECTOR));
         }
         return builder.toString();
