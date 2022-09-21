@@ -30,8 +30,10 @@ import javax.inject.Inject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import org.kohsuke.github.GHApp;
 import org.kohsuke.github.GHAppInstallation;
+import org.kohsuke.github.GHAuthenticatedAppInstallation;
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssueBuilder;
 import org.kohsuke.github.GHIssueQueryBuilder;
@@ -59,12 +61,14 @@ import io.quarkus.test.junit.QuarkusTest;
 @ExtendWith(MockitoExtension.class)
 public class GitHubServiceTest {
 
+    private final GitHubInstallationRef installationRef = new GitHubInstallationRef("quarkus-github-lottery", 1234L);
+
     @Inject
     GitHubService gitHubService;
 
     @Test
     void listRepositories() throws IOException {
-        GitHubRepositoryRef repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -75,21 +79,19 @@ public class GitHubServiceTest {
                         // Scope: application client
                         var appMock = mocks.ghObject(GHApp.class, 1);
                         when(applicationClient.getApp()).thenReturn(appMock);
+                        when(appMock.getName()).thenReturn(installationRef.appName());
 
                         var installationMock = Mockito.mock(GHAppInstallation.class);
-                        when(installationMock.getId()).thenReturn(repoRef.installationId());
+                        when(installationMock.getId()).thenReturn(installationRef.installationId());
                         var installationsMocks = mockPagedIterable(installationMock);
                         when(appMock.listInstallations()).thenReturn(installationsMocks);
                     }
 
-                    var installationClient = mocks.installationClient(repoRef.installationId());
+                    var installationClient = mocks.installationClient(installationRef.installationId());
                     {
                         // Scope: installation client
-                        var appMock = mocks.ghObject(GHApp.class, 2);
-                        when(installationClient.getApp()).thenReturn(appMock);
-
-                        var installationMock = Mockito.mock(GHAppInstallation.class);
-                        when(appMock.getInstallationById(repoRef.installationId())).thenReturn(installationMock);
+                        var installationMock = Mockito.mock(GHAuthenticatedAppInstallation.class);
+                        when(installationClient.getInstallation()).thenReturn(installationMock);
 
                         var installationRepositoryMock = Mockito.mock(GHRepository.class);
                         var installationRepositoryMocks = mockPagedIterable(installationRepositoryMock);
@@ -109,7 +111,7 @@ public class GitHubServiceTest {
 
     @Test
     void fetchLotteryConfig() throws IOException {
-        GitHubRepositoryRef repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         given()
                 .github(mocks -> {
@@ -168,7 +170,7 @@ public class GitHubServiceTest {
 
     @Test
     void issuesWithLabel() throws IOException {
-        GitHubRepositoryRef repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -223,7 +225,7 @@ public class GitHubServiceTest {
 
     @Test
     void extractCommentsFromDedicatedIssue_dedicatedIssueDoesNotExist() throws Exception {
-        var repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus-lottery-reports");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var since = LocalDateTime.of(2017, 11, 6, 19, 0).toInstant(ZoneOffset.UTC);
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
@@ -242,12 +244,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue("quarkus-lottery-bot",
+                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appName() + "[bot]",
                             "Lottery history for quarkusio/quarkus", since))
                             .isEmpty();
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee("quarkus-lottery-bot");
+                    verify(queryIssuesBuilderMock).assignee(installationRef.appName() + "[bot]");
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
@@ -256,7 +258,7 @@ public class GitHubServiceTest {
 
     @Test
     void extractCommentsFromDedicatedIssue_dedicatedIssueExists_appCommentsDoNotExist() throws Exception {
-        var repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus-lottery-reports");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var since = LocalDateTime.of(2017, 11, 6, 19, 0).toInstant(ZoneOffset.UTC);
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
@@ -272,13 +274,8 @@ public class GitHubServiceTest {
                     var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
-                    var clientMock = mocks.installationClient(repoRef.installationId());
-                    var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
-                    when(clientMock.getMyself()).thenReturn(mySelfMock);
-                    when(mySelfMock.getId()).thenReturn(1L);
-
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
-                    when(someoneElseMock.getId()).thenReturn(2L);
+                    when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     var issue2Comment1Mock = mocks.issueComment(201);
                     when(issue2Comment1Mock.getUser()).thenReturn(someoneElseMock);
@@ -290,12 +287,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue("quarkus-lottery-bot",
+                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appName() + "[bot]",
                             "Lottery history for quarkusio/quarkus", since))
                             .isEmpty();
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee("quarkus-lottery-bot");
+                    verify(queryIssuesBuilderMock).assignee(installationRef.appName() + "[bot]");
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
@@ -304,7 +301,7 @@ public class GitHubServiceTest {
 
     @Test
     void extractCommentsFromDedicatedIssue_dedicatedIssueExists_appCommentsExist_allTooOld() throws Exception {
-        var repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus-lottery-reports");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var since = LocalDateTime.of(2017, 11, 6, 19, 0).toInstant(ZoneOffset.UTC);
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
@@ -320,13 +317,10 @@ public class GitHubServiceTest {
                     var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
-                    var clientMock = mocks.installationClient(repoRef.installationId());
                     var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
-                    when(clientMock.getMyself()).thenReturn(mySelfMock);
-                    when(mySelfMock.getId()).thenReturn(1L);
-
+                    when(mySelfMock.getLogin()).thenReturn(installationRef.appName() + "[bot]");
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
-                    when(someoneElseMock.getId()).thenReturn(2L);
+                    when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     var issue2Comment1Mock = mocks.issueComment(201);
                     when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
@@ -342,12 +336,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue("quarkus-lottery-bot",
+                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appName() + "[bot]",
                             "Lottery history for quarkusio/quarkus", since))
                             .isEmpty();
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee("quarkus-lottery-bot");
+                    verify(queryIssuesBuilderMock).assignee(installationRef.appName() + "[bot]");
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
@@ -356,7 +350,7 @@ public class GitHubServiceTest {
 
     @Test
     void extractCommentsFromDedicatedIssue_dedicatedIssueExists_appCommentsExist() throws Exception {
-        var repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus-lottery-reports");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var since = LocalDateTime.of(2017, 11, 6, 19, 0).toInstant(ZoneOffset.UTC);
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
@@ -372,13 +366,10 @@ public class GitHubServiceTest {
                     var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
-                    var clientMock = mocks.installationClient(repoRef.installationId());
                     var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
-                    when(clientMock.getMyself()).thenReturn(mySelfMock);
-                    when(mySelfMock.getId()).thenReturn(1L);
-
+                    when(mySelfMock.getLogin()).thenReturn(installationRef.appName() + "[bot]");
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
-                    when(someoneElseMock.getId()).thenReturn(2L);
+                    when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     var issue2Comment1Mock = mocks.issueComment(201);
                     when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
@@ -415,7 +406,7 @@ public class GitHubServiceTest {
     @SuppressWarnings("unchecked")
     @Test
     void commentOnDedicatedIssue_dedicatedIssueExists_open() throws Exception {
-        var repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus-lottery-reports");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var commentToMinimizeNodeId = "MDM6Qm90NzUwNjg0Mzg=";
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
@@ -433,13 +424,10 @@ public class GitHubServiceTest {
 
                     when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
 
-                    var clientMock = mocks.installationClient(repoRef.installationId());
                     var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
-                    when(clientMock.getMyself()).thenReturn(mySelfMock);
-                    when(mySelfMock.getId()).thenReturn(1L);
-
+                    when(mySelfMock.getLogin()).thenReturn(installationRef.appName() + "[bot]");
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
-                    when(someoneElseMock.getId()).thenReturn(2L);
+                    when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     var issue2Comment1Mock = mocks.issueComment(201);
                     when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
@@ -462,7 +450,7 @@ public class GitHubServiceTest {
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
 
                     var mapCaptor = ArgumentCaptor.forClass(Map.class);
-                    verify(mocks.installationGraphQLClient(repoRef.installationId()))
+                    verify(mocks.installationGraphQLClient(installationRef.installationId()))
                             .executeSync(anyString(), mapCaptor.capture());
 
                     verify(mocks.issue(2)).comment("Some content");
@@ -477,7 +465,7 @@ public class GitHubServiceTest {
     @SuppressWarnings("unchecked")
     @Test
     void commentOnDedicatedIssue_dedicatedIssueExists_closed() throws Exception {
-        var repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus-lottery-reports");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var commentToMinimizeNodeId = "MDM6Qm90NzUwNjg0Mzg=";
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
@@ -495,13 +483,10 @@ public class GitHubServiceTest {
 
                     when(issue2Mock.getState()).thenReturn(GHIssueState.CLOSED);
 
-                    var clientMock = mocks.installationClient(repoRef.installationId());
                     var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
-                    when(clientMock.getMyself()).thenReturn(mySelfMock);
-                    when(mySelfMock.getId()).thenReturn(1L);
-
+                    when(mySelfMock.getLogin()).thenReturn(installationRef.appName() + "[bot]");
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
-                    when(someoneElseMock.getId()).thenReturn(2L);
+                    when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     var issue2Comment1Mock = mocks.issueComment(201);
                     when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
@@ -526,7 +511,7 @@ public class GitHubServiceTest {
                     verify(mocks.issue(2)).reopen();
 
                     var mapCaptor = ArgumentCaptor.forClass(Map.class);
-                    verify(mocks.installationGraphQLClient(repoRef.installationId()))
+                    verify(mocks.installationGraphQLClient(installationRef.installationId()))
                             .executeSync(anyString(), mapCaptor.capture());
 
                     verify(mocks.issue(2)).comment("Some content");
@@ -540,7 +525,7 @@ public class GitHubServiceTest {
 
     @Test
     void commentOnDedicatedIssue_dedicatedIssueDoesNotExist() throws IOException {
-        var repoRef = new GitHubRepositoryRef(1234L, "quarkusio/quarkus-lottery-reports");
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
         var issueBuilderMock = Mockito.mock(GHIssueBuilder.class,

@@ -61,13 +61,13 @@ public class GitHubRepository implements AutoCloseable {
         return ref;
     }
 
-    public String selfUsername() throws IOException {
-        return client().getMyself().getLogin();
+    public String selfLogin() {
+        return ref.installationRef().appName() + "[bot]";
     }
 
     private GitHub client() {
         if (client == null) {
-            client = clientProvider.getInstallationClient(ref.installationId());
+            client = clientProvider.getInstallationClient(ref.installationRef().installationId());
         }
         return client;
     }
@@ -81,7 +81,7 @@ public class GitHubRepository implements AutoCloseable {
 
     private DynamicGraphQLClient graphQLClient() {
         if (graphQLClient == null) {
-            graphQLClient = clientProvider.getInstallationGraphQLClient(ref.installationId());
+            graphQLClient = clientProvider.getInstallationGraphQLClient(ref.installationRef().installationId());
         }
         return graphQLClient;
     }
@@ -120,9 +120,9 @@ public class GitHubRepository implements AutoCloseable {
         issue.comment(markdownBody);
     }
 
-    public Stream<String> extractCommentsFromDedicatedIssue(String username, String topic, Instant since)
+    public Stream<String> extractCommentsFromDedicatedIssue(String login, String topic, Instant since)
             throws IOException {
-        return getDedicatedIssue(username, topic)
+        return getDedicatedIssue(login, topic)
                 .map(uncheckedIO(issue -> getAppCommentsSince(issue, since)))
                 .orElse(Stream.of())
                 .map(GHIssueComment::getBody);
@@ -145,14 +145,14 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     private Optional<GHIssueComment> getLastAppComment(GHIssue issue) throws IOException {
-        long selfId = client().getMyself().getId();
+        String selfLogin = selfLogin();
         // TODO ideally we'd use the "since" API parameter to ignore
         //  older comments (e.g. 1+ year old) that are unlikely to be relevant
         //  (see 'since' in https://docs.github.com/en/rest/issues/comments#list-issue-comments)
         //  but that's not supported yet in the library we're using...
         GHIssueComment lastNotificationComment = null;
         for (GHIssueComment comment : issue.listComments()) {
-            if (selfId == comment.getUser().getId()) {
+            if (selfLogin.equals(comment.getUser().getLogin())) {
                 lastNotificationComment = comment;
             }
         }
@@ -160,12 +160,12 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) throws IOException {
-        long selfId = client().getMyself().getId();
+        String selfLogin = selfLogin();
         // TODO ideally we'd use the "since" API parameter to ignore older comments
         //  (see 'since' in https://docs.github.com/en/rest/issues/comments#list-issue-comments)
         //  but that's not supported yet in the library we're using...
         return toStream(issue.listComments())
-                .filter(uncheckedIO((GHIssueComment comment) -> selfId == comment.getUser().getId()
+                .filter(uncheckedIO((GHIssueComment comment) -> selfLogin.equals(comment.getUser().getLogin())
                         && !comment.getCreatedAt().toInstant().isBefore(since))::apply);
     }
 

@@ -15,7 +15,7 @@ public class NotificationService {
 
     public static GitHubRepository notificationRepository(GitHubService gitHubService, DrawRef drawRef,
             LotteryConfig.NotificationsConfig config) {
-        return gitHubService.repository(new GitHubRepositoryRef(drawRef.repositoryRef().installationId(),
+        return gitHubService.repository(new GitHubRepositoryRef(drawRef.repositoryRef().installationRef(),
                 config.createIssues().repository()));
     }
 

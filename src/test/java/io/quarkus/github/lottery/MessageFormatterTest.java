@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.quarkus.github.lottery.draw.DrawRef;
@@ -28,6 +29,7 @@ import io.quarkus.test.junit.QuarkusTest;
 @ExtendWith(MockitoExtension.class)
 public class MessageFormatterTest {
 
+    GitHubInstallationRef installationRef;
     GitHubRepositoryRef repoRef;
     DrawRef drawRef;
 
@@ -36,7 +38,8 @@ public class MessageFormatterTest {
 
     @BeforeEach
     void setup() {
-        repoRef = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
+        installationRef = new GitHubInstallationRef("quarkus-github-lottery", 1L);
+        repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
         var now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         drawRef = new DrawRef(repoRef, now);
     }

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -42,6 +43,7 @@ public class HistoryServiceTest {
 
     MessageFormatter messageFormatterMock;
 
+    GitHubInstallationRef installationRef;
     GitHubRepositoryRef repoRef;
     Instant now;
     DrawRef drawRef;
@@ -53,7 +55,8 @@ public class HistoryServiceTest {
     void setup() {
         gitHubServiceMock = Mockito.mock(GitHubService.class);
         QuarkusMock.installMockForType(gitHubServiceMock, GitHubService.class);
-        repoRef = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
+        installationRef = new GitHubInstallationRef("quarkus-github-lottery", 1L);
+        repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         persistenceRepoMock = Mockito.mock(GitHubRepository.class);
 
@@ -73,14 +76,14 @@ public class HistoryServiceTest {
                         new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of());
 
-        var persistenceRepoRef = new GitHubRepositoryRef(repoRef.installationId(),
+        var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
         when(gitHubServiceMock.repository(persistenceRepoRef)).thenReturn(persistenceRepoMock);
 
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfUsername()).thenReturn(selfUsername);
+        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of());
 
@@ -101,14 +104,14 @@ public class HistoryServiceTest {
                         new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of());
 
-        var persistenceRepoRef = new GitHubRepositoryRef(repoRef.installationId(),
+        var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
         when(gitHubServiceMock.repository(persistenceRepoRef)).thenReturn(persistenceRepoMock);
 
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfUsername()).thenReturn(selfUsername);
+        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
         String historyBody = "Some content";
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of(historyBody));
@@ -134,14 +137,14 @@ public class HistoryServiceTest {
                         new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of());
 
-        var persistenceRepoRef = new GitHubRepositoryRef(repoRef.installationId(),
+        var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
         when(gitHubServiceMock.repository(persistenceRepoRef)).thenReturn(persistenceRepoMock);
 
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfUsername()).thenReturn(selfUsername);
+        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
         String historyBody = "Some content";
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of(historyBody));
@@ -169,14 +172,14 @@ public class HistoryServiceTest {
                         new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of());
 
-        var persistenceRepoRef = new GitHubRepositoryRef(repoRef.installationId(),
+        var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
         when(gitHubServiceMock.repository(persistenceRepoRef)).thenReturn(persistenceRepoMock);
 
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfUsername()).thenReturn(selfUsername);
+        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of());
 
@@ -197,14 +200,14 @@ public class HistoryServiceTest {
                         new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
                 List.of());
 
-        var persistenceRepoRef = new GitHubRepositoryRef(repoRef.installationId(),
+        var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
         when(gitHubServiceMock.repository(persistenceRepoRef)).thenReturn(persistenceRepoMock);
 
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfUsername()).thenReturn(selfUsername);
+        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
         String historyBody = "Some content";
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of(historyBody));

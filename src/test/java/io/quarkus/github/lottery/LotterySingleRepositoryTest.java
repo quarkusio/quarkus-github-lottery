@@ -30,6 +30,7 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -57,6 +58,7 @@ public class LotterySingleRepositoryTest {
     NotificationService notificationServiceMock;
     HistoryService historyServiceMock;
 
+    GitHubInstallationRef installationRef;
     GitHubRepositoryRef repoRef;
     DrawRef drawRef;
 
@@ -67,7 +69,8 @@ public class LotterySingleRepositoryTest {
     void setup() throws IOException {
         gitHubServiceMock = Mockito.mock(GitHubService.class);
         QuarkusMock.installMockForType(gitHubServiceMock, GitHubService.class);
-        repoRef = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
+        installationRef = new GitHubInstallationRef("quarkus-github-lottery", 1L);
+        repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
         when(gitHubServiceMock.listRepositories()).thenReturn(List.of(repoRef));
 
         repoMock = Mockito.mock(GitHubRepository.class);

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -40,6 +41,7 @@ public class NotificationServiceTest {
 
     MessageFormatter messageFormatterMock;
 
+    GitHubInstallationRef installationRef;
     GitHubRepositoryRef repoRef;
     DrawRef drawRef;
 
@@ -50,7 +52,8 @@ public class NotificationServiceTest {
     void setup() {
         gitHubServiceMock = Mockito.mock(GitHubService.class);
         QuarkusMock.installMockForType(gitHubServiceMock, GitHubService.class);
-        repoRef = new GitHubRepositoryRef(1L, "quarkusio/quarkus");
+        installationRef = new GitHubInstallationRef("quarkus-github-lottery", 1L);
+        repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         notificationRepoMock = Mockito.mock(GitHubRepository.class);
 
@@ -65,7 +68,7 @@ public class NotificationServiceTest {
         var config = new LotteryConfig.NotificationsConfig(
                 new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports"));
 
-        var notificationRepoRef = new GitHubRepositoryRef(repoRef.installationId(), config.createIssues().repository());
+        var notificationRepoRef = new GitHubRepositoryRef(installationRef, config.createIssues().repository());
         when(gitHubServiceMock.repository(notificationRepoRef)).thenReturn(notificationRepoMock);
 
         Notifier notifier = notificationService.notifier(drawRef, config);
