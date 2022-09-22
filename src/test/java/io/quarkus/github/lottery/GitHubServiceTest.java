@@ -29,7 +29,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -86,7 +85,7 @@ public class GitHubServiceTest {
                         // Scope: application client
                         var appMock = mocks.ghObject(GHApp.class, 1);
                         when(applicationClient.getApp()).thenReturn(appMock);
-                        when(appMock.getName()).thenReturn(installationRef.appName());
+                        when(appMock.getSlug()).thenReturn(installationRef.appSlug());
 
                         var installationMock = Mockito.mock(GHAppInstallation.class);
                         when(installationMock.getId()).thenReturn(installationRef.installationId());
@@ -251,12 +250,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appName() + "[bot]",
+                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appLogin(),
                             "Lottery history for quarkusio/quarkus", since))
                             .isEmpty();
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee(installationRef.appName() + "[bot]");
+                    verify(queryIssuesBuilderMock).assignee(installationRef.appLogin());
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
@@ -297,12 +296,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appName() + "[bot]",
+                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appLogin(),
                             "Lottery history for quarkusio/quarkus", since))
                             .isEmpty();
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee(installationRef.appName() + "[bot]");
+                    verify(queryIssuesBuilderMock).assignee(installationRef.appLogin());
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -337,12 +336,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appName() + "[bot]",
+                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appLogin(),
                             "Lottery history for quarkusio/quarkus", since))
                             .isEmpty();
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee(installationRef.appName() + "[bot]");
+                    verify(queryIssuesBuilderMock).assignee(installationRef.appLogin());
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -371,7 +370,7 @@ public class GitHubServiceTest {
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
                     var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
-                    when(mySelfMock.getLogin()).thenReturn(installationRef.appName() + "[bot]");
+                    when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
@@ -431,7 +430,7 @@ public class GitHubServiceTest {
                     when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
 
                     var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
-                    when(mySelfMock.getLogin()).thenReturn(installationRef.appName() + "[bot]");
+                    when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
@@ -498,7 +497,7 @@ public class GitHubServiceTest {
                     when(issue2Mock.getState()).thenReturn(GHIssueState.CLOSED);
 
                     var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
-                    when(mySelfMock.getLogin()).thenReturn(installationRef.appName() + "[bot]");
+                    when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 

@@ -28,10 +28,10 @@ public class GitHubService {
         List<GitHubRepositoryRef> result = new ArrayList<>();
         GitHub client = clientProvider.getApplicationClient();
         GHApp app = client.getApp();
-        String appName = app.getName();
+        String appSlug = app.getSlug();
         for (GHAppInstallation installation : app.listInstallations()) {
             long installationId = installation.getId();
-            var installationRef = new GitHubInstallationRef(appName, installationId);
+            var installationRef = new GitHubInstallationRef(appSlug, installationId);
             for (GHRepository repository : clientProvider.getInstallationClient(installationId)
                     .getInstallation().listRepositories()) {
                 result.add(new GitHubRepositoryRef(installationRef, repository.getFullName()));
