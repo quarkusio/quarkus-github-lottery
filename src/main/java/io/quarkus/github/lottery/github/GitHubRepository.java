@@ -66,8 +66,8 @@ public class GitHubRepository implements AutoCloseable {
         return ref;
     }
 
-    public String selfLogin() {
-        return ref.installationRef().appName() + "[bot]";
+    public String appLogin() {
+        return ref.installationRef().appLogin();
     }
 
     private GitHub client() {
@@ -157,9 +157,9 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) {
-        String selfLogin = selfLogin();
+        String appLogin = appLogin();
         return toStream(issue.queryComments().since(Date.from(since)).list())
-                .filter(uncheckedIO((GHIssueComment comment) -> selfLogin.equals(comment.getUser().getLogin()))::apply);
+                .filter(uncheckedIO((GHIssueComment comment) -> appLogin.equals(comment.getUser().getLogin()))::apply);
     }
 
     private void minimizeOutdatedComment(GHIssueComment comment) {

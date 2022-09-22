@@ -83,7 +83,7 @@ public class HistoryServiceTest {
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
+        when(persistenceRepoMock.appLogin()).thenReturn(selfUsername);
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of());
 
@@ -111,7 +111,7 @@ public class HistoryServiceTest {
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
+        when(persistenceRepoMock.appLogin()).thenReturn(selfUsername);
         String historyBody = "Some content";
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of(historyBody));
@@ -144,7 +144,7 @@ public class HistoryServiceTest {
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
+        when(persistenceRepoMock.appLogin()).thenReturn(selfUsername);
         String historyBody = "Some content";
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of(historyBody));
@@ -179,7 +179,7 @@ public class HistoryServiceTest {
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
+        when(persistenceRepoMock.appLogin()).thenReturn(selfUsername);
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of());
 
@@ -207,7 +207,7 @@ public class HistoryServiceTest {
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String selfUsername = "quarkus-lottery-bot";
-        when(persistenceRepoMock.selfLogin()).thenReturn(selfUsername);
+        when(persistenceRepoMock.appLogin()).thenReturn(selfUsername);
         String historyBody = "Some content";
         when(persistenceRepoMock.extractCommentsFromDedicatedIssue(eq(selfUsername), eq(topic), any()))
                 .thenAnswer(ignored -> Stream.of(historyBody));
