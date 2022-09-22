@@ -72,6 +72,10 @@
       <artifactId>quarkus-scheduler</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-qute</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.quarkiverse.githubapp</groupId>
       <artifactId>quarkus-github-app</artifactId>
       <version>${quarkus-github-app.version}</version>
