@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery.github;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import javax.enterprise.context.ApplicationScoped;
@@ -16,6 +17,8 @@ import org.kohsuke.github.GitHub;
 @ApplicationScoped
 public class GitHubService {
 
+    @Inject
+    Clock clock;
     @Inject
     GitHubClientProvider clientProvider;
     @Inject
@@ -38,6 +41,6 @@ public class GitHubService {
     }
 
     public GitHubRepository repository(GitHubRepositoryRef ref) {
-        return new GitHubRepository(clientProvider, configFileProvider, ref);
+        return new GitHubRepository(clock, clientProvider, configFileProvider, ref);
     }
 }

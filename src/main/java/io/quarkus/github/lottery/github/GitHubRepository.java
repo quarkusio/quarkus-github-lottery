@@ -4,7 +4,9 @@ import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -32,6 +34,7 @@ import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
  */
 public class GitHubRepository implements AutoCloseable {
 
+    private final Clock clock;
     private final GitHubClientProvider clientProvider;
     private final GitHubConfigFileProvider configFileProvider;
     private final GitHubRepositoryRef ref;
@@ -40,8 +43,9 @@ public class GitHubRepository implements AutoCloseable {
     private GHRepository repository;
     private DynamicGraphQLClient graphQLClient;
 
-    public GitHubRepository(GitHubClientProvider clientProvider, GitHubConfigFileProvider configFileProvider,
+    public GitHubRepository(Clock clock, GitHubClientProvider clientProvider, GitHubConfigFileProvider configFileProvider,
             GitHubRepositoryRef ref) {
+        this.clock = clock;
         this.clientProvider = clientProvider;
         this.configFileProvider = configFileProvider;
         this.ref = ref;
@@ -110,7 +114,14 @@ public class GitHubRepository implements AutoCloseable {
                 issue.reopen();
             }
             try {
-                getLastAppComment(issue).ifPresent(this::minimizeOutdatedComment);
+                // We try to minimize the last comment on a best-effort basis,
+                // taking into account only recent comments,
+                // to avoid performance hogs on issues with many comments.
+                // (There's no way to retrieve comments of an issue in anti-chronological order...)
+                Optional<GHIssueComment> lastRecentComment = getAppCommentsSince(issue,
+                        clock.instant().minus(21, ChronoUnit.DAYS))
+                        .reduce((first, second) -> second);
+                lastRecentComment.ifPresent(this::minimizeOutdatedComment);
             } catch (Exception e) {
                 Log.errorf(e, "Failed to minimize last notification for issue %s#%s", ref.repositoryName(), issue.getNumber());
             }
@@ -143,21 +154,6 @@ public class GitHubRepository implements AutoCloseable {
                 .assignee(username)
                 .body("This issue is dedicated to " + topic + ".")
                 .create();
-    }
-
-    private Optional<GHIssueComment> getLastAppComment(GHIssue issue) throws IOException {
-        String selfLogin = selfLogin();
-        // TODO ideally we'd use the "since" API parameter to ignore
-        //  older comments (e.g. 1+ year old) that are unlikely to be relevant
-        //  (see 'since' in https://docs.github.com/en/rest/issues/comments#list-issue-comments)
-        //  but that's not supported yet in the library we're using...
-        GHIssueComment lastNotificationComment = null;
-        for (GHIssueComment comment : issue.listComments()) {
-            if (selfLogin.equals(comment.getUser().getLogin())) {
-                lastNotificationComment = comment;
-            }
-        }
-        return Optional.ofNullable(lastNotificationComment);
     }
 
     private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) {
