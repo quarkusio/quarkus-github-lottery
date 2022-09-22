@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -52,11 +53,12 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_empty() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(List.of()));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
                 .isEqualTo("""
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
+                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+
                         # Triage
                         No issues in this category this time.
                         """);
@@ -64,31 +66,33 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_simple() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(List.of(
                         new Issue(1, "Hibernate ORM works too well", url(1)),
                         new Issue(3, "Hibernate Search needs Solr support", url(3)))));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
                 .isEqualTo("""
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06.
+                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+
                         # Triage
-                         - http://github.com/quarkus/issues/1
-                         - http://github.com/quarkus/issues/3
+                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Hibernate ORM works too well
+                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Hibernate Search needs Solr support
                         """);
     }
 
     @Test
     void formatNotificationBodyMarkdown_exoticTimezone() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", ZoneId.of("America/Los_Angeles"),
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
                 new LotteryReport.Bucket(List.of(
                         new Issue(1, "Hibernate ORM works too well", url(1)),
                         new Issue(3, "Hibernate Search needs Solr support", url(3)))));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
                 .isEqualTo("""
                         Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-05.
+
                         # Triage
-                         - http://github.com/quarkus/issues/1
-                         - http://github.com/quarkus/issues/3
+                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Hibernate ORM works too well
+                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Hibernate Search needs Solr support
                         """);
     }
 

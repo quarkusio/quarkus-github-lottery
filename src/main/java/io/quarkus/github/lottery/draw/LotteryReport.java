@@ -3,6 +3,7 @@ package io.quarkus.github.lottery.draw;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.quarkus.github.lottery.github.Issue;
@@ -10,7 +11,7 @@ import io.quarkus.github.lottery.github.Issue;
 public record LotteryReport(
         DrawRef drawRef,
         String username,
-        ZoneId timezone,
+        Optional<ZoneId> timezone,
         Bucket triage) {
 
     public record Bucket(

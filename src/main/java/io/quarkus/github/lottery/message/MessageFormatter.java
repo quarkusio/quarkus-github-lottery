@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery.message;
 
 import java.time.LocalDate;
+import java.time.temporal.Temporal;
 import java.util.List;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -71,8 +72,11 @@ public class MessageFormatter {
     @SuppressWarnings("unused")
     private static class TemplateExtensions {
 
-        static LocalDate localDate(LotteryReport report) {
-            return report.drawRef().instant().atZone(report.timezone()).toLocalDate();
+        static Temporal localDate(LotteryReport report) {
+            var instant = report.drawRef().instant();
+            return report.timezone().map(zone -> (Temporal) instant.atZone(zone).toLocalDate())
+                    // Degrade gracefully to displaying a locale-independent instant.
+                    .orElse(instant);
         }
 
         static String repositoryName(LotteryReport report) {

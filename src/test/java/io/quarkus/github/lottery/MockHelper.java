@@ -36,7 +36,7 @@ class MockHelper {
 
     public static URL url(int id) {
         try {
-            return new URL("http://github.com/quarkus/issues/" + id);
+            return new URL("http://github.com/quarkusio/quarkus/issues/" + id);
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
