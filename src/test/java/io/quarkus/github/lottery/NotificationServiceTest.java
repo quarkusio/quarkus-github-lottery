@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Optional;
 
 import javax.inject.Inject;
 
@@ -74,7 +75,7 @@ public class NotificationServiceTest {
         Notifier notifier = notificationService.notifier(drawRef, config);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
-        var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+        var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(List.of(
                         new Issue(1, "Hibernate ORM works too well", url(1)),
                         new Issue(3, "Hibernate Search needs Solr support", url(3)))));
@@ -87,7 +88,7 @@ public class NotificationServiceTest {
                 markdownNotification1);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
-        var lotteryReport2 = new LotteryReport(drawRef, "gsmet", ZoneOffset.UTC,
+        var lotteryReport2 = new LotteryReport(drawRef, "gsmet", Optional.empty(),
                 new LotteryReport.Bucket(List.of(
                         new Issue(4, "Hibernate Search and Validator are on a boat", url(4)),
                         new Issue(5, "Hibernate Validator needs Scala support", url(5)))));

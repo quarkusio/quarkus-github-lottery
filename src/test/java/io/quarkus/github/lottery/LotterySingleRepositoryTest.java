@@ -190,7 +190,7 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(issueNeedingTriage.subList(0, 3))));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
@@ -238,7 +238,7 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(issueNeedingTriage.subList(0, 3))));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
@@ -289,7 +289,7 @@ public class LotterySingleRepositoryTest {
 
         // Since the last notification for issue with number 3 didn't expire yet,
         // it will be skipped and we'll notify about another issue.
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", ZoneOffset.UTC,
+        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(
                         List.of(issueNeedingTriage.get(0), issueNeedingTriage.get(2), issueNeedingTriage.get(3)))));
 
