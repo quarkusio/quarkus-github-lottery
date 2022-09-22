@@ -3,6 +3,7 @@ package io.quarkus.github.lottery.github;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
+import java.sql.Date;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -159,14 +160,10 @@ public class GitHubRepository implements AutoCloseable {
         return Optional.ofNullable(lastNotificationComment);
     }
 
-    private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) throws IOException {
+    private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) {
         String selfLogin = selfLogin();
-        // TODO ideally we'd use the "since" API parameter to ignore older comments
-        //  (see 'since' in https://docs.github.com/en/rest/issues/comments#list-issue-comments)
-        //  but that's not supported yet in the library we're using...
-        return toStream(issue.listComments())
-                .filter(uncheckedIO((GHIssueComment comment) -> selfLogin.equals(comment.getUser().getLogin())
-                        && !comment.getCreatedAt().toInstant().isBefore(since))::apply);
+        return toStream(issue.queryComments().since(Date.from(since)).list())
+                .filter(uncheckedIO((GHIssueComment comment) -> selfLogin.equals(comment.getUser().getLogin()))::apply);
     }
 
     private void minimizeOutdatedComment(GHIssueComment comment) {

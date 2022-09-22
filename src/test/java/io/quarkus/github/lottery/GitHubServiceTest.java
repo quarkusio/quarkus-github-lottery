@@ -36,11 +36,14 @@ import org.kohsuke.github.GHAppInstallation;
 import org.kohsuke.github.GHAuthenticatedAppInstallation;
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssueBuilder;
+import org.kohsuke.github.GHIssueComment;
+import org.kohsuke.github.GHIssueCommentQueryBuilder;
 import org.kohsuke.github.GHIssueQueryBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
+import org.kohsuke.github.PagedSearchIterable;
 import org.mockito.Answers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
@@ -263,6 +266,8 @@ public class GitHubServiceTest {
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var queryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
 
         given()
                 .github(mocks -> {
@@ -277,12 +282,13 @@ public class GitHubServiceTest {
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
+                    when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
                     var issue2Comment1Mock = mocks.issueComment(201);
                     when(issue2Comment1Mock.getUser()).thenReturn(someoneElseMock);
                     var issue2Comment2Mock = mocks.issueComment(202);
                     when(issue2Comment2Mock.getUser()).thenReturn(someoneElseMock);
                     var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock);
-                    when(issue2Mock.listComments()).thenReturn(issue2CommentMocks);
+                    when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -293,8 +299,9 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).assignee(installationRef.appName() + "[bot]");
+                    verify(queryCommentsBuilderMock).since(Date.from(since));
 
-                    verifyNoMoreInteractions(queryIssuesBuilderMock);
+                    verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
     }
@@ -306,6 +313,8 @@ public class GitHubServiceTest {
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var queryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
 
         given()
                 .github(mocks -> {
@@ -317,21 +326,9 @@ public class GitHubServiceTest {
                     var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
-                    var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
-                    when(mySelfMock.getLogin()).thenReturn(installationRef.appName() + "[bot]");
-                    var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
-                    when(someoneElseMock.getLogin()).thenReturn("yrodiere");
-
-                    var issue2Comment1Mock = mocks.issueComment(201);
-                    when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
-                    when(issue2Comment1Mock.getCreatedAt()).thenReturn(Date.from(since.minus(7, ChronoUnit.DAYS)));
-                    var issue2Comment2Mock = mocks.issueComment(202);
-                    when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
-                    when(issue2Comment2Mock.getCreatedAt()).thenReturn(Date.from(since.minus(1, ChronoUnit.MILLIS)));
-                    var issue2Comment3Mock = mocks.issueComment(203);
-                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
-                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
-                    when(issue2Mock.listComments()).thenReturn(issue2CommentMocks);
+                    when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
+                    PagedSearchIterable<GHIssueComment> issue2CommentMocks = mockPagedIterable();
+                    when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -342,8 +339,9 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).assignee(installationRef.appName() + "[bot]");
+                    verify(queryCommentsBuilderMock).since(Date.from(since));
 
-                    verifyNoMoreInteractions(queryIssuesBuilderMock);
+                    verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
     }
@@ -354,6 +352,8 @@ public class GitHubServiceTest {
         var since = LocalDateTime.of(2017, 11, 6, 19, 0).toInstant(ZoneOffset.UTC);
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var queryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
 
         given()
@@ -371,34 +371,30 @@ public class GitHubServiceTest {
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
-                    var issue2Comment1Mock = mocks.issueComment(201);
+                    when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
+                    var issue2Comment1Mock = mocks.issueComment(202);
                     when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
-                    when(issue2Comment1Mock.getCreatedAt()).thenReturn(Date.from(since.minus(1, ChronoUnit.MILLIS)));
-                    var issue2Comment2Mock = mocks.issueComment(202);
+                    when(issue2Comment1Mock.getBody()).thenReturn("issue2Comment1Mock#body");
+                    var issue2Comment2Mock = mocks.issueComment(203);
                     when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
-                    when(issue2Comment2Mock.getCreatedAt()).thenReturn(Date.from(since.plus(1, ChronoUnit.MILLIS)));
                     when(issue2Comment2Mock.getBody()).thenReturn("issue2Comment2Mock#body");
-                    var issue2Comment3Mock = mocks.issueComment(203);
-                    when(issue2Comment3Mock.getUser()).thenReturn(mySelfMock);
-                    when(issue2Comment3Mock.getCreatedAt()).thenReturn(Date.from(since.plus(7, ChronoUnit.DAYS)));
-                    when(issue2Comment3Mock.getBody()).thenReturn("issue2Comment3Mock#body");
-                    var issue2Comment4Mock = mocks.issueComment(204);
-                    when(issue2Comment4Mock.getUser()).thenReturn(someoneElseMock);
-                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock,
-                            issue2Comment4Mock);
-                    when(issue2Mock.listComments()).thenReturn(issue2CommentMocks);
+                    var issue2Comment3Mock = mocks.issueComment(204);
+                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
+                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
+                    when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
                     assertThat(repo.extractCommentsFromDedicatedIssue("quarkus-lottery-bot",
                             "Lottery history for quarkusio/quarkus", since))
-                            .containsExactly("issue2Comment2Mock#body", "issue2Comment3Mock#body");
+                            .containsExactly("issue2Comment1Mock#body", "issue2Comment2Mock#body");
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).assignee("quarkus-lottery-bot");
+                    verify(queryCommentsBuilderMock).since(Date.from(since));
 
-                    verifyNoMoreInteractions(queryIssuesBuilderMock);
+                    verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
     }
