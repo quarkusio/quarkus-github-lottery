@@ -38,7 +38,7 @@ public class HistoryService {
         var persistenceRepo = persistenceRepo(drawRef, config);
         String historyTopic = messageFormatter.formatHistoryTopicText(drawRef);
         String commentBody = messageFormatter.formatHistoryBodyMarkdown(drawRef, reports);
-        persistenceRepo.commentOnDedicatedIssue(persistenceRepo.appLogin(), historyTopic, commentBody);
+        persistenceRepo.commentOnDedicatedIssue(persistenceRepo.appLogin(), historyTopic, "", commentBody);
     }
 
     GitHubRepository persistenceRepo(DrawRef drawRef, LotteryConfig config) {

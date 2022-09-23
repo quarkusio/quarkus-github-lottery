@@ -52,6 +52,22 @@ public class MessageFormatterTest {
     }
 
     @Test
+    void formatNotificationTopicSuffixText() {
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                new LotteryReport.Bucket(List.of()));
+        assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
+                .isEqualTo(" (updated 2017-11-06T06:00:00Z)");
+    }
+
+    @Test
+    void formatNotificationTopicSuffixText_exoticTimezone() {
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
+                new LotteryReport.Bucket(List.of()));
+        assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
+                .isEqualTo(" (updated 2017-11-05)");
+    }
+
+    @Test
     void formatNotificationBodyMarkdown_empty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(List.of()));

@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery.message;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.Temporal;
 import java.util.List;
 
@@ -32,6 +33,10 @@ public class MessageFormatter {
 
     public String formatNotificationTopicText(DrawRef drawRef, String username) {
         return Qute.fmt("{}'s report for {}", username, drawRef.repositoryRef().repositoryName());
+    }
+
+    public String formatNotificationTopicSuffixText(LotteryReport report) {
+        return Qute.fmt(" (updated {})", TemplateExtensions.localDate(report));
     }
 
     public String formatNotificationBodyMarkdown(LotteryReport report) {
