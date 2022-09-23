@@ -71,10 +71,10 @@ public class HistoryServiceTest {
     @Test
     void lastNotificationInstantForUser_noHistory() throws Exception {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
                 List.of());
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
@@ -97,10 +97,10 @@ public class HistoryServiceTest {
     @Test
     void lastNotificationInstantForUser_notNotified() throws Exception {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
                 List.of());
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
@@ -128,10 +128,10 @@ public class HistoryServiceTest {
     @Test
     void lastNotificationInstantForUser_notifiedRecently() throws Exception {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
                 List.of());
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
@@ -161,10 +161,10 @@ public class HistoryServiceTest {
     @Test
     void lastNotificationExpiredForIssueNumber_noHistory() throws Exception {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
                 List.of());
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
@@ -187,10 +187,10 @@ public class HistoryServiceTest {
     @Test
     void lastNotificationExpiredForIssueNumber() throws Exception {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
                 List.of());
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,

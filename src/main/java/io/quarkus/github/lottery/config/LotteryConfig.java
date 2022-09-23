@@ -14,37 +14,37 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection(ignoreNested = false) // For deserialization from the GitHub repository
 public record LotteryConfig(
-        @JsonProperty(required = true) NotificationsConfig notifications,
-        @JsonProperty(required = true) BucketsConfig buckets,
-        List<ParticipantConfig> participants) {
+        @JsonProperty(required = true) Notifications notifications,
+        @JsonProperty(required = true) Buckets buckets,
+        List<Participant> participants) {
 
     public static final String FILE_NAME = "quarkus-github-lottery.yml";
 
-    public record BucketsConfig(
-            @JsonProperty(required = true) TriageBucketConfig triage) {
+    public record Buckets(
+            @JsonProperty(required = true) TriageBucket triage) {
 
-        public record TriageBucketConfig(
+        public record TriageBucket(
                 @JsonProperty(required = true) String needsTriageLabel,
                 @JsonProperty(required = true) Duration notificationExpiration) {
         }
     }
 
-    public record NotificationsConfig(
+    public record Notifications(
             @JsonProperty(required = true) CreateIssuesConfig createIssues) {
         public record CreateIssuesConfig(
                 @JsonProperty(required = true) String repository) {
         }
     }
 
-    public record ParticipantConfig(
+    public record Participant(
             @JsonProperty(required = true) String username,
             @JsonProperty(required = true) @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
             Optional<ZoneId> timezone,
-            ParticipationConfig triage) {
+            Participation triage) {
 
     }
 
-    public record ParticipationConfig(
+    public record Participation(
             @JsonProperty(required = true) int maxIssues) {
     }
 

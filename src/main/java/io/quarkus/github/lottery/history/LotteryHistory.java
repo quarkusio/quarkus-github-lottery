@@ -25,7 +25,7 @@ public class LotteryHistory {
 
     private final Bucket triage;
 
-    public LotteryHistory(Instant now, LotteryConfig.BucketsConfig config) {
+    public LotteryHistory(Instant now, LotteryConfig.Buckets config) {
         Instant minSinceToResolveLastNotificationInstantForUsername = now.minus(2, ChronoUnit.DAYS);
         Instant triageExpirationCutoff = now.minus(config.triage().notificationExpiration());
         this.since = min(minSinceToResolveLastNotificationInstantForUsername, triageExpirationCutoff);

@@ -1,7 +1,6 @@
 package io.quarkus.github.lottery.draw;
 
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.Optional;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
@@ -16,7 +15,7 @@ public final class Participant {
 
     private final Participation triage;
 
-    public Participant(DrawRef drawRef, LotteryConfig.ParticipantConfig config) {
+    public Participant(DrawRef drawRef, LotteryConfig.Participant config) {
         this.drawRef = drawRef;
         username = config.username();
         timezone = config.timezone();

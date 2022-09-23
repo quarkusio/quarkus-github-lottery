@@ -9,11 +9,11 @@ import io.quarkus.github.lottery.github.Issue;
  * A participation of one {@link Participant} to one {@link LotteryBucket}.
  */
 final class Participation {
-    private final LotteryConfig.ParticipationConfig config;
+    private final LotteryConfig.Participation config;
 
     private LotteryTicket ticket;
 
-    Participation(LotteryConfig.ParticipationConfig config) {
+    Participation(LotteryConfig.Participation config) {
         this.config = config;
     }
 

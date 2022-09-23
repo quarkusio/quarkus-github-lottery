@@ -12,10 +12,10 @@ import io.quarkus.github.lottery.history.LotteryHistory;
  */
 public final class Lottery {
 
-    private final LotteryConfig.BucketsConfig buckets;
+    private final LotteryConfig.Buckets buckets;
     private final LotteryBucket triageBucket;
 
-    public Lottery(LotteryConfig.BucketsConfig buckets) {
+    public Lottery(LotteryConfig.Buckets buckets) {
         this.buckets = buckets;
         Random random = new Random();
         this.triageBucket = new LotteryBucket(random);

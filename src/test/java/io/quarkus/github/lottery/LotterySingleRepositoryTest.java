@@ -103,14 +103,14 @@ public class LotterySingleRepositoryTest {
     @Test
     void participant_days_differentDay_defaultTimezone() throws IOException {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.ParticipantConfig(
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
+                List.of(new LotteryConfig.Participant(
                         "yrodiere",
                         Set.of(DayOfWeek.TUESDAY), Optional.empty(),
-                        new LotteryConfig.ParticipationConfig(3))));
+                        new LotteryConfig.Participation(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -131,14 +131,14 @@ public class LotterySingleRepositoryTest {
     @Test
     void participant_days_differentDay_explicitTimezone() throws IOException {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.ParticipantConfig(
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
+                List.of(new LotteryConfig.Participant(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.of(ZoneId.of("America/Los_Angeles")),
-                        new LotteryConfig.ParticipationConfig(3))));
+                        new LotteryConfig.Participation(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -160,14 +160,14 @@ public class LotterySingleRepositoryTest {
     @Test
     void singleParticipant_neverNotified() throws IOException {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.ParticipantConfig(
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
+                List.of(new LotteryConfig.Participant(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                        new LotteryConfig.ParticipationConfig(3))));
+                        new LotteryConfig.Participation(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -207,14 +207,14 @@ public class LotterySingleRepositoryTest {
     @Test
     void singleParticipant_notifiedYesterday() throws IOException {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.ParticipantConfig(
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
+                List.of(new LotteryConfig.Participant(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                        new LotteryConfig.ParticipationConfig(3))));
+                        new LotteryConfig.Participation(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -255,14 +255,14 @@ public class LotterySingleRepositoryTest {
     @Test
     void singleParticipant_notifiedYesterday_issueAlreadyHasNonExpiredNotification() throws IOException {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.ParticipantConfig(
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
+                List.of(new LotteryConfig.Participant(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                        new LotteryConfig.ParticipationConfig(3))));
+                        new LotteryConfig.Participation(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -307,14 +307,14 @@ public class LotterySingleRepositoryTest {
     @Test
     void singleParticipant_alreadyNotifiedToday() throws IOException {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.ParticipantConfig(
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
+                List.of(new LotteryConfig.Participant(
                         "yrodiere",
                         Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                        new LotteryConfig.ParticipationConfig(3))));
+                        new LotteryConfig.Participation(3))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -339,19 +339,19 @@ public class LotterySingleRepositoryTest {
     @RepeatedTest(10) // Just to be reasonably certain that issues are spread evenly
     void multiParticipants_evenSpread() throws IOException {
         var config = new LotteryConfig(
-                new LotteryConfig.NotificationsConfig(
-                        new LotteryConfig.NotificationsConfig.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.BucketsConfig(
-                        new LotteryConfig.BucketsConfig.TriageBucketConfig("needs-triage", Duration.ofDays(3))),
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
                 List.of(
-                        new LotteryConfig.ParticipantConfig(
+                        new LotteryConfig.Participant(
                                 "yrodiere",
                                 Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                                new LotteryConfig.ParticipationConfig(10)),
-                        new LotteryConfig.ParticipantConfig(
+                                new LotteryConfig.Participation(10)),
+                        new LotteryConfig.Participant(
                                 "gsmet",
                                 Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                                new LotteryConfig.ParticipationConfig(10))));
+                                new LotteryConfig.Participation(10))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 

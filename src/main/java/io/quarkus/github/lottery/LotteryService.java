@@ -17,9 +17,9 @@ import javax.inject.Inject;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.Lottery;
+import io.quarkus.github.lottery.draw.Participant;
 import io.quarkus.github.lottery.history.LotteryHistory;
 import io.quarkus.github.lottery.draw.LotteryReport;
-import io.quarkus.github.lottery.draw.Participant;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
@@ -100,11 +100,11 @@ public class LotteryService {
     }
 
     private List<Participant> registerParticipants(DrawRef drawRef, Lottery lottery,
-            LotteryHistory history, List<LotteryConfig.ParticipantConfig> participantConfigs) throws IOException {
+            LotteryHistory history, List<LotteryConfig.Participant> participantConfigs) throws IOException {
         List<Participant> participants = new ArrayList<>();
 
         // Add participants to the lottery as necessary.
-        for (LotteryConfig.ParticipantConfig participantConfig : participantConfigs) {
+        for ( LotteryConfig.Participant participantConfig : participantConfigs) {
             String username = participantConfig.username();
             ZoneId timezone = participantConfig.timezone().orElse(ZoneOffset.UTC);
             LocalDate drawDate = drawRef.instant().atZone(timezone).toLocalDate();

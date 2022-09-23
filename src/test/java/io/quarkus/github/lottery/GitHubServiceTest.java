@@ -149,24 +149,24 @@ public class GitHubServiceTest {
                     assertThat(repo.fetchLotteryConfig())
                             .isNotEmpty()
                             .get().usingRecursiveComparison().isEqualTo(new LotteryConfig(
-                                    new LotteryConfig.NotificationsConfig(
-                                            new LotteryConfig.NotificationsConfig.CreateIssuesConfig(
+                                    new LotteryConfig.Notifications(
+                                            new LotteryConfig.Notifications.CreateIssuesConfig(
                                                     "quarkusio/quarkus-lottery-reports")),
-                                    new LotteryConfig.BucketsConfig(
-                                            new LotteryConfig.BucketsConfig.TriageBucketConfig("triage/needs-triage",
+                                    new LotteryConfig.Buckets(
+                                            new LotteryConfig.Buckets.TriageBucket("triage/needs-triage",
                                                     Duration.ofDays(3))),
                                     List.of(
-                                            new LotteryConfig.ParticipantConfig(
+                                            new LotteryConfig.Participant(
                                                     "yrodiere",
                                                     Set.of(DayOfWeek.MONDAY),
                                                     Optional.empty(),
-                                                    new LotteryConfig.ParticipationConfig(
+                                                    new LotteryConfig.Participation(
                                                             3)),
-                                            new LotteryConfig.ParticipantConfig(
+                                            new LotteryConfig.Participant(
                                                     "gsmet",
                                                     Set.of(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
                                                     Optional.of(ZoneId.of("Europe/Paris")),
-                                                    new LotteryConfig.ParticipationConfig(
+                                                    new LotteryConfig.Participation(
                                                             10)))));
                 })
                 .then().github(mocks -> {
