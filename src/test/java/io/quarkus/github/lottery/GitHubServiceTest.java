@@ -43,7 +43,6 @@ import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHIssueCommentQueryBuilder;
 import org.kohsuke.github.GHIssueQueryBuilder;
 import org.kohsuke.github.GHIssueState;
-import org.kohsuke.github.GHMyself;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.PagedSearchIterable;
@@ -369,7 +368,7 @@ public class GitHubServiceTest {
                     var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
-                    var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
+                    var mySelfMock = mocks.ghObject(GHUser.class, 1L);
                     when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
@@ -429,7 +428,7 @@ public class GitHubServiceTest {
 
                     when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
 
-                    var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
+                    var mySelfMock = mocks.ghObject(GHUser.class, 1L);
                     when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
@@ -496,7 +495,7 @@ public class GitHubServiceTest {
 
                     when(issue2Mock.getState()).thenReturn(GHIssueState.CLOSED);
 
-                    var mySelfMock = mocks.ghObject(GHMyself.class, 1L);
+                    var mySelfMock = mocks.ghObject(GHUser.class, 1L);
                     when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
