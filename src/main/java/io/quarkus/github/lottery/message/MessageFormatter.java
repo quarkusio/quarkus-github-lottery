@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.qute.CheckedTemplate;
@@ -85,6 +86,16 @@ public class MessageFormatter {
 
         static String repositoryName(DrawRef drawRef) {
             return drawRef.repositoryRef().repositoryName();
+        }
+
+    }
+
+    @TemplateExtension(namespace = "github")
+    @SuppressWarnings("unused")
+    private static class TemplateGitHubExtensions {
+
+        static String configPath() {
+            return "/.github/" + LotteryConfig.FILE_NAME;
         }
 
     }
