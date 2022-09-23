@@ -105,11 +105,35 @@ public class GitHubRepository implements AutoCloseable {
                 .map(ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getHtmlUrl()));
     }
 
-    public void commentOnDedicatedIssue(String username, String topic, String markdownBody) throws IOException {
-        var existingIssue = getDedicatedIssue(username, topic);
+    /**
+     * Adds a comment to an issue identified by its assignee and topic (title prefix).
+     *
+     * @param assignee The GitHub username of issue assignee.
+     *        Two calls with the same username + topic will result in a comment on the same issue.
+     * @param topic The issue's topic, a string that will be prefixed to the issue title.
+     *        Two calls with the same username + topic will result in a comment on the same issue.
+     * @param topicSuffix A string that should be appended to the topic in the issue title.
+     *        Each time that suffix changes for a new comment,
+     *        the issue title will be updated,
+     *        and so will the subject of any email notification sent as a result of that comment.
+     *        In conversation-based email clients such as GMail,
+     *        this will result in the comment appearing in a new conversation,
+     *        which can be useful to avoid huge conversations
+     * @param markdownBody The body of the comment to add.
+     *
+     * @throws IOException If a GitHub API call fails.
+     * @throws java.io.UncheckedIOException If a GitHub API call fails.
+     */
+    public void commentOnDedicatedIssue(String assignee, String topic, String topicSuffix, String markdownBody)
+            throws IOException {
+        String targetTitle = topic + topicSuffix;
+        var existingIssue = getDedicatedIssue(assignee, topic);
         GHIssue issue;
         if (existingIssue.isPresent()) {
             issue = existingIssue.get();
+            if (!issue.getTitle().equals(targetTitle)) {
+                issue.setTitle(targetTitle);
+            }
             if (GHIssueState.CLOSED.equals(issue.getState())) {
                 issue.reopen();
             }
@@ -126,7 +150,7 @@ public class GitHubRepository implements AutoCloseable {
                 Log.errorf(e, "Failed to minimize last notification for issue %s#%s", ref.repositoryName(), issue.getNumber());
             }
         } else {
-            issue = createDedicatedIssue(username, topic);
+            issue = createDedicatedIssue(assignee, targetTitle, topic);
         }
 
         issue.comment(markdownBody);
@@ -142,15 +166,15 @@ public class GitHubRepository implements AutoCloseable {
 
     private Optional<GHIssue> getDedicatedIssue(String username, String topic) throws IOException {
         for (var issue : repository().queryIssues().assignee(username).list()) {
-            if (issue.getTitle().equals(topic)) {
+            if (issue.getTitle().startsWith(topic)) {
                 return Optional.of(issue);
             }
         }
         return Optional.empty();
     }
 
-    private GHIssue createDedicatedIssue(String username, String topic) throws IOException {
-        return repository().createIssue(topic)
+    private GHIssue createDedicatedIssue(String username, String title, String topic) throws IOException {
+        return repository().createIssue(title)
                 .assignee(username)
                 .body("This issue is dedicated to " + topic + ".")
                 .create();

@@ -26,7 +26,8 @@ public class Notifier implements AutoCloseable {
 
     public void send(LotteryReport report) throws IOException {
         String topic = formatter.formatNotificationTopicText(report.drawRef(), report.username());
+        String topicSuffix = formatter.formatNotificationTopicSuffixText(report);
         String body = formatter.formatNotificationBodyMarkdown(report);
-        notificationRepository.commentOnDedicatedIssue(report.username(), topic, body);
+        notificationRepository.commentOnDedicatedIssue(report.username(), topic, topicSuffix, body);
     }
 }

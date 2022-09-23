@@ -82,10 +82,12 @@ public class NotificationServiceTest {
         var markdownNotification1 = "Notif 1";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "yrodiere"))
                 .thenReturn("yrodiere's report for quarkusio/quarkus");
+        when(messageFormatterMock.formatNotificationTopicSuffixText(lotteryReport1))
+                .thenReturn(" (updated 2017-11-06T06:00:00Z)");
         when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport1)).thenReturn(markdownNotification1);
         notifier.send(lotteryReport1);
         verify(notificationRepoMock).commentOnDedicatedIssue("yrodiere", "yrodiere's report for quarkusio/quarkus",
-                markdownNotification1);
+                " (updated 2017-11-06T06:00:00Z)", markdownNotification1);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport2 = new LotteryReport(drawRef, "gsmet", Optional.empty(),
@@ -95,10 +97,12 @@ public class NotificationServiceTest {
         var markdownNotification2 = "Notif 2";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "gsmet"))
                 .thenReturn("gsmet's report for quarkusio/quarkus");
+        when(messageFormatterMock.formatNotificationTopicSuffixText(lotteryReport2))
+                .thenReturn(" (updated 2017-11-06T06:00:00Z)");
         when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport2)).thenReturn(markdownNotification2);
         notifier.send(lotteryReport2);
         verify(notificationRepoMock).commentOnDedicatedIssue("gsmet", "gsmet's report for quarkusio/quarkus",
-                markdownNotification2);
+                " (updated 2017-11-06T06:00:00Z)", markdownNotification2);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
     }
 

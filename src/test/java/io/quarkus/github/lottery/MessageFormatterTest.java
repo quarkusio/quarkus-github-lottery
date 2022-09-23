@@ -52,6 +52,22 @@ public class MessageFormatterTest {
     }
 
     @Test
+    void formatNotificationTopicSuffixText() {
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                new LotteryReport.Bucket(List.of()));
+        assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
+                .isEqualTo(" (updated 2017-11-06T06:00:00Z)");
+    }
+
+    @Test
+    void formatNotificationTopicSuffixText_exoticTimezone() {
+        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
+                new LotteryReport.Bucket(List.of()));
+        assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
+                .isEqualTo(" (updated 2017-11-05)");
+    }
+
+    @Test
     void formatNotificationBodyMarkdown_empty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(List.of()));
@@ -61,6 +77,12 @@ public class MessageFormatterTest {
 
                         # Triage
                         No issues in this category this time.
+
+                        ---
+                        <sup>If you no longer want to receive these notifications, \
+                        send a pull request to the GitHub repository `quarkusio/quarkus` \
+                        to remove the section relative to your username from the file \
+                        `/.github/quarkus-github-lottery.yml`.</sup>
                         """);
     }
 
@@ -77,6 +99,12 @@ public class MessageFormatterTest {
                         # Triage
                          - [#1](http://github.com/quarkusio/quarkus/issues/1) Hibernate ORM works too well
                          - [#3](http://github.com/quarkusio/quarkus/issues/3) Hibernate Search needs Solr support
+
+                        ---
+                        <sup>If you no longer want to receive these notifications, \
+                        send a pull request to the GitHub repository `quarkusio/quarkus` \
+                        to remove the section relative to your username from the file \
+                        `/.github/quarkus-github-lottery.yml`.</sup>
                         """);
     }
 
@@ -93,6 +121,12 @@ public class MessageFormatterTest {
                         # Triage
                          - [#1](http://github.com/quarkusio/quarkus/issues/1) Hibernate ORM works too well
                          - [#3](http://github.com/quarkusio/quarkus/issues/3) Hibernate Search needs Solr support
+
+                        ---
+                        <sup>If you no longer want to receive these notifications, \
+                        send a pull request to the GitHub repository `quarkusio/quarkus` \
+                        to remove the section relative to your username from the file \
+                        `/.github/quarkus-github-lottery.yml`.</sup>
                         """);
     }
 

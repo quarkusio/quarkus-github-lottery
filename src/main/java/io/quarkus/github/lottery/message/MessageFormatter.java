@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery.message;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.Temporal;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.qute.CheckedTemplate;
@@ -31,6 +33,10 @@ public class MessageFormatter {
 
     public String formatNotificationTopicText(DrawRef drawRef, String username) {
         return Qute.fmt("{}'s report for {}", username, drawRef.repositoryRef().repositoryName());
+    }
+
+    public String formatNotificationTopicSuffixText(LotteryReport report) {
+        return Qute.fmt(" (updated {})", TemplateExtensions.localDate(report));
     }
 
     public String formatNotificationBodyMarkdown(LotteryReport report) {
@@ -85,6 +91,16 @@ public class MessageFormatter {
 
         static String repositoryName(DrawRef drawRef) {
             return drawRef.repositoryRef().repositoryName();
+        }
+
+    }
+
+    @TemplateExtension(namespace = "github")
+    @SuppressWarnings("unused")
+    private static class TemplateGitHubExtensions {
+
+        static String configPath() {
+            return "/.github/" + LotteryConfig.FILE_NAME;
         }
 
     }

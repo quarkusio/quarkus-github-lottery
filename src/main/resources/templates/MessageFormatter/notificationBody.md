@@ -10,3 +10,6 @@ No issues in this category this time.
 {/for}
 {/if}
 {/let}
+
+---
+<sup>If you no longer want to receive these notifications, send a pull request to the GitHub repository `{report.repositoryName}` to remove the section relative to your username from the file `{github:configPath}`.</sup>
