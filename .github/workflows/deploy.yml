@@ -13,6 +13,10 @@ on:
       - '*.txt'
       - '.all-contributorsrc'
 
+concurrency:
+  group: deployment
+  cancel-in-progress: false
+
 jobs:
   deploy:
 
