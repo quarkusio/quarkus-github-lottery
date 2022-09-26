@@ -159,6 +159,11 @@
         <artifactId>quarkus-maven-plugin</artifactId>
         <version>${quarkus.version}</version>
         <extensions>true</extensions>
+        <configuration>
+          <systemProperties>
+            <buildNumber>${buildNumber}</buildNumber>
+          </systemProperties>
+        </configuration>
         <executions>
           <execution>
             <goals>
