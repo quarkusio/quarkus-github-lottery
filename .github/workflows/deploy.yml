@@ -1,0 +1,45 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - "main"
+    paths-ignore:
+      - '.gitignore'
+      - 'CODEOWNERS'
+      - 'LICENSE'
+      - '*.md'
+      - '*.adoc'
+      - '*.txt'
+      - '.all-contributorsrc'
+
+jobs:
+  deploy:
+
+    if: github.repository == 'quarkusio/quarkus-github-lottery'
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v2
+      with:
+        distribution: temurin
+        java-version: 17
+
+    - name: Check out yrodiere:github-api waitingforrelease
+      run: git clone -b waitingforrelease https://github.com/yrodiere/github-api.git
+
+    - name: Build github-api SNAPSHOT
+      run: cd github-api && mvn -B clean install -DskipTests && cd -
+
+    - name: Log in to OpenShift
+      run: oc login --token=${{ secrets.QUARKUS_GITHUB_LOTTERY_OC_DEPLOY_TOKEN }} --server=${{ secrets.QUARKUS_GITHUB_LOTTERY_OC_DEPLOY_SERVER }}
+
+    - name: Delete problematic image
+      run: oc delete is ubi-quarkus-native-binary-s2i
+
+    - name: Build and deploy
+      run: mvn clean package -Dquarkus.kubernetes.deploy=true -Dquarkus.native.container-build=true -Dnative
