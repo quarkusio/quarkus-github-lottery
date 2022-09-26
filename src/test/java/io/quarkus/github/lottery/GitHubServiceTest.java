@@ -250,13 +250,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appLogin(),
+                    assertThat(repo.extractCommentsFromDedicatedIssue(null,
                             "Lottery history for quarkusio/quarkus", since))
                             .isEmpty();
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee(installationRef.appLogin());
-
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
@@ -296,12 +295,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appLogin(),
+                    assertThat(repo.extractCommentsFromDedicatedIssue(null,
                             "Lottery history for quarkusio/quarkus", since))
                             .isEmpty();
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -336,12 +335,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue(installationRef.appLogin(),
+                    assertThat(repo.extractCommentsFromDedicatedIssue(null,
                             "Lottery history for quarkusio/quarkus", since))
                             .isEmpty();
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -389,12 +388,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.extractCommentsFromDedicatedIssue("quarkus-lottery-bot",
+                    assertThat(repo.extractCommentsFromDedicatedIssue(null,
                             "Lottery history for quarkusio/quarkus", since))
                             .containsExactly("issue2Comment1Mock#body", "issue2Comment2Mock#body");
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).assignee("quarkus-lottery-bot");
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -454,6 +453,7 @@ public class GitHubServiceTest {
                             " (updated 2017-11-06T06:00:00Z)", "Some content");
                 })
                 .then().github(mocks -> {
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
 
                     verify(queryCommentsBuilderMock).since(Date.from(now.minus(21, ChronoUnit.DAYS)));
@@ -522,6 +522,7 @@ public class GitHubServiceTest {
                             "Lottery history for quarkusio/quarkus", "", "Some content");
                 })
                 .then().github(mocks -> {
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("quarkus-github-lottery[bot]");
 
                     verify(queryCommentsBuilderMock).since(Date.from(now.minus(21, ChronoUnit.DAYS)));
@@ -590,6 +591,7 @@ public class GitHubServiceTest {
                             " (updated 2017-11-06T06:00:00Z)", "Some content");
                 })
                 .then().github(mocks -> {
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
 
                     verify(mocks.issue(2)).setTitle("yrodiere's report for quarkusio/quarkus (updated 2017-11-06T06:00:00Z)");
@@ -639,6 +641,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
                     verify(repositoryMock)
                             .createIssue("yrodiere's report for quarkusio/quarkus (updated 2017-11-06T06:00:00Z)");

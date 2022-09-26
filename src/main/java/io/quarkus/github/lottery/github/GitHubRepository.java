@@ -156,16 +156,20 @@ public class GitHubRepository implements AutoCloseable {
         issue.comment(markdownBody);
     }
 
-    public Stream<String> extractCommentsFromDedicatedIssue(String login, String topic, Instant since)
+    public Stream<String> extractCommentsFromDedicatedIssue(String assignee, String topic, Instant since)
             throws IOException {
-        return getDedicatedIssue(login, topic)
+        return getDedicatedIssue(assignee, topic)
                 .map(uncheckedIO(issue -> getAppCommentsSince(issue, since)))
                 .orElse(Stream.of())
                 .map(GHIssueComment::getBody);
     }
 
-    private Optional<GHIssue> getDedicatedIssue(String username, String topic) throws IOException {
-        for (var issue : repository().queryIssues().assignee(username).list()) {
+    private Optional<GHIssue> getDedicatedIssue(String assignee, String topic) throws IOException {
+        var builder = repository().queryIssues().creator(appLogin());
+        if (assignee != null) {
+            builder.assignee(assignee);
+        }
+        for (var issue : builder.list()) {
             if (issue.getTitle().startsWith(topic)) {
                 return Optional.of(issue);
             }

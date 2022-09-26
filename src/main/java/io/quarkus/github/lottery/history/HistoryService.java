@@ -28,7 +28,7 @@ public class HistoryService {
         var persistenceRepo = persistenceRepo(drawRef, config);
         var history = new LotteryHistory(drawRef.instant(), config.buckets());
         String historyTopic = messageFormatter.formatHistoryTopicText(drawRef);
-        persistenceRepo.extractCommentsFromDedicatedIssue(persistenceRepo.appLogin(), historyTopic, history.since())
+        persistenceRepo.extractCommentsFromDedicatedIssue(null, historyTopic, history.since())
                 .flatMap(uncheckedIO(message -> messageFormatter.extractPayloadFromHistoryBodyMarkdown(message).stream()))
                 .forEach(history::add);
         return history;
@@ -38,7 +38,7 @@ public class HistoryService {
         var persistenceRepo = persistenceRepo(drawRef, config);
         String historyTopic = messageFormatter.formatHistoryTopicText(drawRef);
         String commentBody = messageFormatter.formatHistoryBodyMarkdown(drawRef, reports);
-        persistenceRepo.commentOnDedicatedIssue(persistenceRepo.appLogin(), historyTopic, "", commentBody);
+        persistenceRepo.commentOnDedicatedIssue(null, historyTopic, "", commentBody);
     }
 
     GitHubRepository persistenceRepo(DrawRef drawRef, LotteryConfig config) {
