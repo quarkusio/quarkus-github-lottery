@@ -43,7 +43,7 @@ jobs:
       run: oc login --token=${{ secrets.QUARKUS_GITHUB_LOTTERY_OC_DEPLOY_TOKEN }} --server=${{ secrets.QUARKUS_GITHUB_LOTTERY_OC_DEPLOY_SERVER }}
 
     - name: Delete problematic image
-      run: oc delete is ubi-quarkus-native-binary-s2i
+      run: oc delete is ubi-quarkus-native-binary-s2i || true
 
     - name: Build and deploy
       run: mvn clean package -Dquarkus.kubernetes.deploy=true -Dquarkus.native.container-build=true -Dnative
