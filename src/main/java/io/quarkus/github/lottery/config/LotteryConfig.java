@@ -10,7 +10,9 @@ import java.util.TreeSet;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
+@RegisterForReflection(ignoreNested = false) // For deserialization from the GitHub repository
 public record LotteryConfig(
         @JsonProperty(required = true) NotificationsConfig notifications,
         @JsonProperty(required = true) BucketsConfig buckets,

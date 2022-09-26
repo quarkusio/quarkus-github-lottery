@@ -7,7 +7,9 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.quarkus.github.lottery.github.Issue;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
+@RegisterForReflection(ignoreNested = false) // For serialization of the "Serialized" classes
 public record LotteryReport(
         DrawRef drawRef,
         String username,
