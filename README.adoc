@@ -16,7 +16,13 @@ TODO: this is work in progress
 
 == Deployment
 
-TODO: this is work in progress
+Deployment should happen automatically when pushing to the `main` branch.
+
+Maintainers can review the application and update configuration/secrets
+at https://console-openshift-console.apps.ospo-osci.z3b1.p1.openshiftapps.com/
+
+Be careful about which configuration you change in the UI,
+as deployment may overwrite part of the topology.
 
 == License
 
