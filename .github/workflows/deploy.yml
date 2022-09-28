@@ -33,12 +33,6 @@ jobs:
         distribution: temurin
         java-version: 17
 
-    - name: Check out yrodiere:github-api waitingforrelease
-      run: git clone -b waitingforrelease https://github.com/yrodiere/github-api.git
-
-    - name: Build github-api SNAPSHOT
-      run: cd github-api && mvn -B clean install -DskipTests && cd -
-
     - name: Log in to OpenShift
       run: oc login --token=${{ secrets.QUARKUS_GITHUB_LOTTERY_OC_DEPLOY_TOKEN }} --server=${{ secrets.QUARKUS_GITHUB_LOTTERY_OC_DEPLOY_SERVER }}
 
