@@ -1,6 +1,6 @@
 package io.quarkus.github.lottery;
 
-import static io.quarkus.github.lottery.util.MockHelper.url;
+import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -41,7 +41,6 @@ import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
-import io.quarkus.github.lottery.github.Issue;
 import io.quarkus.github.lottery.history.HistoryService;
 import io.quarkus.github.lottery.history.LotteryHistory;
 import io.quarkus.github.lottery.notification.NotificationService;
@@ -175,13 +174,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
-        List<Issue> issueNeedingTriage = List.of(
-                new Issue(1, "Hibernate ORM works too well", url(1)),
-                new Issue(3, "Hibernate Search needs Solr support", url(3)),
-                new Issue(2, "Where can I find documentation?", url(2)),
-                new Issue(4, "Hibernate ORM works too well", url(4)));
         when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
-                .thenAnswer(ignored -> issueNeedingTriage.stream());
+                .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
         var notifierMock = mock(Notifier.class);
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
@@ -195,7 +189,7 @@ public class LotterySingleRepositoryTest {
         lotteryService.draw();
 
         verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                new LotteryReport.Bucket(issueNeedingTriage.subList(0, 3))));
+                new LotteryReport.Bucket(stubIssueList(1, 3, 2))));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
@@ -219,13 +213,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
-        List<Issue> issueNeedingTriage = List.of(
-                new Issue(1, "Hibernate ORM works too well", url(1)),
-                new Issue(3, "Hibernate Search needs Solr support", url(3)),
-                new Issue(2, "Where can I find documentation?", url(2)),
-                new Issue(4, "Hibernate ORM works too well", url(4)));
         when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
-                .thenAnswer(ignored -> issueNeedingTriage.stream());
+                .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
         var notifierMock = mock(Notifier.class);
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
@@ -242,8 +231,7 @@ public class LotterySingleRepositoryTest {
         // Since the last notification for issue with number 3 didn't expire yet,
         // it will be skipped and we'll notify about another issue.
         verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                new LotteryReport.Bucket(
-                        List.of(issueNeedingTriage.get(0), issueNeedingTriage.get(2), issueNeedingTriage.get(3)))));
+                new LotteryReport.Bucket(stubIssueList(1, 2, 4))));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
@@ -301,13 +289,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
-        List<Issue> issueNeedingTriage = List.of(
-                new Issue(1, "Hibernate ORM works too well", url(1)),
-                new Issue(3, "Hibernate Search needs Solr support", url(3)),
-                new Issue(2, "Where can I find documentation?", url(2)),
-                new Issue(4, "Hibernate ORM works too well", url(4)));
         when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
-                .thenAnswer(ignored -> issueNeedingTriage.stream());
+                .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
         var notifierMock = mock(Notifier.class);
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);

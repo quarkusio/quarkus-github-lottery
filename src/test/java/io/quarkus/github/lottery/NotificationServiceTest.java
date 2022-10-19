@@ -1,6 +1,6 @@
 package io.quarkus.github.lottery;
 
-import static io.quarkus.github.lottery.util.MockHelper.url;
+import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -8,7 +8,6 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.List;
 import java.util.Optional;
 
 import javax.inject.Inject;
@@ -27,7 +26,6 @@ import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
-import io.quarkus.github.lottery.github.Issue;
 import io.quarkus.github.lottery.message.MessageFormatter;
 import io.quarkus.github.lottery.notification.NotificationService;
 import io.quarkus.github.lottery.notification.Notifier;
@@ -76,9 +74,7 @@ public class NotificationServiceTest {
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                new LotteryReport.Bucket(List.of(
-                        new Issue(1, "Hibernate ORM works too well", url(1)),
-                        new Issue(3, "Hibernate Search needs Solr support", url(3)))));
+                new LotteryReport.Bucket(stubIssueList(1, 3)));
         var markdownNotification1 = "Notif 1";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "yrodiere"))
                 .thenReturn("yrodiere's report for quarkusio/quarkus");
@@ -91,9 +87,7 @@ public class NotificationServiceTest {
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport2 = new LotteryReport(drawRef, "gsmet", Optional.empty(),
-                new LotteryReport.Bucket(List.of(
-                        new Issue(4, "Hibernate Search and Validator are on a boat", url(4)),
-                        new Issue(5, "Hibernate Validator needs Scala support", url(5)))));
+                new LotteryReport.Bucket(stubIssueList(4, 5)));
         var markdownNotification2 = "Notif 2";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "gsmet"))
                 .thenReturn("gsmet's report for quarkusio/quarkus");

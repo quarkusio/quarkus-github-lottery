@@ -1,6 +1,6 @@
 package io.quarkus.github.lottery;
 
-import static io.quarkus.github.lottery.util.MockHelper.url;
+import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
@@ -22,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
-import io.quarkus.github.lottery.github.Issue;
 import io.quarkus.github.lottery.message.MessageFormatter;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -89,16 +88,14 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_triage_simple() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                new LotteryReport.Bucket(List.of(
-                        new Issue(1, "Hibernate ORM works too well", url(1)),
-                        new Issue(3, "Hibernate Search needs Solr support", url(3)))));
+                new LotteryReport.Bucket(stubIssueList(1, 3)));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
                 .isEqualTo("""
                         Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
                         # Triage
-                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Hibernate ORM works too well
-                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Hibernate Search needs Solr support
+                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
+                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
 
                         ---
                         <sup>If you no longer want to receive these notifications, \
@@ -111,16 +108,14 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_exoticTimezone() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
-                new LotteryReport.Bucket(List.of(
-                        new Issue(1, "Hibernate ORM works too well", url(1)),
-                        new Issue(3, "Hibernate Search needs Solr support", url(3)))));
+                new LotteryReport.Bucket(stubIssueList(1, 3)));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
                 .isEqualTo("""
                         Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-05.
 
                         # Triage
-                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Hibernate ORM works too well
-                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Hibernate Search needs Solr support
+                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
+                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
 
                         ---
                         <sup>If you no longer want to receive these notifications, \

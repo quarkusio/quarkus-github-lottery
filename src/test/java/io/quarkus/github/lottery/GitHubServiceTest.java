@@ -5,7 +5,7 @@ import static io.quarkus.github.lottery.util.MockHelper.mockIssueForLottery;
 import static io.quarkus.github.lottery.util.MockHelper.mockIssueForLotteryFilteredOutByDate;
 import static io.quarkus.github.lottery.util.MockHelper.mockIssueForNotification;
 import static io.quarkus.github.lottery.util.MockHelper.mockPagedIterable;
-import static io.quarkus.github.lottery.util.MockHelper.url;
+import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -57,7 +57,6 @@ import io.quarkiverse.githubapp.testing.GitHubAppTest;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
-import io.quarkus.github.lottery.github.Issue;
 import io.quarkus.test.junit.QuarkusTest;
 
 /**
@@ -191,10 +190,10 @@ public class GitHubServiceTest {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
                     when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
-                    var issue1Mock = mockIssueForLottery(mocks, 1, "Hibernate ORM works too well", beforeCutoff);
-                    var issue2Mock = mockIssueForLottery(mocks, 3, "Hibernate Search needs Solr support", beforeCutoff);
-                    var issue3Mock = mockIssueForLottery(mocks, 2, "Where can I find documentation?", beforeCutoff);
-                    var issue4Mock = mockIssueForLottery(mocks, 4, "Hibernate ORM works too well", beforeCutoff);
+                    var issue1Mock = mockIssueForLottery(mocks, 1, beforeCutoff);
+                    var issue2Mock = mockIssueForLottery(mocks, 3, beforeCutoff);
+                    var issue3Mock = mockIssueForLottery(mocks, 2, beforeCutoff);
+                    var issue4Mock = mockIssueForLottery(mocks, 4, beforeCutoff);
                     var issue5Mock = mockIssueForLotteryFilteredOutByDate(mocks, 5, afterCutoff);
                     var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
@@ -203,11 +202,7 @@ public class GitHubServiceTest {
                     var repo = gitHubService.repository(repoRef);
 
                     assertThat(repo.issuesWithLabelLastUpdatedBefore("triage/needs-triage", cutoff))
-                            .containsExactly(
-                                    new Issue(1, "Hibernate ORM works too well", url(1)),
-                                    new Issue(3, "Hibernate Search needs Solr support", url(3)),
-                                    new Issue(2, "Where can I find documentation?", url(2)),
-                                    new Issue(4, "Hibernate ORM works too well", url(4)));
+                            .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).state(GHIssueState.OPEN);
