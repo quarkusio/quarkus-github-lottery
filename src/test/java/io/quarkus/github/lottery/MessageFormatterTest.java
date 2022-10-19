@@ -162,6 +162,7 @@ public class MessageFormatterTest {
 
                         # rick
                         ## Triage
+                        No issues in this category this time.
 
                         <!--:payload:
                         """);
