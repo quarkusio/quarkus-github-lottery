@@ -14,6 +14,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -48,7 +49,16 @@ public class HistoryServiceTest {
                 new LotteryConfig.Buckets(
                         new LotteryConfig.Buckets.Triage(
                                 "triage/needs-triage",
-                                Duration.ZERO, Duration.ofDays(3))),
+                                Duration.ZERO, Duration.ofDays(3)),
+                        new LotteryConfig.Buckets.Maintenance(
+                                new LotteryConfig.Buckets.Maintenance.Reproducer(
+                                        "needs-reproducer",
+                                        new LotteryConfig.Buckets.Maintenance.Reproducer.Needed(
+                                                Duration.ofDays(21), Duration.ofDays(3)),
+                                        new LotteryConfig.Buckets.Maintenance.Reproducer.Provided(
+                                                Duration.ofDays(7), Duration.ofDays(3))),
+                                new LotteryConfig.Buckets.Maintenance.Stale(
+                                        Duration.ofDays(60), Duration.ofDays(14)))),
                 List.of());
     }
 
@@ -122,9 +132,11 @@ public class HistoryServiceTest {
         when(messageFormatterMock.extractPayloadFromHistoryBodyMarkdown(historyBody))
                 .thenReturn(List.of(
                         new LotteryReport.Serialized(now.minus(2, ChronoUnit.DAYS), "jane",
-                                new LotteryReport.Bucket.Serialized(List.of(6, 7))),
+                                Optional.of(new LotteryReport.Bucket.Serialized(List.of(6, 7))),
+                                Optional.empty(), Optional.empty(), Optional.empty()),
                         new LotteryReport.Serialized(now.minus(1, ChronoUnit.HOURS), "gsmet",
-                                new LotteryReport.Bucket.Serialized(List.of(1, 2)))));
+                                Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2))),
+                                Optional.empty(), Optional.empty(), Optional.empty())));
 
         var history = historyService.fetch(drawRef, config);
 
@@ -154,11 +166,14 @@ public class HistoryServiceTest {
         when(messageFormatterMock.extractPayloadFromHistoryBodyMarkdown(historyBody))
                 .thenReturn(List.of(
                         new LotteryReport.Serialized(now.minus(2, ChronoUnit.DAYS), "jane",
-                                new LotteryReport.Bucket.Serialized(List.of(6, 7))),
+                                Optional.of(new LotteryReport.Bucket.Serialized(List.of(6, 7))),
+                                Optional.empty(), Optional.empty(), Optional.empty()),
                         new LotteryReport.Serialized(now.minus(1, ChronoUnit.HOURS), "gsmet",
-                                new LotteryReport.Bucket.Serialized(List.of(1, 2))),
+                                Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2))),
+                                Optional.empty(), Optional.empty(), Optional.empty()),
                         new LotteryReport.Serialized(now.minus(9, ChronoUnit.HOURS), "yrodiere",
-                                new LotteryReport.Bucket.Serialized(List.of(4, 5)))));
+                                Optional.of(new LotteryReport.Bucket.Serialized(List.of(4, 5))),
+                                Optional.empty(), Optional.empty(), Optional.empty())));
 
         var history = historyService.fetch(drawRef, config);
 
@@ -212,9 +227,11 @@ public class HistoryServiceTest {
         when(messageFormatterMock.extractPayloadFromHistoryBodyMarkdown(historyBody))
                 .thenReturn(List.of(
                         new LotteryReport.Serialized(now.minus(1, ChronoUnit.DAYS), "gsmet",
-                                new LotteryReport.Bucket.Serialized(List.of(1, 2))),
+                                Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2))),
+                                Optional.empty(), Optional.empty(), Optional.empty()),
                         new LotteryReport.Serialized(now.minus(7, ChronoUnit.DAYS), "yrodiere",
-                                new LotteryReport.Bucket.Serialized(List.of(42)))));
+                                Optional.of(new LotteryReport.Bucket.Serialized(List.of(42))),
+                                Optional.empty(), Optional.empty(), Optional.empty())));
 
         var history = historyService.fetch(drawRef, config);
 

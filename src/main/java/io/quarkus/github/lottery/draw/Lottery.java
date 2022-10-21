@@ -6,13 +6,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.Issue;
+import io.quarkus.github.lottery.github.IssueActionSide;
 import io.quarkus.github.lottery.history.LotteryHistory;
 import io.quarkus.logging.Log;
 
@@ -25,16 +28,22 @@ public final class Lottery {
     private final LotteryConfig.Buckets config;
     private final Random random;
     private final Triage triage;
+    private final Map<String, Maintenance> maintenanceByLabel;
 
     public Lottery(Instant now, LotteryConfig.Buckets config) {
         this.now = now;
         this.config = config;
         this.random = new Random();
         this.triage = new Triage();
+        this.maintenanceByLabel = new LinkedHashMap<>();
     }
 
     Bucket triage() {
         return triage.bucket;
+    }
+
+    Maintenance maintenance(String areaLabel) {
+        return maintenanceByLabel.computeIfAbsent(areaLabel, Maintenance::new);
     }
 
     public void draw(GitHubRepository repo, LotteryHistory lotteryHistory) throws IOException {
@@ -46,6 +55,9 @@ public final class Lottery {
         // This is to avoid notifying twice about the same issue in parallel draws.
         Set<Integer> allWinnings = new HashSet<>();
         triage.createDraws(repo, lotteryHistory, draws);
+        for (Maintenance maintenance : maintenanceByLabel.values()) {
+            maintenance.createDraws(repo, lotteryHistory, draws);
+        }
         while (!draws.isEmpty()) {
             var drawsIterator = draws.iterator();
             while (drawsIterator.hasNext()) {
@@ -73,6 +85,63 @@ public final class Lottery {
                 draws.add(triage.bucket.createDraw(repo.issuesWithLabelLastUpdatedBefore(label, cutoff)
                         .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                         .iterator()));
+            }
+        }
+    }
+
+    final class Maintenance {
+        private final String areaLabel;
+        private final Bucket reproducerNeeded;
+        private final Bucket reproducerProvided;
+        private final Bucket stale;
+
+        Maintenance(String areaLabel) {
+            this.areaLabel = areaLabel;
+            String namePrefix = "maintenance - '" + areaLabel + "' - ";
+            reproducerNeeded = new Bucket(namePrefix + "reproducerNeeded");
+            reproducerProvided = new Bucket(namePrefix + "reproducerProvided");
+            stale = new Bucket(namePrefix + "stale");
+        }
+
+        Bucket reproducerNeeded() {
+            return reproducerNeeded;
+        }
+
+        Bucket reproducerProvided() {
+            return reproducerProvided;
+        }
+
+        Bucket stale() {
+            return stale;
+        }
+
+        void createDraws(GitHubRepository repo, LotteryHistory lotteryHistory, List<Draw> draws) throws IOException {
+            String needReproducerLabel = config.maintenance().reproducer().label();
+            if (reproducerNeeded.hasParticipation()) {
+                var cutoff = now.minus(config.maintenance().reproducer().needed().notification().delay());
+                var history = lotteryHistory.reproducerNeeded();
+                draws.add(reproducerNeeded.createDraw(
+                        repo.issuesLastActedOnByAndLastUpdatedBefore(needReproducerLabel, areaLabel,
+                                IssueActionSide.TEAM, cutoff)
+                                .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
+                                .iterator()));
+            }
+            if (reproducerProvided.hasParticipation()) {
+                var cutoff = now.minus(config.maintenance().reproducer().provided().notification().delay());
+                var history = lotteryHistory.reproducerProvided();
+                draws.add(reproducerProvided.createDraw(
+                        repo.issuesLastActedOnByAndLastUpdatedBefore(needReproducerLabel, areaLabel,
+                                IssueActionSide.OUTSIDER, cutoff)
+                                .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
+                                .iterator()));
+            }
+            if (stale.hasParticipation()) {
+                var cutoff = now.minus(config.maintenance().stale().notification().delay());
+                var history = lotteryHistory.stale();
+                draws.add(stale.createDraw(
+                        repo.issuesWithLabelLastUpdatedBefore(areaLabel, cutoff)
+                                .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
+                                .iterator()));
             }
         }
     }

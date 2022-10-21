@@ -3,6 +3,7 @@ package io.quarkus.github.lottery.config;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.ZoneId;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -30,7 +31,8 @@ public record LotteryConfig(
     }
 
     public record Buckets(
-            @JsonProperty(required = true) Triage triage) {
+            @JsonProperty(required = true) Triage triage,
+            @JsonProperty(required = true) Maintenance maintenance) {
 
         public record Triage(
                 String label,
@@ -44,6 +46,49 @@ public record LotteryConfig(
             }
         }
 
+        public record Maintenance(
+                @JsonProperty(required = true) Reproducer reproducer,
+                @JsonProperty(required = true) Stale stale) {
+
+            public record Reproducer(
+                    @JsonProperty(required = true) String label,
+                    @JsonProperty(required = true) Needed needed,
+                    @JsonProperty(required = true) Provided provided) {
+
+                public record Needed(
+                        @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+                    // https://stackoverflow.com/a/71539100/6692043
+                    // Also gives us a less verbose constructor for tests
+                    @JsonCreator
+                    public Needed(@JsonProperty(required = true) Duration delay,
+                            @JsonProperty(required = true) Duration timeout) {
+                        this(new Notification(delay, timeout));
+                    }
+                }
+
+                public record Provided(
+                        @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+                    // https://stackoverflow.com/a/71539100/6692043
+                    // Also gives us a less verbose constructor for tests
+                    @JsonCreator
+                    public Provided(@JsonProperty(required = true) Duration delay,
+                            @JsonProperty(required = true) Duration timeout) {
+                        this(new Notification(delay, timeout));
+                    }
+                }
+            }
+
+            public record Stale(
+                    @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+                // https://stackoverflow.com/a/71539100/6692043
+                // Also gives us a less verbose constructor for tests
+                @JsonCreator
+                public Stale(@JsonProperty(required = true) Duration delay, @JsonProperty(required = true) Duration timeout) {
+                    this(new Notification(delay, timeout));
+                }
+            }
+        }
+
         public record Notification(
                 @JsonProperty(required = true) Duration delay,
                 @JsonProperty(required = true) Duration timeout) {
@@ -53,7 +98,8 @@ public record LotteryConfig(
     public record Participant(
             @JsonProperty(required = true) String username,
             Optional<ZoneId> timezone,
-            Triage triage) {
+            Optional<Triage> triage,
+            Optional<Maintenance> maintenance) {
 
         public record Triage(
                 @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
@@ -62,6 +108,18 @@ public record LotteryConfig(
             @JsonCreator
             public Triage(@JsonProperty(required = true) Set<DayOfWeek> days, @JsonProperty(required = true) int maxIssues) {
                 this(days, new Participation(maxIssues));
+            }
+        }
+
+        public record Maintenance(
+                // TODO default to all labels configured for this user in .github/quarkus-bot.yml
+                @JsonProperty(required = true) List<String> labels,
+                @JsonProperty(required = true) @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
+                Reproducer reproducer,
+                @JsonProperty(required = true) Participation stale) {
+            public record Reproducer(
+                    @JsonProperty(required = true) Participation needed,
+                    @JsonProperty(required = true) Participation provided) {
             }
         }
 

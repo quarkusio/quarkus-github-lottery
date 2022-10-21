@@ -33,6 +33,9 @@ public class LotteryHistory {
     private final Instant since;
 
     private final Bucket triage;
+    private final Bucket reproducerNeeded;
+    private final Bucket reproducerProvided;
+    private final Bucket stale;
 
     public LotteryHistory(Instant now, LotteryConfig.Buckets config) {
         this.now = now;
@@ -44,8 +47,18 @@ public class LotteryHistory {
         // a new notification will be sent for the same ticket.
         // For that mechanism, we need to retrieve all past notifications that did not time out.
         Instant triageNotificationTimeoutCutoff = now.minus(config.triage().notification().timeout());
-        this.since = min(lastNotificationTodayCutoff, triageNotificationTimeoutCutoff);
+        Instant reproducerNeededNotificationTimeoutCutoff = now
+                .minus(config.maintenance().reproducer().needed().notification().timeout());
+        Instant reproducerProvidedNotificationTimeoutCutoff = now
+                .minus(config.maintenance().reproducer().provided().notification().timeout());
+        Instant staleNotificationTimeoutCutoff = now.minus(config.maintenance().stale().notification().timeout());
+        this.since = min(lastNotificationTodayCutoff, triageNotificationTimeoutCutoff,
+                reproducerNeededNotificationTimeoutCutoff, reproducerProvidedNotificationTimeoutCutoff,
+                staleNotificationTimeoutCutoff);
         this.triage = new Bucket(triageNotificationTimeoutCutoff);
+        this.reproducerNeeded = new Bucket(reproducerNeededNotificationTimeoutCutoff);
+        this.reproducerProvided = new Bucket(reproducerProvidedNotificationTimeoutCutoff);
+        this.stale = new Bucket(staleNotificationTimeoutCutoff);
     }
 
     Instant since() {
@@ -56,8 +69,10 @@ public class LotteryHistory {
         var instant = report.instant();
         lastNotificationInstantByUsername.merge(report.username(), instant, LotteryHistory::max);
 
-        triage().add(instant, report.triage());
-        // TODO also extract information for other buckets (when there *are* other buckets)
+        report.triage().ifPresent(bucket -> triage().add(instant, bucket));
+        report.reproducerNeeded().ifPresent(bucket -> reproducerNeeded().add(instant, bucket));
+        report.reproducerProvided().ifPresent(bucket -> reproducerProvided().add(instant, bucket));
+        report.stale().ifPresent(bucket -> stale().add(instant, bucket));
     }
 
     public Optional<ZonedDateTime> lastNotificationToday(String username, ZoneId timezone) {
@@ -69,6 +84,18 @@ public class LotteryHistory {
 
     public Bucket triage() {
         return triage;
+    }
+
+    public Bucket reproducerNeeded() {
+        return reproducerNeeded;
+    }
+
+    public Bucket reproducerProvided() {
+        return reproducerProvided;
+    }
+
+    public Bucket stale() {
+        return stale;
     }
 
     public static class Bucket {

@@ -74,7 +74,8 @@ public class NotificationServiceTest {
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                new LotteryReport.Bucket(stubIssueList(1, 3)));
+                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
+                Optional.empty(), Optional.empty(), Optional.empty());
         var markdownNotification1 = "Notif 1";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "yrodiere"))
                 .thenReturn("yrodiere's report for quarkusio/quarkus");
@@ -87,7 +88,10 @@ public class NotificationServiceTest {
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport2 = new LotteryReport(drawRef, "gsmet", Optional.empty(),
-                new LotteryReport.Bucket(stubIssueList(4, 5)));
+                Optional.empty(),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(7, 8))),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(9, 10))));
         var markdownNotification2 = "Notif 2";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "gsmet"))
                 .thenReturn("gsmet's report for quarkusio/quarkus");

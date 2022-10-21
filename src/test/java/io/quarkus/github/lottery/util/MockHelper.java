@@ -16,10 +16,13 @@ import java.util.stream.IntStream;
 import io.quarkiverse.githubapp.testing.dsl.GitHubMockContext;
 import io.quarkus.github.lottery.github.Issue;
 import org.kohsuke.github.GHIssue;
+import org.kohsuke.github.GHIssueEvent;
+import org.kohsuke.github.GHLabel;
 import org.kohsuke.github.GHPullRequestFileDetail;
 import org.kohsuke.github.PagedIterator;
 import org.kohsuke.github.PagedSearchIterable;
 import org.mockito.Answers;
+import org.mockito.Mockito;
 import org.mockito.quality.Strictness;
 
 public class MockHelper {
@@ -66,7 +69,7 @@ public class MockHelper {
         return mock;
     }
 
-    public static GHIssue mockIssueForLotteryFilteredOutByDate(GitHubMockContext context, int number, Date updatedAt)
+    public static GHIssue mockIssueForLotteryFilteredOutByRepository(GitHubMockContext context, int number, Date updatedAt)
             throws IOException {
         GHIssue mock = context.issue(10000L + number);
         when(mock.getUpdatedAt()).thenReturn(updatedAt);
@@ -76,6 +79,18 @@ public class MockHelper {
     public static GHIssue mockIssueForNotification(GitHubMockContext context, long id, String title) {
         GHIssue mock = context.issue(id);
         when(mock.getTitle()).thenReturn(title);
+        return mock;
+    }
+
+    public static GHIssueEvent mockIssueEvent(String type) {
+        GHIssueEvent mock = Mockito.mock(GHIssueEvent.class);
+        when(mock.getEvent()).thenReturn(type);
+        return mock;
+    }
+
+    public static GHLabel mockLabel(String name) {
+        GHLabel mock = Mockito.mock(GHLabel.class);
+        when(mock.getName()).thenReturn(name);
         return mock;
     }
 

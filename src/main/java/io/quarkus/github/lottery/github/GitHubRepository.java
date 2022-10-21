@@ -1,5 +1,6 @@
 package io.quarkus.github.lottery.github;
 
+import static io.quarkus.github.lottery.github.GitHubUtils.toStream;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
@@ -10,11 +11,16 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
+import org.kohsuke.github.GHIssueCommentQueryBuilder;
+import org.kohsuke.github.GHIssueEvent;
 import org.kohsuke.github.GHIssueQueryBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
@@ -104,13 +110,75 @@ public class GitHubRepository implements AutoCloseable {
      * @throws java.io.UncheckedIOException In case of I/O failure.
      */
     public Stream<Issue> issuesWithLabelLastUpdatedBefore(String label, Instant updatedBefore) throws IOException {
-        return GitHubUtils.toStream(repository().queryIssues().label(label)
+        return toStream(repository().queryIssues().label(label)
                 .state(GHIssueState.OPEN)
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
                 .list())
-                .filter(uncheckedIO((GHIssue ghIssue) -> ghIssue.getUpdatedAt().toInstant().isBefore(updatedBefore))::apply)
-                .map(ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getHtmlUrl()));
+                .filter(updatedBefore(updatedBefore))
+                .map(toIssueRecord());
+    }
+
+    /**
+     * Lists issues with the given labels that were last acted on (label applied or comment)
+     * by the given "side" (team or outsider) and were last updated before the given instant.
+     *
+     * @param initialActionLabel A GitHub label; all returned issues must have been assigned that label.
+     *        The last time this label was assigned is considered the first "action" on an issue.
+     * @param filterLabel A secondary GitHub label; all returned issues must have been assigned that label.
+     *        This label is not relevant to determining the last action.
+     * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
+     * @return A lazily populated stream of matching issues.
+     * @throws IOException In case of I/O failure.
+     * @throws java.io.UncheckedIOException In case of I/O failure.
+     */
+    public Stream<Issue> issuesLastActedOnByAndLastUpdatedBefore(String initialActionLabel, String filterLabel,
+            IssueActionSide lastActionSide, Instant updatedBefore) throws IOException {
+        return toStream(repository().queryIssues()
+                .label(initialActionLabel)
+                .label(filterLabel)
+                .state(GHIssueState.OPEN)
+                .sort(GHIssueQueryBuilder.Sort.UPDATED)
+                .direction(GHDirection.DESC)
+                .list())
+                .filter(updatedBefore(updatedBefore))
+                .filter(uncheckedIO((GHIssue ghIssue) -> lastActionSide
+                        .equals(lastActionSide(ghIssue, initialActionLabel)))::apply)
+                .map(toIssueRecord());
+    }
+
+    private Predicate<GHIssue> updatedBefore(Instant updatedBefore) {
+        return uncheckedIO((GHIssue ghIssue) -> ghIssue.getUpdatedAt().toInstant().isBefore(updatedBefore))::apply;
+    }
+
+    private IssueActionSide lastActionSide(GHIssue ghIssue, String initialActionLabel) throws IOException {
+        // Optimization: don't even fetch older comments as they wouldn't affect the result
+        // (we're looking for the *last* action).
+        Instant lastEventActionSideInstant = null;
+        for (GHIssueEvent event : ghIssue.listEvents()) {
+            if (io.quarkiverse.githubapp.event.Issue.Labeled.NAME.equals(event.getEvent())
+                    && initialActionLabel.equals(event.getLabel().getName())) {
+                lastEventActionSideInstant = event.getCreatedAt().toInstant();
+            }
+        }
+        GHIssueCommentQueryBuilder queryCommentsBuilder = ghIssue.queryComments();
+        if (lastEventActionSideInstant != null) {
+            queryCommentsBuilder.since(Date.from(lastEventActionSideInstant));
+        }
+
+        Optional<GHIssueComment> lastComment = toStream(queryCommentsBuilder.list()).reduce(last());
+        if (lastComment.isEmpty()) {
+            // No action since the label was assigned.
+            return IssueActionSide.TEAM;
+        }
+        return switch (repository().getPermission(lastComment.get().getUser())) {
+            case ADMIN, WRITE -> IssueActionSide.TEAM;
+            case READ, NONE -> IssueActionSide.OUTSIDER;
+        };
+    }
+
+    private Function<GHIssue, Issue> toIssueRecord() {
+        return ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getHtmlUrl());
     }
 
     /**
@@ -152,7 +220,7 @@ public class GitHubRepository implements AutoCloseable {
                 // (There's no way to retrieve comments of an issue in anti-chronological order...)
                 Optional<GHIssueComment> lastRecentComment = getAppCommentsSince(issue,
                         clock.instant().minus(21, ChronoUnit.DAYS))
-                        .reduce((first, second) -> second);
+                        .reduce(last());
                 lastRecentComment.ifPresent(this::minimizeOutdatedComment);
             } catch (Exception e) {
                 Log.errorf(e, "Failed to minimize last notification for issue %s#%s", ref.repositoryName(), issue.getNumber());
@@ -194,7 +262,7 @@ public class GitHubRepository implements AutoCloseable {
 
     private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) {
         String appLogin = appLogin();
-        return GitHubUtils.toStream(issue.queryComments().since(Date.from(since)).list())
+        return toStream(issue.queryComments().since(Date.from(since)).list())
                 .filter(uncheckedIO((GHIssueComment comment) -> appLogin.equals(comment.getUser().getLogin()))::apply);
     }
 
@@ -218,4 +286,7 @@ public class GitHubRepository implements AutoCloseable {
         }
     }
 
+    private <T> BinaryOperator<T> last() {
+        return (first, second) -> second;
+    }
 }

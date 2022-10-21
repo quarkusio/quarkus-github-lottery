@@ -14,7 +14,10 @@ public record LotteryReport(
         DrawRef drawRef,
         String username,
         Optional<ZoneId> timezone,
-        Bucket triage) {
+        Optional<Bucket> triage,
+        Optional<Bucket> reproducerNeeded,
+        Optional<Bucket> reproducerProvided,
+        Optional<Bucket> stale) {
 
     public record Bucket(
             List<Issue> issues) {
@@ -29,12 +32,18 @@ public record LotteryReport(
     }
 
     public Serialized serialized() {
-        return new Serialized(drawRef.instant(), username, triage.serialized());
+        return new Serialized(drawRef.instant(), username, triage.map(Bucket::serialized),
+                reproducerNeeded.map(Bucket::serialized),
+                reproducerProvided.map(Bucket::serialized),
+                stale.map(Bucket::serialized));
     }
 
     public record Serialized(
             Instant instant,
             String username,
-            Bucket.Serialized triage) {
+            Optional<Bucket.Serialized> triage,
+            Optional<Bucket.Serialized> reproducerNeeded,
+            Optional<Bucket.Serialized> reproducerProvided,
+            Optional<Bucket.Serialized> stale) {
     }
 }

@@ -32,4 +32,8 @@ final class Participation {
     public String toString() {
         return "Participation[username=" + username + ", maxIssues=" + maxIssues + "]";
     }
+
+    List<Issue> issues() {
+        return issues;
+    }
 }

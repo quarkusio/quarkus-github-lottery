@@ -83,6 +83,18 @@ public class PullRequestConfigCheckTest {
                                         label: "triage/needs-triage"
                                         delay: PT0S
                                         timeout: P3D
+                                      maintenance:
+                                        reproducer:
+                                          label: "needs-reproducer"
+                                          needed:
+                                            delay: P21D
+                                            timeout: P3D
+                                          provided:
+                                            delay: P7D
+                                            timeout: P3D
+                                        stale:
+                                          delay: P60D
+                                          timeout: P14D
                                     participants:
                                       - username: "yrodiere"
                                         triage:
@@ -141,6 +153,18 @@ public class PullRequestConfigCheckTest {
                                         label: "triage/needs-triage"
                                         delay: PT0S
                                         timeout: P3D
+                                      maintenance:
+                                        reproducer:
+                                          label: "needs-reproducer"
+                                          needed:
+                                            delay: P21D
+                                            timeout: P3D
+                                          provided:
+                                            delay: P7D
+                                            timeout: P3D
+                                        stale:
+                                          delay: P60D
+                                          timeout: P14D
                                     participants:
                                       - username: "yrodiere"
                                         triage:
