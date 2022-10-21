@@ -1,10 +1,10 @@
 package io.quarkus.github.lottery;
 
 import static io.quarkiverse.githubapp.testing.GitHubAppTesting.given;
-import static io.quarkus.github.lottery.MockHelper.mockIssueForLottery;
-import static io.quarkus.github.lottery.MockHelper.mockIssueForNotification;
-import static io.quarkus.github.lottery.MockHelper.mockPagedIterable;
-import static io.quarkus.github.lottery.MockHelper.url;
+import static io.quarkus.github.lottery.util.MockHelper.mockIssueForLottery;
+import static io.quarkus.github.lottery.util.MockHelper.mockIssueForNotification;
+import static io.quarkus.github.lottery.util.MockHelper.mockPagedIterable;
+import static io.quarkus.github.lottery.util.MockHelper.url;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;

@@ -1,5 +1,6 @@
-package io.quarkus.github.lottery;
+package io.quarkus.github.lottery.util;
 
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
@@ -11,12 +12,13 @@ import java.util.List;
 
 import io.quarkiverse.githubapp.testing.dsl.GitHubMockContext;
 import org.kohsuke.github.GHIssue;
+import org.kohsuke.github.GHPullRequestFileDetail;
 import org.kohsuke.github.PagedIterator;
 import org.kohsuke.github.PagedSearchIterable;
 import org.mockito.Answers;
 import org.mockito.quality.Strictness;
 
-class MockHelper {
+public class MockHelper {
 
     @SafeVarargs
     @SuppressWarnings("unchecked")
@@ -53,6 +55,12 @@ class MockHelper {
     public static GHIssue mockIssueForNotification(GitHubMockContext context, long id, String title) {
         GHIssue mock = context.issue(id);
         when(mock.getTitle()).thenReturn(title);
+        return mock;
+    }
+
+    public static GHPullRequestFileDetail mockGHPullRequestFileDetail(String filename) {
+        GHPullRequestFileDetail mock = mock(GHPullRequestFileDetail.class);
+        lenient().when(mock.getFilename()).thenReturn(filename);
         return mock;
     }
 

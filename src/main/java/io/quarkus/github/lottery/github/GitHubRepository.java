@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssue;
@@ -20,7 +19,6 @@ import org.kohsuke.github.GHIssueQueryBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
-import org.kohsuke.github.PagedIterable;
 
 import io.quarkiverse.githubapp.ConfigFile;
 import io.quarkiverse.githubapp.GitHubClientProvider;
@@ -97,7 +95,7 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     public Stream<Issue> issuesWithLabel(String label) throws IOException {
-        return toStream(repository().queryIssues().label(label)
+        return GitHubUtils.toStream(repository().queryIssues().label(label)
                 .state(GHIssueState.OPEN)
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
@@ -186,7 +184,7 @@ public class GitHubRepository implements AutoCloseable {
 
     private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) {
         String appLogin = appLogin();
-        return toStream(issue.queryComments().since(Date.from(since)).list())
+        return GitHubUtils.toStream(issue.queryComments().since(Date.from(since)).list())
                 .filter(uncheckedIO((GHIssueComment comment) -> appLogin.equals(comment.getUser().getLogin()))::apply);
     }
 
@@ -210,7 +208,4 @@ public class GitHubRepository implements AutoCloseable {
         }
     }
 
-    private <T> Stream<T> toStream(PagedIterable<T> iterable) {
-        return StreamSupport.stream(iterable.spliterator(), false);
-    }
 }
