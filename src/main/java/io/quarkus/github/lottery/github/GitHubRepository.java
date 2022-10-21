@@ -94,12 +94,22 @@ public class GitHubRepository implements AutoCloseable {
                 LotteryConfig.class);
     }
 
-    public Stream<Issue> issuesWithLabel(String label) throws IOException {
+    /**
+     * Lists issues with the given label that were last updated before the given instant.
+     *
+     * @param label A GitHub label; all returned issues must have been assigned that label.
+     * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
+     * @return A lazily populated stream of matching issues.
+     * @throws IOException In case of I/O failure.
+     * @throws java.io.UncheckedIOException In case of I/O failure.
+     */
+    public Stream<Issue> issuesWithLabelLastUpdatedBefore(String label, Instant updatedBefore) throws IOException {
         return GitHubUtils.toStream(repository().queryIssues().label(label)
                 .state(GHIssueState.OPEN)
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
                 .list())
+                .filter(uncheckedIO((GHIssue ghIssue) -> ghIssue.getUpdatedAt().toInstant().isBefore(updatedBefore))::apply)
                 .map(ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getHtmlUrl()));
     }
 

@@ -2,11 +2,10 @@ package io.quarkus.github.lottery;
 
 import java.io.IOException;
 import java.time.Clock;
-import java.time.DayOfWeek;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -78,10 +77,11 @@ public class LotteryService {
     }
 
     private void doDrawForRepository(GitHubRepository repo, LotteryConfig lotteryConfig) throws IOException {
-        Lottery lottery = new Lottery(lotteryConfig.buckets());
-
         var now = Instant.now(clock);
         var drawRef = new DrawRef(repo.ref(), now);
+
+        Lottery lottery = new Lottery(now, lotteryConfig.buckets());
+
         try (var notifier = notificationService.notifier(drawRef, lotteryConfig.notifications())) {
             var history = historyService.fetch(drawRef, lotteryConfig);
             List<Participant> participants = registerParticipants(drawRef, lottery, history, lotteryConfig.participants());
@@ -100,37 +100,25 @@ public class LotteryService {
     }
 
     private List<Participant> registerParticipants(DrawRef drawRef, Lottery lottery,
-            LotteryHistory history, List<LotteryConfig.Participant> participantConfigs) throws IOException {
+            LotteryHistory history, List<LotteryConfig.Participant> participantConfigs) {
         List<Participant> participants = new ArrayList<>();
 
         // Add participants to the lottery as necessary.
-        for ( LotteryConfig.Participant participantConfig : participantConfigs) {
+        for (LotteryConfig.Participant participantConfig : participantConfigs) {
             String username = participantConfig.username();
             ZoneId timezone = participantConfig.timezone().orElse(ZoneOffset.UTC);
-            LocalDate drawDate = drawRef.instant().atZone(timezone).toLocalDate();
 
-            var participationDays = participantConfig.days();
-            DayOfWeek dayOfWeek = drawDate.getDayOfWeek();
-            if (!participationDays.contains(dayOfWeek)) {
-                Log.debugf("Skipping user %s who wants to be notified on %s, because today is %s",
-                        username, participationDays, dayOfWeek);
-                continue;
-            }
-
-            Optional<Instant> lastNotificationInstant = history.lastNotificationInstantForUsername(username);
-            if (lastNotificationInstant.isPresent()
-                    && drawDate.equals(lastNotificationInstant.get().atZone(timezone).toLocalDate())) {
+            Optional<ZonedDateTime> lastNotificationToday = history.lastNotificationToday(username, timezone);
+            if (lastNotificationToday.isPresent()) {
                 Log.debugf("Skipping user %s who has already been notified today (on %s)",
-                        username, lastNotificationInstant.get());
+                        username, lastNotificationToday.get());
                 continue;
             }
 
-            var participant = new Participant(drawRef, participantConfig);
-            participants.add(participant);
-
-            participant.participate(lottery);
-
-            // TODO also handle maintainers
+            Participant.create(drawRef, participantConfig).ifPresent(p -> {
+                participants.add(p);
+                p.participate(lottery);
+            });
         }
 
         return participants;

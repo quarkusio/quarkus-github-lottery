@@ -68,7 +68,7 @@ public class MessageFormatterTest {
     }
 
     @Test
-    void formatNotificationBodyMarkdown_empty() {
+    void formatNotificationBodyMarkdown_triage_empty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(List.of()));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
@@ -87,7 +87,7 @@ public class MessageFormatterTest {
     }
 
     @Test
-    void formatNotificationBodyMarkdown_simple() {
+    void formatNotificationBodyMarkdown_triage_simple() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 new LotteryReport.Bucket(List.of(
                         new Issue(1, "Hibernate ORM works too well", url(1)),

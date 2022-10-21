@@ -8,7 +8,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
@@ -20,15 +22,6 @@ public record LotteryConfig(
 
     public static final String FILE_NAME = "quarkus-github-lottery.yml";
 
-    public record Buckets(
-            @JsonProperty(required = true) TriageBucket triage) {
-
-        public record TriageBucket(
-                @JsonProperty(required = true) String needsTriageLabel,
-                @JsonProperty(required = true) Duration notificationExpiration) {
-        }
-    }
-
     public record Notifications(
             @JsonProperty(required = true) CreateIssuesConfig createIssues) {
         public record CreateIssuesConfig(
@@ -36,16 +29,44 @@ public record LotteryConfig(
         }
     }
 
-    public record Participant(
-            @JsonProperty(required = true) String username,
-            @JsonProperty(required = true) @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
-            Optional<ZoneId> timezone,
-            Participation triage) {
+    public record Buckets(
+            @JsonProperty(required = true) Triage triage) {
 
+        public record Triage(
+                String label,
+                @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+            // https://stackoverflow.com/a/71539100/6692043
+            // Also gives us a less verbose constructor for tests
+            @JsonCreator
+            public Triage(@JsonProperty(required = true) String label,
+                    @JsonProperty(required = true) Duration delay, @JsonProperty(required = true) Duration timeout) {
+                this(label, new Notification(delay, timeout));
+            }
+        }
+
+        public record Notification(
+                @JsonProperty(required = true) Duration delay,
+                @JsonProperty(required = true) Duration timeout) {
+        }
     }
 
-    public record Participation(
-            @JsonProperty(required = true) int maxIssues) {
+    public record Participant(
+            @JsonProperty(required = true) String username,
+            Optional<ZoneId> timezone,
+            Triage triage) {
+
+        public record Triage(
+                @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
+                @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Participation participation) {
+            // https://stackoverflow.com/a/71539100/6692043
+            @JsonCreator
+            public Triage(@JsonProperty(required = true) Set<DayOfWeek> days, @JsonProperty(required = true) int maxIssues) {
+                this(days, new Participation(maxIssues));
+            }
+        }
+
+        public record Participation(@JsonProperty(required = true) int maxIssues) {
+        }
     }
 
 }

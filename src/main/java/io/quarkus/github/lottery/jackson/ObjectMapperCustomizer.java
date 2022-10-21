@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
 import io.quarkiverse.githubapp.runtime.UtilsProducer;
 import io.quarkus.runtime.Startup;
 
@@ -21,6 +22,7 @@ public class ObjectMapperCustomizer {
         for (ObjectMapper mapper : List.of(jsonMapper, yamlMapper)) {
             mapper.registerModule(new Jdk8Module());
             mapper.registerModule(new JavaTimeModule());
+            mapper.registerModule(new ParameterNamesModule());
         }
     }
 

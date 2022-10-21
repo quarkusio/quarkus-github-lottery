@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -39,6 +40,18 @@ import io.quarkus.test.junit.QuarkusTest;
 @QuarkusTest
 @ExtendWith(MockitoExtension.class)
 public class HistoryServiceTest {
+
+    private static LotteryConfig defaultConfig() {
+        return new LotteryConfig(
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.Triage(
+                                "triage/needs-triage",
+                                Duration.ZERO, Duration.ofDays(3))),
+                List.of());
+    }
+
     GitHubService gitHubServiceMock;
     GitHubRepository persistenceRepoMock;
 
@@ -61,7 +74,7 @@ public class HistoryServiceTest {
 
         persistenceRepoMock = Mockito.mock(GitHubRepository.class);
 
-        now = LocalDateTime.of(2017, 11, 6, 8, 0).toInstant(ZoneOffset.UTC);
+        now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         drawRef = new DrawRef(repoRef, now);
 
         messageFormatterMock = Mockito.mock(MessageFormatter.class);
@@ -70,12 +83,7 @@ public class HistoryServiceTest {
 
     @Test
     void lastNotificationInstantForUser_noHistory() throws Exception {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of());
+        var config = defaultConfig();
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
@@ -88,7 +96,11 @@ public class HistoryServiceTest {
 
         var history = historyService.fetch(drawRef, config);
 
-        assertThat(history.lastNotificationInstantForUsername("yrodiere"))
+        ZoneId timezone = ZoneId.of("Europe/Paris");
+        assertThat(history.lastNotificationToday("yrodiere", timezone))
+                .isEmpty();
+        timezone = ZoneId.of("America/Los_Angeles");
+        assertThat(history.lastNotificationToday("yrodiere", timezone))
                 .isEmpty();
 
         verifyNoMoreInteractions(gitHubServiceMock, persistenceRepoMock, messageFormatterMock);
@@ -96,12 +108,7 @@ public class HistoryServiceTest {
 
     @Test
     void lastNotificationInstantForUser_notNotified() throws Exception {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of());
+        var config = defaultConfig();
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
@@ -114,12 +121,18 @@ public class HistoryServiceTest {
                 .thenAnswer(ignored -> Stream.of(historyBody));
         when(messageFormatterMock.extractPayloadFromHistoryBodyMarkdown(historyBody))
                 .thenReturn(List.of(
-                        new LotteryReport.Serialized(now.minus(1, ChronoUnit.DAYS), "gsmet",
+                        new LotteryReport.Serialized(now.minus(2, ChronoUnit.DAYS), "jane",
+                                new LotteryReport.Bucket.Serialized(List.of(6, 7))),
+                        new LotteryReport.Serialized(now.minus(1, ChronoUnit.HOURS), "gsmet",
                                 new LotteryReport.Bucket.Serialized(List.of(1, 2)))));
 
         var history = historyService.fetch(drawRef, config);
 
-        assertThat(history.lastNotificationInstantForUsername("yrodiere"))
+        ZoneId timezone = ZoneId.of("Europe/Paris");
+        assertThat(history.lastNotificationToday("yrodiere", timezone))
+                .isEmpty();
+        timezone = ZoneId.of("America/Los_Angeles");
+        assertThat(history.lastNotificationToday("yrodiere", timezone))
                 .isEmpty();
 
         verifyNoMoreInteractions(gitHubServiceMock, persistenceRepoMock, messageFormatterMock);
@@ -127,12 +140,7 @@ public class HistoryServiceTest {
 
     @Test
     void lastNotificationInstantForUser_notifiedRecently() throws Exception {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of());
+        var config = defaultConfig();
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
@@ -145,27 +153,31 @@ public class HistoryServiceTest {
                 .thenAnswer(ignored -> Stream.of(historyBody));
         when(messageFormatterMock.extractPayloadFromHistoryBodyMarkdown(historyBody))
                 .thenReturn(List.of(
-                        new LotteryReport.Serialized(now.minus(1, ChronoUnit.DAYS), "gsmet",
+                        new LotteryReport.Serialized(now.minus(2, ChronoUnit.DAYS), "jane",
+                                new LotteryReport.Bucket.Serialized(List.of(6, 7))),
+                        new LotteryReport.Serialized(now.minus(1, ChronoUnit.HOURS), "gsmet",
                                 new LotteryReport.Bucket.Serialized(List.of(1, 2))),
-                        new LotteryReport.Serialized(now.minus(2, ChronoUnit.DAYS), "yrodiere",
+                        new LotteryReport.Serialized(now.minus(9, ChronoUnit.HOURS), "yrodiere",
                                 new LotteryReport.Bucket.Serialized(List.of(4, 5)))));
 
         var history = historyService.fetch(drawRef, config);
 
-        assertThat(history.lastNotificationInstantForUsername("yrodiere"))
-                .contains(now.minus(2, ChronoUnit.DAYS));
+        // 9 hours ago was yesterday in Paris
+        ZoneId timezone = ZoneId.of("Europe/Paris");
+        assertThat(history.lastNotificationToday("yrodiere", timezone))
+                .isEmpty();
+
+        // 9 hours ago was still today in Los Angeles
+        timezone = ZoneId.of("America/Los_Angeles");
+        assertThat(history.lastNotificationToday("yrodiere", timezone))
+                .contains(now.minus(9, ChronoUnit.HOURS).atZone(timezone));
 
         verifyNoMoreInteractions(gitHubServiceMock, persistenceRepoMock, messageFormatterMock);
     }
 
     @Test
-    void lastNotificationExpiredForIssueNumber_noHistory() throws Exception {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of());
+    void lastNotificationTimedOutForIssueNumber_noHistory() throws Exception {
+        var config = defaultConfig();
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
@@ -178,20 +190,15 @@ public class HistoryServiceTest {
 
         var history = historyService.fetch(drawRef, config);
 
-        assertThat(history.triage().lastNotificationExpiredForIssueNumber(2))
+        assertThat(history.triage().lastNotificationTimedOutForIssueNumber(2))
                 .isTrue();
 
         verifyNoMoreInteractions(gitHubServiceMock, persistenceRepoMock, messageFormatterMock);
     }
 
     @Test
-    void lastNotificationExpiredForIssueNumber() throws Exception {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of());
+    void lastNotificationTimedOutForIssueNumber() throws Exception {
+        var config = defaultConfig();
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
                 config.notifications().createIssues().repository());
@@ -212,13 +219,13 @@ public class HistoryServiceTest {
         var history = historyService.fetch(drawRef, config);
 
         // Notified recently
-        assertThat(history.triage().lastNotificationExpiredForIssueNumber(2))
+        assertThat(history.triage().lastNotificationTimedOutForIssueNumber(2))
                 .isFalse();
         // Not notified at all
-        assertThat(history.triage().lastNotificationExpiredForIssueNumber(4))
+        assertThat(history.triage().lastNotificationTimedOutForIssueNumber(4))
                 .isTrue();
         // Notified a long time ago (expired)
-        assertThat(history.triage().lastNotificationExpiredForIssueNumber(42))
+        assertThat(history.triage().lastNotificationTimedOutForIssueNumber(42))
                 .isTrue();
 
         verifyNoMoreInteractions(gitHubServiceMock, persistenceRepoMock, messageFormatterMock);

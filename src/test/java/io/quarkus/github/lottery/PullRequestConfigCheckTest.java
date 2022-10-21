@@ -77,19 +77,22 @@ public class PullRequestConfigCheckTest {
                             .fromString("""
                                     notifications:
                                       createIssues:
-                                        repository: "yrodiere/quarkus-github-playground-lottery-reports"
+                                        repository: "quarkusio/quarkus-lottery-reports"
                                     buckets:
                                       triage:
-                                        needsTriageLabel: "triage/needs-triage"
-                                        notificationExpiration: P3D
-                                    labels:
-                                      needsTriage: "triage/needs-triage"
+                                        label: "triage/needs-triage"
+                                        delay: PT0S
+                                        timeout: P3D
                                     participants:
                                       - username: "yrodiere"
-                                        timezone: "Europe/Paris"
-                                        days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
                                         triage:
+                                          days: ["MONDAY", "TUESDAY", "FRIDAY"]
                                           maxIssues: 3
+                                      - username: "gsmet"
+                                        timezone: "Europe/Paris"
+                                        triage:
+                                          days: ["MONDAY", "WEDNESDAY", "FRIDAY"]
+                                          maxIssues: 10
                                     """);
 
                     mockCheckRun(repoMock, PR_HEAD_SHA);
@@ -132,19 +135,22 @@ public class PullRequestConfigCheckTest {
                             .fromString("""
                                     notifications:
                                       createIssues:
-                                        repository: "yrodiere/quarkus-github-playground-lottery-reports"
+                                        repository: "quarkusio/quarkus-lottery-reports"
                                     buckets:
                                       triage:
-                                        needsTriageLabel: "triage/needs-triage"
-                                        notificationExpiration: P3D
-                                    labels:
-                                      needsTriage: "triage/needs-triage"
+                                        label: "triage/needs-triage"
+                                        delay: PT0S
+                                        timeout: P3D
                                     participants:
                                       - username: "yrodiere"
-                                        timezone: "Europe/Parris"
-                                        days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
                                         triage:
+                                          days: ["MONDAY", "TUESDAY", "FRIDAY"]
                                           maxIssues: 3
+                                      - username: "gsmet"
+                                        timezone: "Europe/Parris"
+                                        triage:
+                                          days: ["MONDAY", "WEDNESDAY", "FRIDAY"]
+                                          maxIssues: 10
                                     """);
 
                     mockCheckRun(repoMock, PR_HEAD_SHA);

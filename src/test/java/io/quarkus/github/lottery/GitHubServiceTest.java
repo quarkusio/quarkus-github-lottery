@@ -2,6 +2,7 @@ package io.quarkus.github.lottery;
 
 import static io.quarkiverse.githubapp.testing.GitHubAppTesting.given;
 import static io.quarkus.github.lottery.util.MockHelper.mockIssueForLottery;
+import static io.quarkus.github.lottery.util.MockHelper.mockIssueForLotteryFilteredOutByDate;
 import static io.quarkus.github.lottery.util.MockHelper.mockIssueForNotification;
 import static io.quarkus.github.lottery.util.MockHelper.mockPagedIterable;
 import static io.quarkus.github.lottery.util.MockHelper.url;
@@ -14,7 +15,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 import java.io.IOException;
-import java.sql.Date;
 import java.time.Clock;
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -129,17 +130,18 @@ public class GitHubServiceTest {
                                         repository: "quarkusio/quarkus-lottery-reports"
                                     buckets:
                                       triage:
-                                        needsTriageLabel: "triage/needs-triage"
-                                        notificationExpiration: P3D
+                                        label: "triage/needs-triage"
+                                        delay: PT0S
+                                        timeout: P3D
                                     participants:
                                       - username: "yrodiere"
-                                        days: ["MONDAY"]
                                         triage:
+                                          days: ["MONDAY", "TUESDAY", "FRIDAY"]
                                           maxIssues: 3
                                       - username: "gsmet"
-                                        days: ["MONDAY", "WEDNESDAY", "FRIDAY"]
                                         timezone: "Europe/Paris"
                                         triage:
+                                          days: ["MONDAY", "WEDNESDAY", "FRIDAY"]
                                           maxIssues: 10
                                     """);
                 })
@@ -153,21 +155,20 @@ public class GitHubServiceTest {
                                             new LotteryConfig.Notifications.CreateIssuesConfig(
                                                     "quarkusio/quarkus-lottery-reports")),
                                     new LotteryConfig.Buckets(
-                                            new LotteryConfig.Buckets.TriageBucket("triage/needs-triage",
-                                                    Duration.ofDays(3))),
+                                            new LotteryConfig.Buckets.Triage(
+                                                    "triage/needs-triage",
+                                                    Duration.ZERO, Duration.ofDays(3))),
                                     List.of(
-                                            new LotteryConfig.Participant(
-                                                    "yrodiere",
-                                                    Set.of(DayOfWeek.MONDAY),
+                                            new LotteryConfig.Participant("yrodiere",
                                                     Optional.empty(),
-                                                    new LotteryConfig.Participation(
-                                                            3)),
-                                            new LotteryConfig.Participant(
-                                                    "gsmet",
-                                                    Set.of(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+                                                    new LotteryConfig.Participant.Triage(
+                                                            Set.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.FRIDAY),
+                                                            new LotteryConfig.Participant.Participation(3))),
+                                            new LotteryConfig.Participant("gsmet",
                                                     Optional.of(ZoneId.of("Europe/Paris")),
-                                                    new LotteryConfig.Participation(
-                                                            10)))));
+                                                    new LotteryConfig.Participant.Triage(
+                                                            Set.of(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
+                                                            new LotteryConfig.Participant.Participation(10))))));
                 })
                 .then().github(mocks -> {
                     verifyNoMoreInteractions(mocks.ghObjects());
@@ -175,44 +176,33 @@ public class GitHubServiceTest {
     }
 
     @Test
-    void issuesWithLabel() throws IOException {
+    void issuesWithLabelLastUpdatedBefore() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
+
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        Instant cutoff = now.minus(1, ChronoUnit.DAYS);
+        Date beforeCutoff = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
+        Date afterCutoff = Date.from(cutoff.plus(1, ChronoUnit.HOURS));
 
         var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
         given()
                 .github(mocks -> {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
-                    mocks.configFile(repositoryMock, "quarkus-github-lottery.yaml")
-                            .fromString("""
-                                    notifications:
-                                      createIssues:
-                                        repository: "quarkusio/quarkus-lottery-reports"
-                                    labels:
-                                      needsTriage: "triage/needs-triage"
-                                    participants:
-                                      - username: "yrodiere"
-                                        when: ["MONDAY"]
-                                        triage:
-                                          maxIssues: 3
-                                      - username: "gsmet"
-                                        when: ["MONDAY", "WEDNESDAY", "FRIDAY"]
-                                        triage:
-                                          maxIssues: 10
-                                    """);
 
                     when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
-                    var issue1Mock = mockIssueForLottery(mocks, 1, "Hibernate ORM works too well");
-                    var issue2Mock = mockIssueForLottery(mocks, 3, "Hibernate Search needs Solr support");
-                    var issue3Mock = mockIssueForLottery(mocks, 2, "Where can I find documentation?");
-                    var issue4Mock = mockIssueForLottery(mocks, 4, "Hibernate ORM works too well");
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock);
+                    var issue1Mock = mockIssueForLottery(mocks, 1, "Hibernate ORM works too well", beforeCutoff);
+                    var issue2Mock = mockIssueForLottery(mocks, 3, "Hibernate Search needs Solr support", beforeCutoff);
+                    var issue3Mock = mockIssueForLottery(mocks, 2, "Where can I find documentation?", beforeCutoff);
+                    var issue4Mock = mockIssueForLottery(mocks, 4, "Hibernate ORM works too well", beforeCutoff);
+                    var issue5Mock = mockIssueForLotteryFilteredOutByDate(mocks, 5, afterCutoff);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.issuesWithLabel("triage/needs-triage"))
+                    assertThat(repo.issuesWithLabelLastUpdatedBefore("triage/needs-triage", cutoff))
                             .containsExactly(
                                     new Issue(1, "Hibernate ORM works too well", url(1)),
                                     new Issue(3, "Hibernate Search needs Solr support", url(3)),

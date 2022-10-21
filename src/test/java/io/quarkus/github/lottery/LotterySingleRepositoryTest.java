@@ -52,6 +52,18 @@ import io.quarkus.test.junit.QuarkusTest;
 @QuarkusTest
 @ExtendWith(MockitoExtension.class)
 public class LotterySingleRepositoryTest {
+
+    private static LotteryConfig defaultConfig(List<LotteryConfig.Participant> participants) {
+        return new LotteryConfig(
+                new LotteryConfig.Notifications(
+                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
+                new LotteryConfig.Buckets(
+                        new LotteryConfig.Buckets.Triage(
+                                "needs-triage",
+                                Duration.ZERO, Duration.ofDays(3))),
+                participants);
+    }
+
     GitHubService gitHubServiceMock;
     GitHubRepository repoMock;
     Clock clockMock;
@@ -60,6 +72,7 @@ public class LotterySingleRepositoryTest {
 
     GitHubInstallationRef installationRef;
     GitHubRepositoryRef repoRef;
+    Instant now;
     DrawRef drawRef;
 
     @Inject
@@ -77,7 +90,7 @@ public class LotterySingleRepositoryTest {
         when(gitHubServiceMock.repository(repoRef)).thenReturn(repoMock);
 
         // Note tests below assume this is at least 1AM
-        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         drawRef = new DrawRef(repoRef, now);
         clockMock = Clock.fixed(drawRef.instant(), ZoneOffset.UTC);
         QuarkusMock.installMockForType(clockMock, Clock.class);
@@ -102,15 +115,12 @@ public class LotterySingleRepositoryTest {
 
     @Test
     void participant_days_differentDay_defaultTimezone() throws IOException {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.Participant(
-                        "yrodiere",
-                        Set.of(DayOfWeek.TUESDAY), Optional.empty(),
-                        new LotteryConfig.Participation(3))));
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.TUESDAY),
+                                new LotteryConfig.Participant.Participation(3)))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -130,15 +140,12 @@ public class LotterySingleRepositoryTest {
 
     @Test
     void participant_days_differentDay_explicitTimezone() throws IOException {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.Participant(
-                        "yrodiere",
-                        Set.of(DayOfWeek.MONDAY), Optional.of(ZoneId.of("America/Los_Angeles")),
-                        new LotteryConfig.Participation(3))));
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.of(ZoneId.of("America/Los_Angeles")),
+                        new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3)))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -158,16 +165,13 @@ public class LotterySingleRepositoryTest {
     }
 
     @Test
-    void singleParticipant_neverNotified() throws IOException {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.Participant(
-                        "yrodiere",
-                        Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                        new LotteryConfig.Participation(3))));
+    void singleParticipant_notNotifiedToday() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3)))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -176,17 +180,17 @@ public class LotterySingleRepositoryTest {
                 new Issue(3, "Hibernate Search needs Solr support", url(3)),
                 new Issue(2, "Where can I find documentation?", url(2)),
                 new Issue(4, "Hibernate ORM works too well", url(4)));
-        when(repoMock.issuesWithLabel("needs-triage"))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
                 .thenAnswer(ignored -> issueNeedingTriage.stream());
 
         var notifierMock = mock(Notifier.class);
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
         var historyMock = mock(LotteryHistory.class);
         when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationInstantForUsername("yrodiere")).thenReturn(Optional.empty());
+        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
         var historyTriageMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.triage()).thenReturn(historyTriageMock);
-        when(historyTriageMock.lastNotificationExpiredForIssueNumber(anyInt())).thenReturn(true);
+        when(historyTriageMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
 
         lotteryService.draw();
 
@@ -205,16 +209,13 @@ public class LotterySingleRepositoryTest {
     }
 
     @Test
-    void singleParticipant_notifiedYesterday() throws IOException {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.Participant(
-                        "yrodiere",
-                        Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                        new LotteryConfig.Participation(3))));
+    void singleParticipant_notNotifiedToday_issueAlreadyHasNonExpiredNotification() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3)))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -223,67 +224,18 @@ public class LotterySingleRepositoryTest {
                 new Issue(3, "Hibernate Search needs Solr support", url(3)),
                 new Issue(2, "Where can I find documentation?", url(2)),
                 new Issue(4, "Hibernate ORM works too well", url(4)));
-        when(repoMock.issuesWithLabel("needs-triage"))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
                 .thenAnswer(ignored -> issueNeedingTriage.stream());
 
         var notifierMock = mock(Notifier.class);
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
         var historyMock = mock(LotteryHistory.class);
         when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationInstantForUsername("yrodiere"))
-                .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.DAYS)));
+        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
         var historyTriageMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.triage()).thenReturn(historyTriageMock);
-        when(historyTriageMock.lastNotificationExpiredForIssueNumber(anyInt())).thenReturn(true);
-
-        lotteryService.draw();
-
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                new LotteryReport.Bucket(issueNeedingTriage.subList(0, 3))));
-
-        verify(historyServiceMock).append(drawRef, config, List.of(
-                new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
-                        new LotteryReport.Bucket.Serialized(List.of(1, 3, 2)))));
-
-        verify(notifierMock).close();
-        verify(repoMock).close();
-
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock,
-                historyServiceMock, historyMock, historyTriageMock);
-    }
-
-    @Test
-    void singleParticipant_notifiedYesterday_issueAlreadyHasNonExpiredNotification() throws IOException {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.Participant(
-                        "yrodiere",
-                        Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                        new LotteryConfig.Participation(3))));
-        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
-        when(repoMock.ref()).thenReturn(repoRef);
-
-        List<Issue> issueNeedingTriage = List.of(
-                new Issue(1, "Hibernate ORM works too well", url(1)),
-                new Issue(3, "Hibernate Search needs Solr support", url(3)),
-                new Issue(2, "Where can I find documentation?", url(2)),
-                new Issue(4, "Hibernate ORM works too well", url(4)));
-        when(repoMock.issuesWithLabel("needs-triage"))
-                .thenAnswer(ignored -> issueNeedingTriage.stream());
-
-        var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
-        var historyMock = mock(LotteryHistory.class);
-        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationInstantForUsername("yrodiere"))
-                .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.DAYS)));
-        var historyTriageMock = mock(LotteryHistory.Bucket.class);
-        when(historyMock.triage()).thenReturn(historyTriageMock);
-        when(historyTriageMock.lastNotificationExpiredForIssueNumber(anyInt())).thenReturn(true);
-        when(historyTriageMock.lastNotificationExpiredForIssueNumber(3)).thenReturn(false);
+        when(historyTriageMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
+        when(historyTriageMock.lastNotificationTimedOutForIssueNumber(3)).thenReturn(false);
 
         lotteryService.draw();
 
@@ -306,15 +258,12 @@ public class LotterySingleRepositoryTest {
 
     @Test
     void singleParticipant_alreadyNotifiedToday() throws IOException {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of(new LotteryConfig.Participant(
-                        "yrodiere",
-                        Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                        new LotteryConfig.Participation(3))));
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3)))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -322,8 +271,8 @@ public class LotterySingleRepositoryTest {
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
         var historyMock = mock(LotteryHistory.class);
         when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationInstantForUsername("yrodiere"))
-                .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.HOURS)));
+        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC))
+                .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.HOURS).atZone(ZoneOffset.UTC)));
 
         lotteryService.draw();
 
@@ -338,20 +287,17 @@ public class LotterySingleRepositoryTest {
 
     @RepeatedTest(10) // Just to be reasonably certain that issues are spread evenly
     void multiParticipants_evenSpread() throws IOException {
-        var config = new LotteryConfig(
-                new LotteryConfig.Notifications(
-                        new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports")),
-                new LotteryConfig.Buckets(
-                        new LotteryConfig.Buckets.TriageBucket("needs-triage", Duration.ofDays(3))),
-                List.of(
-                        new LotteryConfig.Participant(
-                                "yrodiere",
-                                Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                                new LotteryConfig.Participation(10)),
-                        new LotteryConfig.Participant(
-                                "gsmet",
-                                Set.of(DayOfWeek.MONDAY), Optional.empty(),
-                                new LotteryConfig.Participation(10))));
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(10))),
+                new LotteryConfig.Participant("gsmet",
+                        Optional.empty(),
+                        new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(10)))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -360,18 +306,18 @@ public class LotterySingleRepositoryTest {
                 new Issue(3, "Hibernate Search needs Solr support", url(3)),
                 new Issue(2, "Where can I find documentation?", url(2)),
                 new Issue(4, "Hibernate ORM works too well", url(4)));
-        when(repoMock.issuesWithLabel("needs-triage"))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
                 .thenAnswer(ignored -> issueNeedingTriage.stream());
 
         var notifierMock = mock(Notifier.class);
         when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
         var historyMock = mock(LotteryHistory.class);
         when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationInstantForUsername("yrodiere")).thenReturn(Optional.empty());
-        when(historyMock.lastNotificationInstantForUsername("gsmet")).thenReturn(Optional.empty());
+        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        when(historyMock.lastNotificationToday("gsmet", ZoneOffset.UTC)).thenReturn(Optional.empty());
         var historyTriageMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.triage()).thenReturn(historyTriageMock);
-        when(historyTriageMock.lastNotificationExpiredForIssueNumber(anyInt())).thenReturn(true);
+        when(historyTriageMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
 
         lotteryService.draw();
 

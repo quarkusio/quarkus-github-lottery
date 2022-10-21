@@ -5,8 +5,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
@@ -44,11 +46,20 @@ public class MockHelper {
         }
     }
 
-    public static GHIssue mockIssueForLottery(GitHubMockContext context, int number, String title) {
+    public static GHIssue mockIssueForLottery(GitHubMockContext context, int number, String title, Date updatedAt)
+            throws IOException {
         GHIssue mock = context.issue(10000L + number);
         when(mock.getNumber()).thenReturn(number);
         when(mock.getTitle()).thenReturn(title);
         when(mock.getHtmlUrl()).thenReturn(url(number));
+        when(mock.getUpdatedAt()).thenReturn(updatedAt);
+        return mock;
+    }
+
+    public static GHIssue mockIssueForLotteryFilteredOutByDate(GitHubMockContext context, int number, Date updatedAt)
+            throws IOException {
+        GHIssue mock = context.issue(10000L + number);
+        when(mock.getUpdatedAt()).thenReturn(updatedAt);
         return mock;
     }
 
