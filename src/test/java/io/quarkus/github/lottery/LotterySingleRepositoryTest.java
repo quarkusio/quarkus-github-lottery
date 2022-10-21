@@ -1,6 +1,6 @@
 package io.quarkus.github.lottery;
 
-import static io.quarkus.github.lottery.MockHelper.url;
+import static io.quarkus.github.lottery.util.MockHelper.url;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;

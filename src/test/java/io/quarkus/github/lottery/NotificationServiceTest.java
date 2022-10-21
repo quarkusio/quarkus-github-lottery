@@ -1,6 +1,6 @@
 package io.quarkus.github.lottery;
 
-import static io.quarkus.github.lottery.MockHelper.url;
+import static io.quarkus.github.lottery.util.MockHelper.url;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
