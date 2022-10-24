@@ -35,7 +35,7 @@ import io.quarkus.test.junit.QuarkusTest;
 public class PullRequestConfigCheckTest {
     private static final long PR_ID = 1095197456L;
     private static final String PR_HEAD_SHA = "8f4fdc737d6f8dcd00e0a304eab63bf9cce52b10";
-    private static final String PR_REPO_NAME = "quarkus-github-playground";
+    private static final String PR_REPO_NAME = "yrodiere/quarkus-github-playground";
 
     private final GHCheckRunBuilder checkRunCreateBuilderMock = mockCheckRunBuilder();
     private final GHCheckRunBuilder checkRunUpdateBuilderMock = mockCheckRunBuilder();
