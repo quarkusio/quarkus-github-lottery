@@ -1,3 +1,4 @@
+{@io.quarkus.github.lottery.draw.LotteryReport$Bucket bucket}
 {#if bucket.issues.isEmpty}
 No issues in this category this time.
 {#else}
