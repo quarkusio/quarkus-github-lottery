@@ -1,5 +1,21 @@
 {
-"files": [
-   "README.adoc"
-]
+  "files": [
+    "README.adoc"
+  ],
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "yrodiere",
+      "name": "Yoann Rodière",
+      "avatar_url": "https://avatars.githubusercontent.com/u/412878?v=4",
+      "profile": "https://github.com/yrodiere",
+      "contributions": [
+        "code",
+        "maintenance"
+      ]
+    }
+  ],
+  "projectName": "quarkus-github-lottery",
+  "projectOwner": "quarkusio"
 }
