@@ -2,18 +2,347 @@
 
 > A Quarkus-powered GitHub App that regularly sends short lists of GitHub issues for triagers/maintainers to consider.
 
+[[intro]]
 == Introduction
 
 This GitHub App is based on the https://github.com/quarkiverse/quarkus-github-app[Quarkus GitHub App framework].
 
-== How to use/configure
+It periodically extracts GitHub issues from one GitHub repository (e.g. https://github.com/quarkusio/quarkus)
+and notifies maintainers about them by commenting on GitHub issues in another GitHub repository
+(e.g. https://github.com/quarkusio/quarkus-github-lottery-reports).
+That second "reports" repository may be private,
+as it's only about notifying maintainers.
 
-TODO: this is work in progress
+Each maintainer who participates in the lottery (opt-in)
+gets their own dedicated GitHub issue in the "reports" repository,
+on which the application will add one comment mentioning the maintainer
+each time its sends a notification.
+That way, maintainers will get daily (or weekly) reports via email,
+sent by GitHub when the comment is added.
 
+Issues are randomly assigned among eligible maintainers up to a limit they define themselves,
+so that everyone gets a chance to help according to the time they want to invest.
+
+There are multiple categories of issues that one can be notified about;
+see <<maintainers>> for more information.
+
+[[maintainers]]
+== Triagers/Maintainers: how to get notifications
+
+[[participants-basics]]
+=== Basics
+
+As a Quarkus triager or a Quarkus core/extension maintainer,
+in order to get notifications about Quarkus issues on GitHub:
+
+* Make sure you have access to the https://github.com/quarkusio/quarkus-github-lottery-reports["reports" repository]
+  if not, request access to an admin of the https://github.com/quarkusio[quarkusio] organization.
+* Send a pull request to the "watched" repository (most likely https://github.com/quarkusio/quarkus)
+  to edit file https://github.com/quarkusio/quarkus/blob/main/.github/quarkus-github-lottery.yml[`.github/quarkus-github-lottery.yml`].
+  Add an entry with your username to the `participations` section.
+
+Here is what an entry will look like:
+
+[source,yaml]
+----
+# [...]
+participations:
+  - username: "yrodiere"
+    timezone: "Europe/Paris"
+    triage:
+      days: ["MONDAY", "WEDNESDAY", "FRIDAY"]
+      maxIssues: 3
+    maintenance:
+      labels: ["area/hibernate-orm", "area/hibernate-search"]
+      days: ["TUESDAY"]
+      reproducer:
+        needed:
+          maxIssues: 4
+        provided:
+          maxIssues: 2
+      stale:
+        maxIssues: 5
+----
+
+`username`::
+Your GitHub username.
++
+String, mandatory, no default.
+`timezone`::
+Your timezone, to get notifications at the right time on the right day.
++
+`java.time.ZoneId` as a String, optional, defaults to `UTC`.
+`triage`::
+Optional section for triagers.
++
+See <<participants-triage>> for details.
+`maintenance`::
+Optional section for maintainers.
++
+See <<participants-maintenance>> for details.
+
+The `triage` and `maintenance` sections are both optional;
+you may participate in triage but not maintain an area of Quarkus, and vice-versa,
+or do both.
+See below for details about each section.
+
+[[participants-triage]]
+=== Triage
+
+If the `triage` section is present, you will get notified when new issues are created
+and need to be routed to the right person/team.
+
+Addressing these notifications generally involves removing the `triage/needs-triage` label,
+adding the correct `+area/*+` labels, and optionally pinging the relevant maintainers
+(though the https://github.com/quarkusio/quarkus-github-bot#triage-issues[Quarkus GitHub Bot should generally take care of that part]
+once you add `+area/*+` labels).
+
+Of course, some more discussion might be necessary before that, and that's fine:
+issues that don't change will reappear in another notification, a few days later.
+
+The `triage` section will look like this:
+
+[source,yaml]
+----
+# [...]
+participations:
+  - username: "yrodiere"
+    triage:
+      days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
+      maxIssues: 3
+----
+
+`days`::
+On which days you wish to get notified about triage.
++
+Array of ``WeekDay``s, mandatory, no default.
+`maxIssues`::
+How many issues, at most, you wish to be included in the "triage" category
+for each notification.
++
+Integer, mandatory, no default.
+
+[[participants-maintenance]]
+=== Maintenance
+
+If the `maintenance` section is present, you will get notified about issues
+related to a specific area (e.g. `area/hibernate-orm`)
+that may be stalled and require intervention from maintainers or reporters.
+
+Issues in "maintenance" notifications will be split in three categories:
+
+Reproducer Needed::
+These issues have the `needs-reproducer` label,
+and it looks like the Quarkus team was the last to comment on the issue,
+quite some time ago.
++
+Depending on the actual content of the issue, you might want to:
++
+* send a (gentle!) reminder to the reporter that we need a reproducer before we can do anything.
+* or, if it's really been too long, close the issue because we cannot reproduce it.
+Reproducer Provided::
+These issues have the `needs-reproducer` label,
+and it looks like someone who is not from the Quarkus team was the last to comment on the issue,
+quite some time ago.
++
+A reproducer might have been provided recently on such an issue, in which case we need to remove the `needs-reproducer` label
+and have a closer look.
+Reproducer Provided::
+These issues have the `needs-reproducer` label,
+and it looks like someone who is not from the Quarkus team was the last to comment on the issue,
+quite some time ago.
++
+There might be a reproducer there, in which case you might want to remove the `needs-reproducer` label
+and have a closer look.
+Stale::
+These issues have not been updated for a very long time.
++
+Depending on the actual content of the issue, you might want to:
++
+* prioritize the issue and work on it soon;
+* or send a reminder to someone you've been waiting on;
+* or close the issue because it's no longer relevant.
+
+Of course, in every situation, simply continuing the conversation,
+pinging someone, or even doing nothing at all are perfectly acceptable responses:
+it's all up to you, and issues that don't change will reappear in another notification, a few days later.
+
+The `maintenance` section will look like this:
+
+[source,yaml]
+----
+# [...]
+participations:
+  - username: "yrodiere"
+    maintenance:
+      labels: ["area/hibernate-orm", "area/hibernate-search", "area/elasticsearch"]
+      days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
+      reproducer:
+        needed:
+          maxIssues: 4
+        provided:
+          maxIssues: 2
+      stale:
+        maxIssues: 5
+----
+
+`labels`::
+The labels identifying issues you are interested in, as a maintainer.
+Issues mentioned in notifications will have at least one of those labels.
++
+Array of Strings, mandatory, no default.
+`days`::
+On which days you wish to get notified about maintenance.
++
+Array of ``WeekDay``s, mandatory, no default.
+`reproducer.needed.maxIssues`::
+How many issues, at most, you wish to be included in the "Reproducer needed" category
+for each notification.
++
+Integer, mandatory, no default.
+`reproducer.provided.maxIssues`::
+How many issues, at most, you wish to be included in the "Reproducer provided" category
+for each notification.
++
+Integer, mandatory, no default.
+`stale.maxIssues`::
+How many issues, at most, you wish to be included in the "Stale" category
+for each notification.
++
+Integer, mandatory, no default.
+
+[[admins]]
+== Admins: how to install and initialize configuration
+
+[[admins-install]]
+=== Installing
+
+The application needs to be installed on both the repository issues are extracted from
+and the repository "notification" issues are added to.
+
+Here is a link to the application on GitHub: https://github.com/apps/quarkus-github-lottery
+
+[[admins-config]]
+=== Configuring
+
+The configuration file https://github.com/quarkusio/quarkus/blob/main/.github/quarkus-github-lottery.yml[`.github/quarkus-github-lottery.yml`]
+includes several sections that are common to all participants to the lottery:
+
+```yaml
+notifications:
+  createIssues:
+    repository: "quarkusio/quarkus-github-lottery-reports"
+buckets:
+  triage:
+    label: "triage/needs-triage"
+    delay: PT0S
+    timeout: P3D
+  maintenance:
+    reproducer:
+      label: "needs-reproducer"
+      needed:
+        delay: P21D
+        timeout: P3D
+      provided:
+        delay: P7D
+        timeout: P3D
+    stale:
+      delay: P60D
+      timeout: P14D
+```
+
+`notifications.createIssues.repository`::
+The full name of the GitHub repository where "reports"/"notification issues" will be created.
++
+String, mandatory, no default.
+`buckets.triage.label`::
+The label identifying GitHub issues that require triage.
++
+String, mandatory, no default.
+`buckets.triage.delay`::
+How much time to wait after the last update on an issue
+before including it in the lottery in the "triage" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.triage.timeout`::
+How much time to wait after an issue was last notified about
+before including it again in the lottery in the "triage" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.maintenance.reproducer.label`::
+The label identifying GitHub issues for which a reproducer was requested.
++
+String, mandatory, no default.
+`buckets.maintenance.reproducer.needed.delay`::
+How much time to wait after the last update on an issue
+before including it in the lottery in the "reproducer needed" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.maintenance.reproducer.needed.timeout`::
+How much time to wait after an issue was last notified about
+before including it again in the lottery in the "reproducer needed" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.maintenance.reproducer.provided.delay`::
+How much time to wait after the last update on an issue
+before including it in the lottery in the "reproducer provided" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.maintenance.reproducer.provided.timeout`::
+How much time to wait after an issue was last notified about
+before including it again in the lottery in the "reproducer provided" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.maintenance.stale.delay`::
+How much time to wait after the last update on an issue
+before including it in the lottery in the "stale" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.maintenance.stale.timeout`::
+How much time to wait after an issue was last notified about
+before including it again in the lottery in the "stale" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+
+[[config-validation]]
+=== Validation of the configuration
+
+The application will automatically add a check to any pull request that changes its <<config,configuration file>>.
+
+The check is fairly simple, it just attempts to deserialize the YAML file and reports any exception.
+
+[[commands]]
+=== Comment-based commands
+
+https://quarkiverse.github.io/quarkiverse-docs/quarkus-github-app/dev/commands.html[Comment-based commands]
+are available for admins.
+You can invoke it by adding a comment on any issue or pull request for repositories where the app is installed.
+
+It supports the following commands:
+
+* `/lottery draw`: force a lottery draw immediately.
+<<delay-and-timeout,Timeouts>> are still complied with,
+so this command is mostly useful if you manually edited the notification history or changed the configuration,
+which may happen frequently in dev mode in particular.
+
+[[contributing]]
 == Contributing
 
-TODO: this is work in progress
+To participate to the development of this GitHub App, create a playground project in your own org and
+follow the steps outlined in https://quarkiverse.github.io/quarkiverse-docs/quarkus-github-app/dev/index.html[the Quarkus GitHub App documentation].
 
+When registering your app, request the following Repository permissions:
+
+* Checks - `Read & Write`: to <<config-validation,validate configuration files>>.
+* Issues - `Read & Write`: to list issues that should be notified, and create "notification" issues in another repository.
+* Pull Requests - `Read & Write`: to react to <<commands,comment-based commands>>.
+
+And subscribe to the following events:
+
+* Check run, Check suite, Pull request: to <<config-validation,validate configuration files>>.
+* Issue comment: to listen to <<commands,comment-based commands>>.
+
+[[deployment]]
 == Deployment
 
 Deployment should happen automatically when pushing to the `main` branch.
@@ -24,6 +353,7 @@ at https://console-openshift-console.apps.ospo-osci.z3b1.p1.openshiftapps.com/
 Be careful about which configuration you change in the UI,
 as deployment may overwrite part of the topology.
 
+[[license]]
 == License
 
 This project is licensed under the Apache License Version 2.0.
