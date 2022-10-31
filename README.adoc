@@ -24,7 +24,9 @@ Issues are randomly assigned among eligible maintainers up to a limit they defin
 so that everyone gets a chance to help according to the time they want to invest.
 
 There are multiple categories of issues that one can be notified about;
-see <<maintainers>> for more information.
+see <<maintainers>> for more information, but here's what an email notification may look like:
+
+image::documentation/screenshots/notification.png[Example of an email notification,align="center"]
 
 [[maintainers]]
 == Triagers/Maintainers: how to get notifications
