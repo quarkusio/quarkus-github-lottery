@@ -24,7 +24,9 @@ Issues are randomly assigned among eligible maintainers up to a limit they defin
 so that everyone gets a chance to help according to the time they want to invest.
 
 There are multiple categories of issues that one can be notified about;
-see <<maintainers>> for more information.
+see <<maintainers>> for more information, but here's what an email notification may look like:
+
+image::documentation/screenshots/notification.png[Example of an email notification,align="center"]
 
 [[maintainers]]
 == Triagers/Maintainers: how to get notifications
@@ -145,13 +147,6 @@ These issues have the `needs-reproducer` label,
 and it looks like someone who is not from the Quarkus team was the last to comment on the issue,
 quite some time ago.
 +
-A reproducer might have been provided recently on such an issue, in which case we need to remove the `needs-reproducer` label
-and have a closer look.
-Reproducer Provided::
-These issues have the `needs-reproducer` label,
-and it looks like someone who is not from the Quarkus team was the last to comment on the issue,
-quite some time ago.
-+
 There might be a reproducer there, in which case you might want to remove the `needs-reproducer` label
 and have a closer look.
 Stale::
@@ -228,7 +223,8 @@ Here is a link to the application on GitHub: https://github.com/apps/quarkus-git
 The configuration file https://github.com/quarkusio/quarkus/blob/main/.github/quarkus-github-lottery.yml[`.github/quarkus-github-lottery.yml`]
 includes several sections that are common to all participants to the lottery:
 
-```yaml
+[source,yaml]
+----
 notifications:
   createIssues:
     repository: "quarkusio/quarkus-github-lottery-reports"
@@ -249,7 +245,8 @@ buckets:
     stale:
       delay: P60D
       timeout: P14D
-```
+# [...]
+----
 
 `notifications.createIssues.repository`::
 The full name of the GitHub repository where "reports"/"notification issues" will be created.
@@ -328,7 +325,7 @@ which may happen frequently in dev mode in particular.
 [[contributing]]
 == Contributing
 
-To participate to the development of this GitHub App, create a playground project in your own org and
+To participate in the development of this GitHub App, create a playground project in your own org and
 follow the steps outlined in https://quarkiverse.github.io/quarkiverse-docs/quarkus-github-app/dev/index.html[the Quarkus GitHub App documentation].
 
 When registering your app, request the following Repository permissions:
