@@ -7,10 +7,10 @@
 
 This GitHub App is based on the https://github.com/quarkiverse/quarkus-github-app[Quarkus GitHub App framework].
 
-It periodically extracts GitHub issues from one GitHub repository (e.g. https://github.com/quarkusio/quarkus)
-and notifies maintainers about them by commenting on GitHub issues in another GitHub repository
+It periodically extracts GitHub issues from one "source" GitHub repository (e.g. https://github.com/quarkusio/quarkus)
+and notifies maintainers about them by commenting on GitHub issues in another "notification" GitHub repository
 (e.g. https://github.com/quarkusio/quarkus-github-lottery-reports).
-That second "reports" repository may be private,
+That second "notification" repository <<admins-install,may be private>>,
 as it's only about notifying maintainers.
 
 Each maintainer who participates in the lottery (opt-in)
@@ -37,7 +37,7 @@ image::documentation/screenshots/notification.png[Example of an email notificati
 As a Quarkus triager or a Quarkus core/extension maintainer,
 in order to get notifications about Quarkus issues on GitHub:
 
-* Make sure you have access to the https://github.com/quarkusio/quarkus-github-lottery-reports["reports" repository]
+* Make sure you have access to the https://github.com/quarkusio/quarkus-github-lottery-reports["notification" repository]
   if not, request access to an admin of the https://github.com/quarkusio[quarkusio] organization.
 * Send a pull request to the "watched" repository (most likely https://github.com/quarkusio/quarkus)
   to edit file https://github.com/quarkusio/quarkus/blob/main/.github/quarkus-github-lottery.yml[`.github/quarkus-github-lottery.yml`].
@@ -212,10 +212,28 @@ Integer, mandatory, no default.
 [[admins-install]]
 === Installing
 
-The application needs to be installed on both the repository issues are extracted from
-and the repository "notification" issues are added to.
-
 Here is a link to the application on GitHub: https://github.com/apps/quarkus-github-lottery
+
+The application needs to be installed on both the "source" repository (the one issues are extracted from)
+and the "notification" repository (the one "notification" issues are added to).
+
+IMPORTANT: For security reasons,
+**the two GitHub repositories need to be in the same organization** (technically, the same "installation").
+Failing that, lottery draws will error out and will not send any notification.
+
+[TIP]
+====
+The "notification" repository should ideally be private:
+
+* This repository is only about notifying maintainers, so it does not provide any useful information to anyone else.
+* Making the "notification" repository public would lead to publicly visible references to notifications
+in the history of "source" issues, like this:
++
+image::documentation/screenshots/notification-reference.png[Example of references to notifications in the GitHub issue history,align="center"]
++
+Those add clutter to the history, and might create false hopes in issue reporters
+("someone is actively addressing my issue!").
+====
 
 [[admins-config]]
 === Configuring
