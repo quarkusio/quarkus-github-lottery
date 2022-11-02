@@ -41,14 +41,14 @@ in order to get notifications about Quarkus issues on GitHub:
   if not, request access to an admin of the https://github.com/quarkusio[quarkusio] organization.
 * Send a pull request to the "watched" repository (most likely https://github.com/quarkusio/quarkus)
   to edit file https://github.com/quarkusio/quarkus/blob/main/.github/quarkus-github-lottery.yml[`.github/quarkus-github-lottery.yml`].
-  Add an entry with your username to the `participations` section.
+  Add an entry with your username to the `participants` section.
 
 Here is what an entry will look like:
 
 [source,yaml]
 ----
 # [...]
-participations:
+participants:
   - username: "yrodiere"
     timezone: "Europe/Paris"
     triage:
@@ -107,7 +107,7 @@ The `triage` section will look like this:
 [source,yaml]
 ----
 # [...]
-participations:
+participants:
   - username: "yrodiere"
     triage:
       days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
@@ -167,7 +167,7 @@ The `maintenance` section will look like this:
 [source,yaml]
 ----
 # [...]
-participations:
+participants:
   - username: "yrodiere"
     maintenance:
       labels: ["area/hibernate-orm", "area/hibernate-search", "area/elasticsearch"]
