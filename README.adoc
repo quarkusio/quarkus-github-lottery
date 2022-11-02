@@ -48,7 +48,7 @@ Here is what an entry will look like:
 [source,yaml]
 ----
 # [...]
-participations:
+participants:
   - username: "yrodiere"
     timezone: "Europe/Paris"
     triage:
@@ -107,7 +107,7 @@ The `triage` section will look like this:
 [source,yaml]
 ----
 # [...]
-participations:
+participants:
   - username: "yrodiere"
     triage:
       days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
@@ -167,7 +167,7 @@ The `maintenance` section will look like this:
 [source,yaml]
 ----
 # [...]
-participations:
+participants:
   - username: "yrodiere"
     maintenance:
       labels: ["area/hibernate-orm", "area/hibernate-search", "area/elasticsearch"]
