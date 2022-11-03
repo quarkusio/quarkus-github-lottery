@@ -92,7 +92,7 @@ public class HistoryServiceTest {
     }
 
     @Test
-    void lastNotificationInstantForUser_noHistory() throws Exception {
+    void lastNotificationToday_noHistory() throws Exception {
         var config = defaultConfig();
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
@@ -117,7 +117,7 @@ public class HistoryServiceTest {
     }
 
     @Test
-    void lastNotificationInstantForUser_notNotified() throws Exception {
+    void lastNotificationToday_notNotified() throws Exception {
         var config = defaultConfig();
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
@@ -151,7 +151,7 @@ public class HistoryServiceTest {
     }
 
     @Test
-    void lastNotificationInstantForUser_notifiedRecently() throws Exception {
+    void lastNotificationToday_notifiedRecently() throws Exception {
         var config = defaultConfig();
 
         var persistenceRepoRef = new GitHubRepositoryRef(installationRef,
