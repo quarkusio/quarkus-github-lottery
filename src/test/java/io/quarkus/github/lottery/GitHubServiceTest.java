@@ -280,7 +280,7 @@ public class GitHubServiceTest {
     }
 
     @Test
-    void issuesLastActedOnByTeamAndLastUpdatedBefore_team() throws IOException {
+    void issuesLastActedOnByAndLastUpdatedBefore_team() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
@@ -412,7 +412,7 @@ public class GitHubServiceTest {
     }
 
     @Test
-    void issuesLastActedOnByTeamAndLastUpdatedBefore_outsider() throws IOException {
+    void issuesLastActedOnByAndLastUpdatedBefore_outsider() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
