@@ -18,6 +18,4 @@ Hey @{report.username}, here's your report for {report.repositoryName} on {repor
 {/if}
 
 ---
-<sup>If you no longer want to receive these notifications, \
-just close [any issue assigned to you in the notification repository](https://github.com/{notificationRepositoryName}/issues/assigned/@me). \
-Reopening the issue will resume the notifications.</sup>
+<sup>If you no longer want to receive these notifications, just close [any issue assigned to you in the notification repository](https://github.com/{notificationRepositoryName}/issues/assigned/@me). Reopening the issue will resume the notifications.</sup>

@@ -261,6 +261,7 @@ public class GitHubRepository implements AutoCloseable {
         if (assignee != null) {
             builder.assignee(assignee);
         }
+        builder.state(GHIssueState.ALL);
         for (var issue : builder.list()) {
             if (issue.getTitle().startsWith(topic)) {
                 return Optional.of(issue);

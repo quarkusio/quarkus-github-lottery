@@ -570,6 +570,7 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
@@ -615,6 +616,7 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -655,6 +657,7 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -708,6 +711,7 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -769,6 +773,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
 
                     verify(queryCommentsBuilderMock).since(Date.from(now.minus(21, ChronoUnit.DAYS)));
                     var mapCaptor = ArgumentCaptor.forClass(Map.class);
@@ -838,6 +843,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("quarkus-github-lottery[bot]");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
 
                     verify(queryCommentsBuilderMock).since(Date.from(now.minus(21, ChronoUnit.DAYS)));
                     var mapCaptor = ArgumentCaptor.forClass(Map.class);
@@ -907,6 +913,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
 
                     verify(mocks.issue(2)).setTitle("yrodiere's report for quarkusio/quarkus (updated 2017-11-06T06:00:00Z)");
                     verify(mocks.issue(2)).reopen();
@@ -957,6 +964,7 @@ public class GitHubServiceTest {
 
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verify(repositoryMock)
                             .createIssue("yrodiere's report for quarkusio/quarkus (updated 2017-11-06T06:00:00Z)");
                     verify(issueBuilderMock).assignee("yrodiere");
@@ -1000,6 +1008,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
@@ -1039,6 +1048,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
@@ -1069,6 +1079,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
