@@ -84,7 +84,8 @@ public class LotteryService {
 
         try (var notifier = notificationService.notifier(drawRef, lotteryConfig.notifications())) {
             var history = historyService.fetch(drawRef, lotteryConfig);
-            List<Participant> participants = registerParticipants(drawRef, lottery, history, lotteryConfig.participants());
+            List<Participant> participants = registerParticipants(drawRef, lottery, notifier, history,
+                    lotteryConfig.participants());
 
             lottery.draw(repo, history);
 
@@ -99,8 +100,8 @@ public class LotteryService {
         }
     }
 
-    private List<Participant> registerParticipants(DrawRef drawRef, Lottery lottery,
-            LotteryHistory history, List<LotteryConfig.Participant> participantConfigs) {
+    private List<Participant> registerParticipants(DrawRef drawRef, Lottery lottery, Notifier notifier,
+            LotteryHistory history, List<LotteryConfig.Participant> participantConfigs) throws IOException {
         List<Participant> participants = new ArrayList<>();
 
         // Add participants to the lottery as necessary.
@@ -112,6 +113,11 @@ public class LotteryService {
             if (lastNotificationToday.isPresent()) {
                 Log.debugf("Skipping user %s who has already been notified today (on %s)",
                         username, lastNotificationToday.get());
+                continue;
+            }
+
+            if (notifier.hasClosedDedicatedIssue(username)) {
+                Log.debugf("Skipping user %s whose dedicated issue is closed", username);
                 continue;
             }
 

@@ -1,7 +1,5 @@
 package io.quarkus.github.lottery.message;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.time.temporal.Temporal;
 import java.util.List;
 
@@ -15,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
+import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.qute.CheckedTemplate;
 import io.quarkus.qute.Qute;
 import io.quarkus.qute.TemplateExtension;
@@ -39,8 +38,8 @@ public class MessageFormatter {
         return Qute.fmt(" (updated {})", TemplateExtensions.localDate(report));
     }
 
-    public String formatNotificationBodyMarkdown(LotteryReport report) {
-        return Templates.notificationBody(report).render();
+    public String formatNotificationBodyMarkdown(LotteryReport report, GitHubRepositoryRef notificationRepoRef) {
+        return Templates.notificationBody(report, notificationRepoRef.repositoryName()).render();
     }
 
     public String formatHistoryTopicText(DrawRef drawRef) {
@@ -70,7 +69,7 @@ public class MessageFormatter {
         public static native TemplateInstance historyBody(DrawRef drawRef, List<LotteryReport.Serialized> reports,
                 String payload);
 
-        public static native TemplateInstance notificationBody(LotteryReport report);
+        public static native TemplateInstance notificationBody(LotteryReport report, String notificationRepositoryName);
 
     }
 

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -77,7 +78,9 @@ public class LotterySingleRepositoryTest {
     GitHubRepository repoMock;
     Clock clockMock;
     NotificationService notificationServiceMock;
+    Notifier notifierMock;
     HistoryService historyServiceMock;
+    LotteryHistory historyMock;
 
     GitHubInstallationRef installationRef;
     GitHubRepositoryRef repoRef;
@@ -86,6 +89,8 @@ public class LotterySingleRepositoryTest {
     Instant reproducerProvidedCutoff;
     Instant staleCutoff;
     DrawRef drawRef;
+
+    private Object[] mainMocks;
 
     @Inject
     LotteryService lotteryService;
@@ -100,6 +105,8 @@ public class LotterySingleRepositoryTest {
 
         repoMock = Mockito.mock(GitHubRepository.class);
         when(gitHubServiceMock.repository(repoRef)).thenReturn(repoMock);
+        doNothing().when(repoMock).close();
+        when(repoMock.ref()).thenReturn(repoRef);
 
         // Note tests below assume this is at least 1AM
         now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
@@ -112,20 +119,25 @@ public class LotterySingleRepositoryTest {
 
         notificationServiceMock = Mockito.mock(NotificationService.class);
         QuarkusMock.installMockForType(notificationServiceMock, NotificationService.class);
+        notifierMock = mock(Notifier.class);
+        when(notificationServiceMock.notifier(eq(drawRef), any())).thenReturn(notifierMock);
+        doNothing().when(notifierMock).close();
 
         historyServiceMock = Mockito.mock(HistoryService.class);
         QuarkusMock.installMockForType(historyServiceMock, HistoryService.class);
+        historyMock = mock(LotteryHistory.class);
+        when(historyServiceMock.fetch(eq(drawRef), any())).thenReturn(historyMock);
+
+        mainMocks = new Object[] {
+                gitHubServiceMock, repoMock,
+                notificationServiceMock, notifierMock,
+                historyServiceMock, historyMock
+        };
     }
 
-    @Test
-    void noConfig() throws IOException {
-        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.empty());
-
-        lotteryService.draw();
-
-        verify(repoMock).close();
-
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, historyServiceMock);
+    private void mockNotifiable(String username, ZoneId timezone) throws IOException {
+        when(historyMock.lastNotificationToday(username, timezone)).thenReturn(Optional.empty());
+        when(notifierMock.hasClosedDedicatedIssue(username)).thenReturn(false);
     }
 
     @Test
@@ -144,27 +156,22 @@ public class LotterySingleRepositoryTest {
                                         new LotteryConfig.Participant.Participation(2)),
                                 new LotteryConfig.Participant.Participation(5))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
-        when(repoMock.ref()).thenReturn(repoRef);
 
-        var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
-        var historyMock = mock(LotteryHistory.class);
-        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
 
         lotteryService.draw();
 
-        verify(repoMock).close();
-
         // The participant wants notifications on Tuesday, but we're Monday in UTC.
         // Nothing to do.
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, historyServiceMock);
+        verifyNoMoreInteractions(mainMocks);
     }
 
     @Test
     void days_differentDay_explicitTimezone() throws IOException {
+        var timezone = ZoneId.of("America/Los_Angeles");
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
-                        Optional.of(ZoneId.of("America/Los_Angeles")),
+                        Optional.of(timezone),
                         Optional.of(new LotteryConfig.Participant.Triage(
                                 Set.of(DayOfWeek.MONDAY),
                                 new LotteryConfig.Participant.Participation(3))),
@@ -176,12 +183,8 @@ public class LotterySingleRepositoryTest {
                                         new LotteryConfig.Participant.Participation(2)),
                                 new LotteryConfig.Participant.Participation(5))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
-        when(repoMock.ref()).thenReturn(repoRef);
 
-        var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
-        var historyMock = mock(LotteryHistory.class);
-        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
+        mockNotifiable("yrodiere", timezone);
 
         lotteryService.draw();
 
@@ -190,11 +193,41 @@ public class LotterySingleRepositoryTest {
         // The participant wants notifications on Monday, and we're Monday in UTC,
         // but still Sunday in Los Angeles.
         // Nothing to do.
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, historyServiceMock);
+        verifyNoMoreInteractions(mainMocks);
     }
 
     @Test
-    void triage_notNotifiedToday() throws IOException {
+    void alreadyNotifiedToday() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        Optional.of(new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3))),
+                        Optional.of(new LotteryConfig.Participant.Maintenance(
+                                List.of("area/hibernate-orm", "area/hibernate-search"),
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Maintenance.Reproducer(
+                                        new LotteryConfig.Participant.Participation(4),
+                                        new LotteryConfig.Participant.Participation(2)),
+                                new LotteryConfig.Participant.Participation(5))))));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+
+        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC))
+                .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.HOURS).atZone(ZoneOffset.UTC)));
+
+        lotteryService.draw();
+
+        verify(notifierMock).close();
+        verify(repoMock).close();
+
+        // The participant was already notified today.
+        // Nothing to do.
+        verifyNoMoreInteractions(mainMocks);
+    }
+
+    @Test
+    void closedDedicatedIssue() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
                         Optional.empty(),
@@ -205,14 +238,34 @@ public class LotterySingleRepositoryTest {
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
+        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        when(notifierMock.hasClosedDedicatedIssue("yrodiere")).thenReturn(true);
+
+        lotteryService.draw();
+
+        verify(repoMock).close();
+
+        // The participant closed their dedicated issues in the "notification" repository.
+        // Nothing to do.
+        verifyNoMoreInteractions(mainMocks);
+    }
+
+    @Test
+    void triage() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        Optional.of(new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3))),
+                        Optional.empty())));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+
         when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
-        var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
-        var historyMock = mock(LotteryHistory.class);
-        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+
         var historyTriageMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.triage()).thenReturn(historyTriageMock);
         when(historyTriageMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -231,12 +284,12 @@ public class LotterySingleRepositoryTest {
         verify(notifierMock).close();
         verify(repoMock).close();
 
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock,
-                historyServiceMock, historyMock, historyTriageMock);
+        verifyNoMoreInteractions(mainMocks);
+        verifyNoMoreInteractions(historyTriageMock);
     }
 
     @Test
-    void triage_notNotifiedToday_issueAlreadyHasNonTimedOutNotification() throws IOException {
+    void triage_issueAlreadyHasNonTimedOutNotification() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
                         Optional.empty(),
@@ -245,16 +298,12 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Participation(3))),
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
-        when(repoMock.ref()).thenReturn(repoRef);
 
         when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
-        var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
-        var historyMock = mock(LotteryHistory.class);
-        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+
         var historyTriageMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.triage()).thenReturn(historyTriageMock);
         when(historyTriageMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -276,48 +325,12 @@ public class LotterySingleRepositoryTest {
         verify(notifierMock).close();
         verify(repoMock).close();
 
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock,
-                historyServiceMock, historyMock, historyTriageMock);
+        verifyNoMoreInteractions(mainMocks);
+        verifyNoMoreInteractions(historyTriageMock);
     }
 
     @Test
-    void alreadyNotifiedToday() throws IOException {
-        var config = defaultConfig(List.of(
-                new LotteryConfig.Participant("yrodiere",
-                        Optional.empty(),
-                        Optional.of(new LotteryConfig.Participant.Triage(
-                                Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Participation(3))),
-                        Optional.of(new LotteryConfig.Participant.Maintenance(
-                                List.of("area/hibernate-orm", "area/hibernate-search"),
-                                Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Maintenance.Reproducer(
-                                        new LotteryConfig.Participant.Participation(4),
-                                        new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))))));
-        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
-        when(repoMock.ref()).thenReturn(repoRef);
-
-        var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
-        var historyMock = mock(LotteryHistory.class);
-        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC))
-                .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.HOURS).atZone(ZoneOffset.UTC)));
-
-        lotteryService.draw();
-
-        verify(notifierMock).close();
-        verify(repoMock).close();
-
-        // The participant was already notified today.
-        // Nothing to do.
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock,
-                historyServiceMock, historyMock);
-    }
-
-    @Test
-    void maintenance_notNotifiedToday() throws IOException {
+    void maintenance() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
                         Optional.empty(),
@@ -330,7 +343,6 @@ public class LotterySingleRepositoryTest {
                                         new LotteryConfig.Participant.Participation(2)),
                                 new LotteryConfig.Participant.Participation(5))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
-        when(repoMock.ref()).thenReturn(repoRef);
 
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
                 "area/hibernate-orm", IssueActionSide.TEAM, reproducerNeededCutoff))
@@ -350,11 +362,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(601, 602, 603, 604, 605, 606).stream());
 
-        var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
-        var historyMock = mock(LotteryHistory.class);
-        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+
         var historyReproducerNeededMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.reproducerNeeded()).thenReturn(historyReproducerNeededMock);
         when(historyReproducerNeededMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -383,13 +392,12 @@ public class LotterySingleRepositoryTest {
         verify(notifierMock).close();
         verify(repoMock).close();
 
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock,
-                historyServiceMock, historyMock,
-                historyReproducerNeededMock, historyReproducerProvidedMock, historyStaleMock);
+        verifyNoMoreInteractions(mainMocks);
+        verifyNoMoreInteractions(historyReproducerNeededMock, historyReproducerProvidedMock, historyStaleMock);
     }
 
     @Test
-    void maintenance_notNotifiedToday_issueAlreadyHasTimedOutNotification() throws IOException {
+    void maintenance_issueAlreadyHasTimedOutNotification() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
                         Optional.empty(),
@@ -402,7 +410,6 @@ public class LotterySingleRepositoryTest {
                                         new LotteryConfig.Participant.Participation(2)),
                                 new LotteryConfig.Participant.Participation(5))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
-        when(repoMock.ref()).thenReturn(repoRef);
 
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
                 "area/hibernate-orm", IssueActionSide.TEAM, reproducerNeededCutoff))
@@ -422,11 +429,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(601, 602, 603, 604, 605, 606).stream());
 
-        var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
-        var historyMock = mock(LotteryHistory.class);
-        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+
         var historyReproducerNeededMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.reproducerNeeded()).thenReturn(historyReproducerNeededMock);
         when(historyReproducerNeededMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -460,9 +464,8 @@ public class LotterySingleRepositoryTest {
         verify(notifierMock).close();
         verify(repoMock).close();
 
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock,
-                historyServiceMock, historyMock,
-                historyReproducerNeededMock, historyReproducerProvidedMock, historyStaleMock);
+        verifyNoMoreInteractions(mainMocks);
+        verifyNoMoreInteractions(historyReproducerNeededMock, historyReproducerProvidedMock, historyStaleMock);
     }
 
     @RepeatedTest(10) // Just to be reasonably certain that issues are spread evenly
@@ -481,17 +484,13 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Participation(10))),
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
-        when(repoMock.ref()).thenReturn(repoRef);
 
         when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
-        var notifierMock = mock(Notifier.class);
-        when(notificationServiceMock.notifier(drawRef, config.notifications())).thenReturn(notifierMock);
-        var historyMock = mock(LotteryHistory.class);
-        when(historyServiceMock.fetch(drawRef, config)).thenReturn(historyMock);
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
-        when(historyMock.lastNotificationToday("gsmet", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+        mockNotifiable("gsmet", ZoneOffset.UTC);
+
         var historyTriageMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.triage()).thenReturn(historyTriageMock);
         when(historyTriageMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -507,8 +506,7 @@ public class LotterySingleRepositoryTest {
         verify(notifierMock).close();
         verify(repoMock).close();
 
-        verifyNoMoreInteractions(gitHubServiceMock, repoMock, notificationServiceMock, notifierMock,
-                historyServiceMock, historyMock);
+        verifyNoMoreInteractions(mainMocks);
 
         for (var report : reports) {
             assertThat(report.triage()).isNotEmpty();

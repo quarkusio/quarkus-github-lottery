@@ -570,6 +570,7 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
@@ -615,6 +616,7 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -655,6 +657,7 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -708,6 +711,7 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verify(queryCommentsBuilderMock).since(Date.from(since));
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock, queryCommentsBuilderMock);
@@ -769,6 +773,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
 
                     verify(queryCommentsBuilderMock).since(Date.from(now.minus(21, ChronoUnit.DAYS)));
                     var mapCaptor = ArgumentCaptor.forClass(Map.class);
@@ -838,6 +843,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("quarkus-github-lottery[bot]");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
 
                     verify(queryCommentsBuilderMock).since(Date.from(now.minus(21, ChronoUnit.DAYS)));
                     var mapCaptor = ArgumentCaptor.forClass(Map.class);
@@ -907,6 +913,7 @@ public class GitHubServiceTest {
                 .then().github(mocks -> {
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
 
                     verify(mocks.issue(2)).setTitle("yrodiere's report for quarkusio/quarkus (updated 2017-11-06T06:00:00Z)");
                     verify(mocks.issue(2)).reopen();
@@ -957,12 +964,124 @@ public class GitHubServiceTest {
 
                     verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
                     verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
                     verify(repositoryMock)
                             .createIssue("yrodiere's report for quarkusio/quarkus (updated 2017-11-06T06:00:00Z)");
                     verify(issueBuilderMock).assignee("yrodiere");
                     verify(issueBuilderMock).body("This issue is dedicated to yrodiere's report for quarkusio/quarkus.");
                     verifyNoMoreInteractions(queryIssuesBuilderMock, issueBuilderMock);
                     verify(mocks.issue(2)).comment("Some content");
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
+    void hasClosedDedicatedIssue_dedicatedIssueExists_open() throws Exception {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
+
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        var clockMock = Clock.fixed(now, ZoneOffset.UTC);
+        QuarkusMock.installMockForType(clockMock, Clock.class);
+
+        var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+
+        given()
+                .github(mocks -> {
+                    var repositoryMock = mocks.repository(repoRef.repositoryName());
+
+                    when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
+                    var issue2Mock = mockIssueForNotification(mocks, 2,
+                            "yrodiere's report for quarkusio/quarkus (updated 2017-11-05T06:00:00Z)");
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
+
+                    when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.hasClosedDedicatedIssue("yrodiere", "yrodiere's report for quarkusio/quarkus"))
+                            .isFalse();
+                })
+                .then().github(mocks -> {
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
+
+                    verifyNoMoreInteractions(queryIssuesBuilderMock);
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
+    void hasClosedDedicatedIssue_dedicatedIssueExists_closed() throws Exception {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
+
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        var clockMock = Clock.fixed(now, ZoneOffset.UTC);
+        QuarkusMock.installMockForType(clockMock, Clock.class);
+
+        var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+
+        given()
+                .github(mocks -> {
+                    var repositoryMock = mocks.repository(repoRef.repositoryName());
+
+                    when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
+                    var issue2Mock = mockIssueForNotification(mocks, 2,
+                            "yrodiere's report for quarkusio/quarkus (updated 2017-11-05T06:00:00Z)");
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
+
+                    when(issue2Mock.getState()).thenReturn(GHIssueState.CLOSED);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.hasClosedDedicatedIssue("yrodiere", "yrodiere's report for quarkusio/quarkus"))
+                            .isTrue();
+                })
+                .then().github(mocks -> {
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
+
+                    verifyNoMoreInteractions(queryIssuesBuilderMock);
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
+    void hasClosedDedicatedIssue_dedicatedIssueDoesNotExist() throws IOException {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
+        var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+
+        given()
+                .github(mocks -> {
+                    var repositoryMock = mocks.repository(repoRef.repositoryName());
+
+                    when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
+                    var issuesMocks = mockPagedIterable(issue1Mock);
+                    when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.hasClosedDedicatedIssue("yrodiere", "yrodiere's report for quarkusio/quarkus"))
+                            .isFalse();
+                })
+                .then().github(mocks -> {
+                    verify(queryIssuesBuilderMock).creator(installationRef.appLogin());
+                    verify(queryIssuesBuilderMock).assignee("yrodiere");
+                    verify(queryIssuesBuilderMock).state(GHIssueState.ALL);
+
+                    verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
     }

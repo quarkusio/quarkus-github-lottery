@@ -18,4 +18,4 @@ Hey @{report.username}, here's your report for {report.repositoryName} on {repor
 {/if}
 
 ---
-<sup>If you no longer want to receive these notifications, send a pull request to the GitHub repository `{report.repositoryName}` to remove the section relative to your username from the file `{github:configPath}`.</sup>
+<sup>If you no longer want to receive these notifications, just close [any issue assigned to you in the notification repository](https://github.com/{notificationRepositoryName}/issues/assigned/@me). Reopening the issue will resume the notifications.</sup>
