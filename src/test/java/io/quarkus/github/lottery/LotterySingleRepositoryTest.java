@@ -135,6 +135,11 @@ public class LotterySingleRepositoryTest {
         };
     }
 
+    private void mockNotifiable(String username, ZoneId timezone) throws IOException {
+        when(historyMock.lastNotificationToday(username, timezone)).thenReturn(Optional.empty());
+        when(notifierMock.hasClosedDedicatedIssue(username)).thenReturn(false);
+    }
+
     @Test
     void days_differentDay_defaultTimezone() throws IOException {
         var config = defaultConfig(List.of(
@@ -152,7 +157,7 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Participation(5))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
 
         lotteryService.draw();
 
@@ -179,7 +184,7 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Participation(5))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(historyMock.lastNotificationToday("yrodiere", timezone)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", timezone);
 
         lotteryService.draw();
 
@@ -222,6 +227,30 @@ public class LotterySingleRepositoryTest {
     }
 
     @Test
+    void closedDedicatedIssue() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        Optional.of(new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3))),
+                        Optional.empty())));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+        when(repoMock.ref()).thenReturn(repoRef);
+
+        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        when(notifierMock.hasClosedDedicatedIssue("yrodiere")).thenReturn(true);
+
+        lotteryService.draw();
+
+        verify(repoMock).close();
+
+        // The participant closed their dedicated issues in the "notification" repository.
+        // Nothing to do.
+        verifyNoMoreInteractions(mainMocks);
+    }
+
+    @Test
     void triage() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
@@ -235,7 +264,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+
         var historyTriageMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.triage()).thenReturn(historyTriageMock);
         when(historyTriageMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -272,7 +302,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+
         var historyTriageMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.triage()).thenReturn(historyTriageMock);
         when(historyTriageMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -331,7 +362,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(601, 602, 603, 604, 605, 606).stream());
 
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+
         var historyReproducerNeededMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.reproducerNeeded()).thenReturn(historyReproducerNeededMock);
         when(historyReproducerNeededMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -397,7 +429,8 @@ public class LotterySingleRepositoryTest {
         when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(601, 602, 603, 604, 605, 606).stream());
 
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+
         var historyReproducerNeededMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.reproducerNeeded()).thenReturn(historyReproducerNeededMock);
         when(historyReproducerNeededMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -455,8 +488,9 @@ public class LotterySingleRepositoryTest {
         when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
-        when(historyMock.lastNotificationToday("gsmet", ZoneOffset.UTC)).thenReturn(Optional.empty());
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+        mockNotifiable("gsmet", ZoneOffset.UTC);
+
         var historyTriageMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.triage()).thenReturn(historyTriageMock);
         when(historyTriageMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);

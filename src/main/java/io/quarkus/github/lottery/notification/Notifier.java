@@ -24,10 +24,19 @@ public class Notifier implements AutoCloseable {
         notificationRepository.close();
     }
 
+    public boolean hasClosedDedicatedIssue(String username) throws IOException {
+        String topic = formatter.formatNotificationTopicText(drawRef, username);
+        return notificationRepository.hasClosedDedicatedIssue(username, topic);
+    }
+
     public void send(LotteryReport report) throws IOException {
-        String topic = formatter.formatNotificationTopicText(report.drawRef(), report.username());
+        if (!drawRef.equals(report.drawRef())) {
+            throw new IllegalStateException("Cannot send reports for different draws; expected '" + drawRef
+                    + "', got '" + report.drawRef() + "'.");
+        }
+        String topic = formatter.formatNotificationTopicText(drawRef, report.username());
         String topicSuffix = formatter.formatNotificationTopicSuffixText(report);
-        String body = formatter.formatNotificationBodyMarkdown(report);
+        String body = formatter.formatNotificationBodyMarkdown(report, notificationRepository.ref());
         notificationRepository.commentOnDedicatedIssue(report.username(), topic, topicSuffix, body);
     }
 }

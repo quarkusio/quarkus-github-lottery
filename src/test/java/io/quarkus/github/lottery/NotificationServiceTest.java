@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery;
 
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -63,12 +64,38 @@ public class NotificationServiceTest {
     }
 
     @Test
-    void simple() throws IOException {
+    void hasClosedDedicatedIssue() throws IOException {
         var config = new LotteryConfig.Notifications(
                 new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports"));
 
         var notificationRepoRef = new GitHubRepositoryRef(installationRef, config.createIssues().repository());
         when(gitHubServiceMock.repository(notificationRepoRef)).thenReturn(notificationRepoMock);
+
+        Notifier notifier = notificationService.notifier(drawRef, config);
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
+
+        when(messageFormatterMock.formatNotificationTopicText(drawRef, "yrodiere"))
+                .thenReturn("yrodiere's report for quarkusio/quarkus");
+
+        when(notificationRepoMock.hasClosedDedicatedIssue("yrodiere", "yrodiere's report for quarkusio/quarkus"))
+                .thenReturn(true);
+        assertThat(notifier.hasClosedDedicatedIssue("yrodiere")).isTrue();
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
+
+        when(notificationRepoMock.hasClosedDedicatedIssue("yrodiere", "yrodiere's report for quarkusio/quarkus"))
+                .thenReturn(false);
+        assertThat(notifier.hasClosedDedicatedIssue("yrodiere")).isFalse();
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
+    }
+
+    @Test
+    void send() throws IOException {
+        var config = new LotteryConfig.Notifications(
+                new LotteryConfig.Notifications.CreateIssuesConfig("quarkusio/quarkus-lottery-reports"));
+
+        var notificationRepoRef = new GitHubRepositoryRef(installationRef, config.createIssues().repository());
+        when(gitHubServiceMock.repository(notificationRepoRef)).thenReturn(notificationRepoMock);
+        when(notificationRepoMock.ref()).thenReturn(notificationRepoRef);
 
         Notifier notifier = notificationService.notifier(drawRef, config);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
@@ -81,7 +108,8 @@ public class NotificationServiceTest {
                 .thenReturn("yrodiere's report for quarkusio/quarkus");
         when(messageFormatterMock.formatNotificationTopicSuffixText(lotteryReport1))
                 .thenReturn(" (updated 2017-11-06T06:00:00Z)");
-        when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport1)).thenReturn(markdownNotification1);
+        when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport1, notificationRepoRef))
+                .thenReturn(markdownNotification1);
         notifier.send(lotteryReport1);
         verify(notificationRepoMock).commentOnDedicatedIssue("yrodiere", "yrodiere's report for quarkusio/quarkus",
                 " (updated 2017-11-06T06:00:00Z)", markdownNotification1);
@@ -97,7 +125,8 @@ public class NotificationServiceTest {
                 .thenReturn("gsmet's report for quarkusio/quarkus");
         when(messageFormatterMock.formatNotificationTopicSuffixText(lotteryReport2))
                 .thenReturn(" (updated 2017-11-06T06:00:00Z)");
-        when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport2)).thenReturn(markdownNotification2);
+        when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport2, notificationRepoRef))
+                .thenReturn(markdownNotification2);
         notifier.send(lotteryReport2);
         verify(notificationRepoMock).commentOnDedicatedIssue("gsmet", "gsmet's report for quarkusio/quarkus",
                 " (updated 2017-11-06T06:00:00Z)", markdownNotification2);

@@ -206,6 +206,14 @@ for each notification.
 +
 Integer, mandatory, no default.
 
+[[participants-suspending]]
+=== Suspending notifications
+
+You can suspend notifications (temporarily or forever) simply by closing the dedicated GitHub issue
+created for you in the "notification" repository.
+
+See the footnote in the notifications you receive.
+
 [[admins]]
 == Admins: how to install and initialize configuration
 

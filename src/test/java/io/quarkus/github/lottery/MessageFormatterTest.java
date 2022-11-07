@@ -32,6 +32,7 @@ public class MessageFormatterTest {
     GitHubInstallationRef installationRef;
     GitHubRepositoryRef repoRef;
     DrawRef drawRef;
+    GitHubRepositoryRef notificationRepoRef;
 
     @Inject
     MessageFormatter messageFormatter;
@@ -42,6 +43,7 @@ public class MessageFormatterTest {
         repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
         var now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         drawRef = new DrawRef(repoRef, now);
+        notificationRepoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-github-lottery-reports");
     }
 
     @Test
@@ -71,19 +73,19 @@ public class MessageFormatterTest {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(List.of())),
                 Optional.empty(), Optional.empty(), Optional.empty());
-        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
-                .isEqualTo("""
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
+                .isEqualTo(
+                        """
+                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                        # Triage
-                        No issues in this category this time.
+                                # Triage
+                                No issues in this category this time.
 
-                        ---
-                        <sup>If you no longer want to receive these notifications, \
-                        send a pull request to the GitHub repository `quarkusio/quarkus` \
-                        to remove the section relative to your username from the file \
-                        `/.github/quarkus-github-lottery.yml`.</sup>
-                        """);
+                                ---
+                                <sup>If you no longer want to receive these notifications, \
+                                just close [any issue assigned to you in the notification repository](https://github.com/quarkusio/quarkus-github-lottery-reports/issues/assigned/@me). \
+                                Reopening the issue will resume the notifications.</sup>
+                                """);
     }
 
     @Test
@@ -91,20 +93,20 @@ public class MessageFormatterTest {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.empty(), Optional.empty(), Optional.empty());
-        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
-                .isEqualTo("""
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
+                .isEqualTo(
+                        """
+                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                        # Triage
-                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
-                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
+                                # Triage
+                                 - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
+                                 - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
 
-                        ---
-                        <sup>If you no longer want to receive these notifications, \
-                        send a pull request to the GitHub repository `quarkusio/quarkus` \
-                        to remove the section relative to your username from the file \
-                        `/.github/quarkus-github-lottery.yml`.</sup>
-                        """);
+                                ---
+                                <sup>If you no longer want to receive these notifications, \
+                                just close [any issue assigned to you in the notification repository](https://github.com/quarkusio/quarkus-github-lottery-reports/issues/assigned/@me). \
+                                Reopening the issue will resume the notifications.</sup>
+                                """);
     }
 
     @Test
@@ -114,23 +116,23 @@ public class MessageFormatterTest {
                 Optional.of(new LotteryReport.Bucket(List.of())),
                 Optional.of(new LotteryReport.Bucket(List.of())),
                 Optional.of(new LotteryReport.Bucket(List.of())));
-        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
-                .isEqualTo("""
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
+                .isEqualTo(
+                        """
+                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                        # Reproducer needed
-                        No issues in this category this time.
-                        # Reproducer provided
-                        No issues in this category this time.
-                        # Stale
-                        No issues in this category this time.
+                                # Reproducer needed
+                                No issues in this category this time.
+                                # Reproducer provided
+                                No issues in this category this time.
+                                # Stale
+                                No issues in this category this time.
 
-                        ---
-                        <sup>If you no longer want to receive these notifications, \
-                        send a pull request to the GitHub repository `quarkusio/quarkus` \
-                        to remove the section relative to your username from the file \
-                        `/.github/quarkus-github-lottery.yml`.</sup>
-                        """);
+                                ---
+                                <sup>If you no longer want to receive these notifications, \
+                                just close [any issue assigned to you in the notification repository](https://github.com/quarkusio/quarkus-github-lottery-reports/issues/assigned/@me). \
+                                Reopening the issue will resume the notifications.</sup>
+                                """);
     }
 
     @Test
@@ -140,24 +142,24 @@ public class MessageFormatterTest {
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.of(new LotteryReport.Bucket(List.of())),
                 Optional.of(new LotteryReport.Bucket(List.of())));
-        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
-                .isEqualTo("""
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
+                .isEqualTo(
+                        """
+                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                        # Reproducer needed
-                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
-                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                        # Reproducer provided
-                        No issues in this category this time.
-                        # Stale
-                        No issues in this category this time.
+                                # Reproducer needed
+                                 - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
+                                 - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
+                                # Reproducer provided
+                                No issues in this category this time.
+                                # Stale
+                                No issues in this category this time.
 
-                        ---
-                        <sup>If you no longer want to receive these notifications, \
-                        send a pull request to the GitHub repository `quarkusio/quarkus` \
-                        to remove the section relative to your username from the file \
-                        `/.github/quarkus-github-lottery.yml`.</sup>
-                        """);
+                                ---
+                                <sup>If you no longer want to receive these notifications, \
+                                just close [any issue assigned to you in the notification repository](https://github.com/quarkusio/quarkus-github-lottery-reports/issues/assigned/@me). \
+                                Reopening the issue will resume the notifications.</sup>
+                                """);
     }
 
     @Test
@@ -167,26 +169,26 @@ public class MessageFormatterTest {
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(2, 7))));
-        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
-                .isEqualTo("""
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
+                .isEqualTo(
+                        """
+                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                        # Reproducer needed
-                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
-                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                        # Reproducer provided
-                         - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
-                         - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
-                        # Stale
-                         - [#2](http://github.com/quarkusio/quarkus/issues/2) Title for issue 2
-                         - [#7](http://github.com/quarkusio/quarkus/issues/7) Title for issue 7
+                                # Reproducer needed
+                                 - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
+                                 - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
+                                # Reproducer provided
+                                 - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
+                                 - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
+                                # Stale
+                                 - [#2](http://github.com/quarkusio/quarkus/issues/2) Title for issue 2
+                                 - [#7](http://github.com/quarkusio/quarkus/issues/7) Title for issue 7
 
-                        ---
-                        <sup>If you no longer want to receive these notifications, \
-                        send a pull request to the GitHub repository `quarkusio/quarkus` \
-                        to remove the section relative to your username from the file \
-                        `/.github/quarkus-github-lottery.yml`.</sup>
-                        """);
+                                ---
+                                <sup>If you no longer want to receive these notifications, \
+                                just close [any issue assigned to you in the notification repository](https://github.com/quarkusio/quarkus-github-lottery-reports/issues/assigned/@me). \
+                                Reopening the issue will resume the notifications.</sup>
+                                """);
     }
 
     @Test
@@ -196,29 +198,29 @@ public class MessageFormatterTest {
                 Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(2, 7))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(8, 9))));
-        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
-                .isEqualTo("""
-                        Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
+                .isEqualTo(
+                        """
+                                Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                        # Triage
-                         - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
-                         - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                        # Reproducer needed
-                         - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
-                         - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
-                        # Reproducer provided
-                         - [#2](http://github.com/quarkusio/quarkus/issues/2) Title for issue 2
-                         - [#7](http://github.com/quarkusio/quarkus/issues/7) Title for issue 7
-                        # Stale
-                         - [#8](http://github.com/quarkusio/quarkus/issues/8) Title for issue 8
-                         - [#9](http://github.com/quarkusio/quarkus/issues/9) Title for issue 9
+                                # Triage
+                                 - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
+                                 - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
+                                # Reproducer needed
+                                 - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
+                                 - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
+                                # Reproducer provided
+                                 - [#2](http://github.com/quarkusio/quarkus/issues/2) Title for issue 2
+                                 - [#7](http://github.com/quarkusio/quarkus/issues/7) Title for issue 7
+                                # Stale
+                                 - [#8](http://github.com/quarkusio/quarkus/issues/8) Title for issue 8
+                                 - [#9](http://github.com/quarkusio/quarkus/issues/9) Title for issue 9
 
-                        ---
-                        <sup>If you no longer want to receive these notifications, \
-                        send a pull request to the GitHub repository `quarkusio/quarkus` \
-                        to remove the section relative to your username from the file \
-                        `/.github/quarkus-github-lottery.yml`.</sup>
-                        """);
+                                ---
+                                <sup>If you no longer want to receive these notifications, \
+                                just close [any issue assigned to you in the notification repository](https://github.com/quarkusio/quarkus-github-lottery-reports/issues/assigned/@me). \
+                                Reopening the issue will resume the notifications.</sup>
+                                """);
     }
 
     @Test
@@ -226,7 +228,7 @@ public class MessageFormatterTest {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
                 Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty());
-        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport))
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .startsWith("""
                         Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-05.
                         """);

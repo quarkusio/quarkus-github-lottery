@@ -182,6 +182,22 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     /**
+     * Checks whether an issue identified by its assignee and topic (title prefix) exists, but has been closed.
+     *
+     * @param assignee The GitHub username of issue assignee.
+     * @param topic The issue's topic, a string that should be prefixed to the issue title.
+     *
+     * @throws IOException If a GitHub API call fails.
+     * @throws java.io.UncheckedIOException If a GitHub API call fails.
+     * @see #commentOnDedicatedIssue(String, String, String, String)
+     */
+    public boolean hasClosedDedicatedIssue(String assignee, String topic)
+            throws IOException {
+        var existingIssue = getDedicatedIssue(assignee, topic);
+        return existingIssue.isPresent() && GHIssueState.CLOSED.equals(existingIssue.get().getState());
+    }
+
+    /**
      * Adds a comment to an issue identified by its assignee and topic (title prefix).
      *
      * @param assignee The GitHub username of issue assignee.
