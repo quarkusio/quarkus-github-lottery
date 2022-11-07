@@ -192,7 +192,37 @@ public class LotterySingleRepositoryTest {
     }
 
     @Test
-    void triage_notNotifiedToday() throws IOException {
+    void alreadyNotifiedToday() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        Optional.of(new LotteryConfig.Participant.Triage(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3))),
+                        Optional.of(new LotteryConfig.Participant.Maintenance(
+                                List.of("area/hibernate-orm", "area/hibernate-search"),
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Maintenance.Reproducer(
+                                        new LotteryConfig.Participant.Participation(4),
+                                        new LotteryConfig.Participant.Participation(2)),
+                                new LotteryConfig.Participant.Participation(5))))));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+
+        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC))
+                .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.HOURS).atZone(ZoneOffset.UTC)));
+
+        lotteryService.draw();
+
+        verify(notifierMock).close();
+        verify(repoMock).close();
+
+        // The participant was already notified today.
+        // Nothing to do.
+        verifyNoMoreInteractions(mainMocks);
+    }
+
+    @Test
+    void triage() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
                         Optional.empty(),
@@ -229,7 +259,7 @@ public class LotterySingleRepositoryTest {
     }
 
     @Test
-    void triage_notNotifiedToday_issueAlreadyHasNonTimedOutNotification() throws IOException {
+    void triage_issueAlreadyHasNonTimedOutNotification() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
                         Optional.empty(),
@@ -269,37 +299,7 @@ public class LotterySingleRepositoryTest {
     }
 
     @Test
-    void alreadyNotifiedToday() throws IOException {
-        var config = defaultConfig(List.of(
-                new LotteryConfig.Participant("yrodiere",
-                        Optional.empty(),
-                        Optional.of(new LotteryConfig.Participant.Triage(
-                                Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Participation(3))),
-                        Optional.of(new LotteryConfig.Participant.Maintenance(
-                                List.of("area/hibernate-orm", "area/hibernate-search"),
-                                Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Maintenance.Reproducer(
-                                        new LotteryConfig.Participant.Participation(4),
-                                        new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))))));
-        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
-
-        when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC))
-                .thenReturn(Optional.of(drawRef.instant().minus(1, ChronoUnit.HOURS).atZone(ZoneOffset.UTC)));
-
-        lotteryService.draw();
-
-        verify(notifierMock).close();
-        verify(repoMock).close();
-
-        // The participant was already notified today.
-        // Nothing to do.
-        verifyNoMoreInteractions(mainMocks);
-    }
-
-    @Test
-    void maintenance_notNotifiedToday() throws IOException {
+    void maintenance() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
                         Optional.empty(),
@@ -365,7 +365,7 @@ public class LotterySingleRepositoryTest {
     }
 
     @Test
-    void maintenance_notNotifiedToday_issueAlreadyHasTimedOutNotification() throws IOException {
+    void maintenance_issueAlreadyHasTimedOutNotification() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
                         Optional.empty(),
