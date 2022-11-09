@@ -36,6 +36,7 @@ public class LotteryHistory {
     private final Bucket reproducerNeeded;
     private final Bucket reproducerProvided;
     private final Bucket stale;
+    private final Bucket stewardship;
 
     public LotteryHistory(Instant now, LotteryConfig.Buckets config) {
         this.now = now;
@@ -52,13 +53,16 @@ public class LotteryHistory {
         Instant reproducerProvidedNotificationTimeoutCutoff = now
                 .minus(config.maintenance().reproducer().provided().notification().timeout());
         Instant staleNotificationTimeoutCutoff = now.minus(config.maintenance().stale().notification().timeout());
+        Instant stewardshipNotificationTimeoutCutoff = now.minus(config.stewardship().notification().timeout());
         this.since = min(lastNotificationTodayCutoff, triageNotificationTimeoutCutoff,
                 reproducerNeededNotificationTimeoutCutoff, reproducerProvidedNotificationTimeoutCutoff,
-                staleNotificationTimeoutCutoff);
+                staleNotificationTimeoutCutoff,
+                stewardshipNotificationTimeoutCutoff);
         this.triage = new Bucket(triageNotificationTimeoutCutoff);
         this.reproducerNeeded = new Bucket(reproducerNeededNotificationTimeoutCutoff);
         this.reproducerProvided = new Bucket(reproducerProvidedNotificationTimeoutCutoff);
         this.stale = new Bucket(staleNotificationTimeoutCutoff);
+        this.stewardship = new Bucket(stewardshipNotificationTimeoutCutoff);
     }
 
     Instant since() {
@@ -96,6 +100,10 @@ public class LotteryHistory {
 
     public Bucket stale() {
         return stale;
+    }
+
+    public Bucket stewardship() {
+        return stewardship;
     }
 
     public static class Bucket {

@@ -18,6 +18,10 @@ Here are the reports for {drawRef.repositoryName} on {drawRef.instant}.
 ## Stale
 {#include MessageFormatter/historyBodyBucketContent bucket=report.stale.get() /}
 {/if}
+{#if report.stewardship.present}
+## Stewardship
+{#include MessageFormatter/historyBodyBucketContent bucket=report.stewardship.get() /}
+{/if}
 
 {/for}
 {payload}

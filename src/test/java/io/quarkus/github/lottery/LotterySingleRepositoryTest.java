@@ -70,7 +70,9 @@ public class LotterySingleRepositoryTest {
                                         new LotteryConfig.Buckets.Maintenance.Reproducer.Provided(
                                                 Duration.ofDays(7), Duration.ofDays(3))),
                                 new LotteryConfig.Buckets.Maintenance.Stale(
-                                        Duration.ofDays(60), Duration.ofDays(14)))),
+                                        Duration.ofDays(60), Duration.ofDays(14))),
+                        new LotteryConfig.Buckets.Stewardship(
+                                Duration.ofDays(60), Duration.ofDays(14))),
                 participants);
     }
 
@@ -88,6 +90,7 @@ public class LotterySingleRepositoryTest {
     Instant reproducerNeededCutoff;
     Instant reproducerProvidedCutoff;
     Instant staleCutoff;
+    Instant stewardshipCutoff;
     DrawRef drawRef;
 
     private Object[] mainMocks;
@@ -113,6 +116,7 @@ public class LotterySingleRepositoryTest {
         reproducerNeededCutoff = now.minus(21, ChronoUnit.DAYS);
         reproducerProvidedCutoff = now.minus(7, ChronoUnit.DAYS);
         staleCutoff = now.minus(60, ChronoUnit.DAYS);
+        stewardshipCutoff = now.minus(60, ChronoUnit.DAYS);
         drawRef = new DrawRef(repoRef, now);
         clockMock = Clock.fixed(drawRef.instant(), ZoneOffset.UTC);
         QuarkusMock.installMockForType(clockMock, Clock.class);
@@ -154,7 +158,10 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Maintenance.Reproducer(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))))));
+                                new LotteryConfig.Participant.Participation(5))),
+                        Optional.of(new LotteryConfig.Participant.Stewardship(
+                                Set.of(DayOfWeek.TUESDAY),
+                                new LotteryConfig.Participant.Participation(10))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
         mockNotifiable("yrodiere", ZoneOffset.UTC);
@@ -181,7 +188,10 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Maintenance.Reproducer(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))))));
+                                new LotteryConfig.Participant.Participation(5))),
+                        Optional.of(new LotteryConfig.Participant.Stewardship(
+                                Set.of(DayOfWeek.TUESDAY),
+                                new LotteryConfig.Participant.Participation(10))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
         mockNotifiable("yrodiere", timezone);
@@ -210,7 +220,10 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Maintenance.Reproducer(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))))));
+                                new LotteryConfig.Participant.Participation(5))),
+                        Optional.of(new LotteryConfig.Participant.Stewardship(
+                                Set.of(DayOfWeek.TUESDAY),
+                                new LotteryConfig.Participant.Participation(10))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
         when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC))
@@ -234,7 +247,16 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Triage(
                                 Set.of(DayOfWeek.MONDAY),
                                 new LotteryConfig.Participant.Participation(3))),
-                        Optional.empty())));
+                        Optional.of(new LotteryConfig.Participant.Maintenance(
+                                List.of("area/hibernate-orm", "area/hibernate-search"),
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Maintenance.Reproducer(
+                                        new LotteryConfig.Participant.Participation(4),
+                                        new LotteryConfig.Participant.Participation(2)),
+                                new LotteryConfig.Participant.Participation(5))),
+                        Optional.of(new LotteryConfig.Participant.Stewardship(
+                                Set.of(DayOfWeek.TUESDAY),
+                                new LotteryConfig.Participant.Participation(10))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
         when(repoMock.ref()).thenReturn(repoRef);
 
@@ -258,6 +280,7 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Triage(
                                 Set.of(DayOfWeek.MONDAY),
                                 new LotteryConfig.Participant.Participation(3))),
+                        Optional.empty(),
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
@@ -274,12 +297,14 @@ public class LotterySingleRepositoryTest {
 
         verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3, 2))),
-                Optional.empty(), Optional.empty(), Optional.empty()));
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty()));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 3, 2))),
-                        Optional.empty(), Optional.empty(), Optional.empty())));
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty())));
 
         verify(notifierMock).close();
         verify(repoMock).close();
@@ -296,6 +321,7 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Triage(
                                 Set.of(DayOfWeek.MONDAY),
                                 new LotteryConfig.Participant.Participation(3))),
+                        Optional.empty(),
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
@@ -315,12 +341,14 @@ public class LotterySingleRepositoryTest {
         // it will be skipped and we'll notify about another issue.
         verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 2, 4))),
-                Optional.empty(), Optional.empty(), Optional.empty()));
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty()));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2, 4))),
-                        Optional.empty(), Optional.empty(), Optional.empty())));
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty())));
 
         verify(notifierMock).close();
         verify(repoMock).close();
@@ -341,7 +369,8 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Maintenance.Reproducer(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))))));
+                                new LotteryConfig.Participant.Participation(5))),
+                        Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
@@ -380,14 +409,16 @@ public class LotterySingleRepositoryTest {
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(101, 401, 102, 402))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(201, 501))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(301, 601, 302, 602, 303)))));
+                Optional.of(new LotteryReport.Bucket(stubIssueList(301, 601, 302, 602, 303))),
+                Optional.empty()));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(101, 401, 102, 402))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(201, 501))),
-                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(301, 601, 302, 602, 303))))));
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(301, 601, 302, 602, 303))),
+                        Optional.empty())));
 
         verify(notifierMock).close();
         verify(repoMock).close();
@@ -408,7 +439,8 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Maintenance.Reproducer(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))))));
+                                new LotteryConfig.Participant.Participation(5))),
+                        Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
@@ -452,14 +484,191 @@ public class LotterySingleRepositoryTest {
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(101, 402, 102, 403))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(202, 501))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(301, 601, 303, 602, 304)))));
+                Optional.of(new LotteryReport.Bucket(stubIssueList(301, 601, 303, 602, 304))),
+                Optional.empty()));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(101, 402, 102, 403))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(202, 501))),
-                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(301, 601, 303, 602, 304))))));
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(301, 601, 303, 602, 304))),
+                        Optional.empty())));
+
+        verify(notifierMock).close();
+        verify(repoMock).close();
+
+        verifyNoMoreInteractions(mainMocks);
+        verifyNoMoreInteractions(historyReproducerNeededMock, historyReproducerProvidedMock, historyStaleMock);
+    }
+
+    @Test
+    void stewardship() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("geoand",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new LotteryConfig.Participant.Stewardship(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3))))));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+
+        when(repoMock.issuesLastUpdatedBefore(stewardshipCutoff))
+                .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
+
+        mockNotifiable("geoand", ZoneOffset.UTC);
+
+        var historyStewardshipMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.stewardship()).thenReturn(historyStewardshipMock);
+        when(historyStewardshipMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
+
+        lotteryService.draw();
+
+        verify(notifierMock).send(new LotteryReport(drawRef, "geoand", Optional.empty(),
+                Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3, 2)))));
+
+        verify(historyServiceMock).append(drawRef, config, List.of(
+                new LotteryReport.Serialized(drawRef.instant(), "geoand",
+                        Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 3, 2))))));
+
+        verify(notifierMock).close();
+        verify(repoMock).close();
+
+        verifyNoMoreInteractions(mainMocks);
+        verifyNoMoreInteractions(historyStewardshipMock);
+    }
+
+    @Test
+    void stewardship_issueAlreadyHasNonTimedOutNotification() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("geoand",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new LotteryConfig.Participant.Stewardship(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(3))))));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+
+        when(repoMock.issuesLastUpdatedBefore(stewardshipCutoff))
+                .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
+
+        mockNotifiable("geoand", ZoneOffset.UTC);
+
+        var historyStewardshipMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.stewardship()).thenReturn(historyStewardshipMock);
+        when(historyStewardshipMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
+        when(historyStewardshipMock.lastNotificationTimedOutForIssueNumber(3)).thenReturn(false);
+
+        lotteryService.draw();
+
+        // Since the last notification for issue with number 3 didn't time out yet,
+        // it will be skipped and we'll notify about another issue.
+        verify(notifierMock).send(new LotteryReport(drawRef, "geoand", Optional.empty(),
+                Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 2, 4)))));
+
+        verify(historyServiceMock).append(drawRef, config, List.of(
+                new LotteryReport.Serialized(drawRef.instant(), "geoand",
+                        Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2, 4))))));
+
+        verify(notifierMock).close();
+        verify(repoMock).close();
+
+        verifyNoMoreInteractions(mainMocks);
+        verifyNoMoreInteractions(historyStewardshipMock);
+    }
+
+    @Test
+    void stewardship_doesNotAffectMaintenance() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new LotteryConfig.Participant.Maintenance(
+                                List.of("area/hibernate-search"),
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Maintenance.Reproducer(
+                                        new LotteryConfig.Participant.Participation(4),
+                                        new LotteryConfig.Participant.Participation(2)),
+                                new LotteryConfig.Participant.Participation(5))),
+                        Optional.empty()),
+                new LotteryConfig.Participant("gsmet",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new LotteryConfig.Participant.Stewardship(
+                                Set.of(DayOfWeek.MONDAY),
+                                new LotteryConfig.Participant.Participation(10))))));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+                "area/hibernate-search", IssueActionSide.TEAM, reproducerNeededCutoff))
+                .thenAnswer(ignored -> stubIssueList(401, 402, 403, 404, 405).stream());
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+                "area/hibernate-search", IssueActionSide.OUTSIDER, reproducerProvidedCutoff))
+                .thenAnswer(ignored -> stubIssueList(501, 502, 503).stream());
+        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
+                .thenAnswer(ignored -> stubIssueList(601, 602, 603, 604, 605, 606).stream());
+
+        when(repoMock.issuesLastUpdatedBefore(stewardshipCutoff))
+                .thenAnswer(ignored -> stubIssueList(401, 501, 601, 701).stream());
+
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+        mockNotifiable("gsmet", ZoneOffset.UTC);
+
+        var historyReproducerNeededMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.reproducerNeeded()).thenReturn(historyReproducerNeededMock);
+        when(historyReproducerNeededMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
+        var historyReproducerProvidedMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.reproducerProvided()).thenReturn(historyReproducerProvidedMock);
+        when(historyReproducerProvidedMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
+        var historyStaleMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.stale()).thenReturn(historyStaleMock);
+        when(historyStaleMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
+        var historyStewardshipMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.stewardship()).thenReturn(historyStewardshipMock);
+        when(historyStewardshipMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
+
+        lotteryService.draw();
+
+        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                Optional.empty(),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(401, 402, 403, 404))),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(501, 502))),
+                // Notifications to stewards don't prevent notifications to maintainers
+                Optional.of(new LotteryReport.Bucket(stubIssueList(601, 602, 603, 604, 605))),
+                Optional.empty()));
+
+        verify(notifierMock).send(new LotteryReport(drawRef, "gsmet", Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                // Notifications to maintainers don't prevent notifications to stewards
+                Optional.of(new LotteryReport.Bucket(stubIssueList(401, 501, 601, 701)))));
+
+        verify(historyServiceMock).append(drawRef, config, List.of(
+                new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
+                        Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(401, 402, 403, 404))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(501, 502))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(601, 602, 603, 604, 605))),
+                        Optional.empty()),
+                new LotteryReport.Serialized(drawRef.instant(), "gsmet",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(401, 501, 601, 701))))));
 
         verify(notifierMock).close();
         verify(repoMock).close();
@@ -476,12 +685,14 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Triage(
                                 Set.of(DayOfWeek.MONDAY),
                                 new LotteryConfig.Participant.Participation(10))),
+                        Optional.empty(),
                         Optional.empty()),
                 new LotteryConfig.Participant("gsmet",
                         Optional.empty(),
                         Optional.of(new LotteryConfig.Participant.Triage(
                                 Set.of(DayOfWeek.MONDAY),
                                 new LotteryConfig.Participant.Participation(10))),
+                        Optional.empty(),
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 

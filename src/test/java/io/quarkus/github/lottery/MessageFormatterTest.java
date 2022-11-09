@@ -55,7 +55,8 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationTopicSuffixText() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
         assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
                 .isEqualTo(" (updated 2017-11-06T06:00:00Z)");
     }
@@ -63,7 +64,8 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationTopicSuffixText_exoticTimezone() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
         assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
                 .isEqualTo(" (updated 2017-11-05)");
     }
@@ -72,7 +74,8 @@ public class MessageFormatterTest {
     void formatNotificationBodyMarkdown_triage_empty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(List.of())),
-                Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -92,7 +95,8 @@ public class MessageFormatterTest {
     void formatNotificationBodyMarkdown_triage_simple() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
-                Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -115,7 +119,8 @@ public class MessageFormatterTest {
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(List.of())),
                 Optional.of(new LotteryReport.Bucket(List.of())),
-                Optional.of(new LotteryReport.Bucket(List.of())));
+                Optional.of(new LotteryReport.Bucket(List.of())),
+                Optional.empty());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -141,7 +146,8 @@ public class MessageFormatterTest {
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.of(new LotteryReport.Bucket(List.of())),
-                Optional.of(new LotteryReport.Bucket(List.of())));
+                Optional.of(new LotteryReport.Bucket(List.of())),
+                Optional.empty());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -168,7 +174,8 @@ public class MessageFormatterTest {
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(2, 7))));
+                Optional.of(new LotteryReport.Bucket(stubIssueList(2, 7))),
+                Optional.empty());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -192,12 +199,56 @@ public class MessageFormatterTest {
     }
 
     @Test
+    void formatNotificationBodyMarkdown_stewardship_empty() {
+        var lotteryReport = new LotteryReport(drawRef, "geoand", Optional.empty(),
+                Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.of(new LotteryReport.Bucket(List.of())));
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
+                .isEqualTo(
+                        """
+                                Hey @geoand, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+
+                                # Stewardship
+                                No issues in this category this time.
+
+                                ---
+                                <sup>If you no longer want to receive these notifications, \
+                                just close [any issue assigned to you in the notification repository](https://github.com/quarkusio/quarkus-github-lottery-reports/issues/assigned/@me). \
+                                Reopening the issue will resume the notifications.</sup>
+                                """);
+    }
+
+    @Test
+    void formatNotificationBodyMarkdown_stewardship_simple() {
+        var lotteryReport = new LotteryReport(drawRef, "geoand", Optional.empty(),
+                Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))));
+        assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
+                .isEqualTo(
+                        """
+                                Hey @geoand, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
+
+                                # Stewardship
+                                 - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
+                                 - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
+
+                                ---
+                                <sup>If you no longer want to receive these notifications, \
+                                just close [any issue assigned to you in the notification repository](https://github.com/quarkusio/quarkus-github-lottery-reports/issues/assigned/@me). \
+                                Reopening the issue will resume the notifications.</sup>
+                                """);
+    }
+
+    @Test
     void formatNotificationBodyMarkdown_all() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(2, 7))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(8, 9))));
+                Optional.of(new LotteryReport.Bucket(stubIssueList(8, 9))),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(10, 11))));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -215,6 +266,9 @@ public class MessageFormatterTest {
                                 # Stale
                                  - [#8](http://github.com/quarkusio/quarkus/issues/8) Title for issue 8
                                  - [#9](http://github.com/quarkusio/quarkus/issues/9) Title for issue 9
+                                # Stewardship
+                                 - [#10](http://github.com/quarkusio/quarkus/issues/10) Title for issue 10
+                                 - [#11](http://github.com/quarkusio/quarkus/issues/11) Title for issue 11
 
                                 ---
                                 <sup>If you no longer want to receive these notifications, \
@@ -227,7 +281,8 @@ public class MessageFormatterTest {
     void formatNotificationBodyMarkdown_exoticTimezone() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
                 Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .startsWith("""
                         Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-05.
@@ -245,23 +300,32 @@ public class MessageFormatterTest {
         var lotteryReports = List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 3))),
-                        Optional.empty(), Optional.empty(), Optional.empty()),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "gsmet",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(2, 4))),
-                        Optional.empty(), Optional.empty(), Optional.empty()),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "rick",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of())),
-                        Optional.empty(), Optional.empty(), Optional.empty()),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "jane",
                         Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(7, 8))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(9))),
-                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(10, 11, 12)))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(10, 11, 12))),
+                        Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "jsmith",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(25, 26))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(27, 28))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(29))),
-                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(30, 31, 32)))));
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(30, 31, 32))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(41, 42)))),
+                new LotteryReport.Serialized(drawRef.instant(), "geoand",
+                        Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(51, 52)))));
         String formatted = messageFormatter.formatHistoryBodyMarkdown(drawRef, lotteryReports);
         assertThat(formatted)
                 .startsWith("""
@@ -305,6 +369,14 @@ public class MessageFormatterTest {
                          - quarkusio/quarkus#30
                          - quarkusio/quarkus#31
                          - quarkusio/quarkus#32
+                        ## Stewardship
+                         - quarkusio/quarkus#41
+                         - quarkusio/quarkus#42
+
+                        # geoand
+                        ## Stewardship
+                         - quarkusio/quarkus#51
+                         - quarkusio/quarkus#52
 
                         <!--:payload:
                         """);
