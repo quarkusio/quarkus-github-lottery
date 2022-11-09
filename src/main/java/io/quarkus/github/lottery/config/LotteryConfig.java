@@ -3,7 +3,6 @@ package io.quarkus.github.lottery.config;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.ZoneId;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -32,7 +31,8 @@ public record LotteryConfig(
 
     public record Buckets(
             @JsonProperty(required = true) Triage triage,
-            @JsonProperty(required = true) Maintenance maintenance) {
+            @JsonProperty(required = true) Maintenance maintenance,
+            @JsonProperty(required = true) Stewardship stewardship) {
 
         public record Triage(
                 String label,
@@ -89,6 +89,16 @@ public record LotteryConfig(
             }
         }
 
+        public record Stewardship(
+                @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+            // https://stackoverflow.com/a/71539100/6692043
+            // Also gives us a less verbose constructor for tests
+            @JsonCreator
+            public Stewardship(@JsonProperty(required = true) Duration delay, @JsonProperty(required = true) Duration timeout) {
+                this(new Notification(delay, timeout));
+            }
+        }
+
         public record Notification(
                 @JsonProperty(required = true) Duration delay,
                 @JsonProperty(required = true) Duration timeout) {
@@ -99,7 +109,8 @@ public record LotteryConfig(
             @JsonProperty(required = true) String username,
             Optional<ZoneId> timezone,
             Optional<Triage> triage,
-            Optional<Maintenance> maintenance) {
+            Optional<Maintenance> maintenance,
+            Optional<Stewardship> stewardship) {
 
         public record Triage(
                 @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
@@ -120,6 +131,17 @@ public record LotteryConfig(
             public record Reproducer(
                     @JsonProperty(required = true) Participation needed,
                     @JsonProperty(required = true) Participation provided) {
+            }
+        }
+
+        public record Stewardship(
+                @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
+                @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Participation participation) {
+            // https://stackoverflow.com/a/71539100/6692043
+            @JsonCreator
+            public Stewardship(@JsonProperty(required = true) Set<DayOfWeek> days,
+                    @JsonProperty(required = true) int maxIssues) {
+                this(days, new Participation(maxIssues));
             }
         }
 

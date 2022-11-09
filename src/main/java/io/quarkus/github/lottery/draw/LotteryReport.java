@@ -17,7 +17,8 @@ public record LotteryReport(
         Optional<Bucket> triage,
         Optional<Bucket> reproducerNeeded,
         Optional<Bucket> reproducerProvided,
-        Optional<Bucket> stale) {
+        Optional<Bucket> stale,
+        Optional<Bucket> stewardship) {
 
     public record Bucket(
             List<Issue> issues) {
@@ -35,7 +36,8 @@ public record LotteryReport(
         return new Serialized(drawRef.instant(), username, triage.map(Bucket::serialized),
                 reproducerNeeded.map(Bucket::serialized),
                 reproducerProvided.map(Bucket::serialized),
-                stale.map(Bucket::serialized));
+                stale.map(Bucket::serialized),
+                stewardship.map(Bucket::serialized));
     }
 
     public record Serialized(
@@ -44,6 +46,7 @@ public record LotteryReport(
             Optional<Bucket.Serialized> triage,
             Optional<Bucket.Serialized> reproducerNeeded,
             Optional<Bucket.Serialized> reproducerProvided,
-            Optional<Bucket.Serialized> stale) {
+            Optional<Bucket.Serialized> stale,
+            Optional<Bucket.Serialized> stewardship) {
     }
 }

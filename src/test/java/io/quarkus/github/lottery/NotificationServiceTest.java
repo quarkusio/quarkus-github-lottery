@@ -102,7 +102,8 @@ public class NotificationServiceTest {
 
         var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
-                Optional.empty(), Optional.empty(), Optional.empty());
+                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty());
         var markdownNotification1 = "Notif 1";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "yrodiere"))
                 .thenReturn("yrodiere's report for quarkusio/quarkus");
@@ -119,7 +120,8 @@ public class NotificationServiceTest {
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(7, 8))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(9, 10))));
+                Optional.of(new LotteryReport.Bucket(stubIssueList(9, 10))),
+                Optional.empty());
         var markdownNotification2 = "Notif 2";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "gsmet"))
                 .thenReturn("gsmet's report for quarkusio/quarkus");
@@ -130,6 +132,24 @@ public class NotificationServiceTest {
         notifier.send(lotteryReport2);
         verify(notificationRepoMock).commentOnDedicatedIssue("gsmet", "gsmet's report for quarkusio/quarkus",
                 " (updated 2017-11-06T06:00:00Z)", markdownNotification2);
+        verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
+
+        var lotteryReport3 = new LotteryReport(drawRef, "geoand", Optional.empty(),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(11, 12))),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(new LotteryReport.Bucket(stubIssueList(13, 14))));
+        var markdownNotification3 = "Notif 2";
+        when(messageFormatterMock.formatNotificationTopicText(drawRef, "geoand"))
+                .thenReturn("geoand's report for quarkusio/quarkus");
+        when(messageFormatterMock.formatNotificationTopicSuffixText(lotteryReport3))
+                .thenReturn(" (updated 2017-11-06T06:00:00Z)");
+        when(messageFormatterMock.formatNotificationBodyMarkdown(lotteryReport3, notificationRepoRef))
+                .thenReturn(markdownNotification3);
+        notifier.send(lotteryReport3);
+        verify(notificationRepoMock).commentOnDedicatedIssue("geoand", "geoand's report for quarkusio/quarkus",
+                " (updated 2017-11-06T06:00:00Z)", markdownNotification3);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
     }
 

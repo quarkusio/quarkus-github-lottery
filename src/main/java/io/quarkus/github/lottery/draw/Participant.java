@@ -30,13 +30,17 @@ public final class Participant {
         var maintenance = config.maintenance()
                 .filter(c -> isDay(c.days(), dayOfWeek, username, "maintenance"))
                 .flatMap(c -> Maintenance.create(username, c));
+        var stewardship = config.stewardship()
+                .filter(c -> isDay(c.days(), dayOfWeek, username, "stewardship"))
+                .map(LotteryConfig.Participant.Stewardship::participation)
+                .flatMap(c -> Participation.create(username, c));
 
-        if (triage.isEmpty() && maintenance.isEmpty()) {
-            Log.debugf("Skipping user %s because they participate in neither triage nor maintenance", username);
+        if (triage.isEmpty() && maintenance.isEmpty() && stewardship.isEmpty()) {
+            Log.debugf("Skipping user %s because they participate in neither triage, maintenance nor stewardship", username);
             return Optional.empty();
         }
 
-        return Optional.of(new Participant(drawRef, username, config.timezone(), triage, maintenance));
+        return Optional.of(new Participant(drawRef, username, config.timezone(), triage, maintenance, stewardship));
     }
 
     private static boolean isDay(Set<DayOfWeek> acceptedDays, DayOfWeek testedDay,
@@ -55,19 +59,22 @@ public final class Participant {
 
     private final Optional<Participation> triage;
     private final Optional<Maintenance> maintenance;
+    private final Optional<Participation> stewardship;
 
     private Participant(DrawRef drawRef, String username, Optional<ZoneId> timezone, Optional<Participation> triage,
-            Optional<Maintenance> maintenance) {
+            Optional<Maintenance> maintenance, Optional<Participation> stewardship) {
         this.drawRef = drawRef;
         this.username = username;
         this.timezone = timezone;
         this.triage = triage;
         this.maintenance = maintenance;
+        this.stewardship = stewardship;
     }
 
     public void participate(Lottery lottery) {
         triage.ifPresent(lottery.triage()::participate);
         maintenance.ifPresent(m -> m.participate(lottery));
+        stewardship.ifPresent(lottery.stewardship()::participate);
     }
 
     public LotteryReport report() {
@@ -75,7 +82,8 @@ public final class Participant {
                 triage.map(Participation::issues).map(LotteryReport.Bucket::new),
                 maintenance.flatMap(m -> m.reproducerNeeded).map(Participation::issues).map(LotteryReport.Bucket::new),
                 maintenance.flatMap(m -> m.reproducerProvided).map(Participation::issues).map(LotteryReport.Bucket::new),
-                maintenance.flatMap(m -> m.stale).map(Participation::issues).map(LotteryReport.Bucket::new));
+                maintenance.flatMap(m -> m.stale).map(Participation::issues).map(LotteryReport.Bucket::new),
+                stewardship.map(Participation::issues).map(LotteryReport.Bucket::new));
     }
 
     private static final class Maintenance {

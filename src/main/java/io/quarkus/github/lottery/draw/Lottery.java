@@ -29,6 +29,7 @@ public final class Lottery {
     private final Random random;
     private final Triage triage;
     private final Map<String, Maintenance> maintenanceByLabel;
+    private final Stewardship stewardship;
 
     public Lottery(Instant now, LotteryConfig.Buckets config) {
         this.now = now;
@@ -36,6 +37,7 @@ public final class Lottery {
         this.random = new Random();
         this.triage = new Triage();
         this.maintenanceByLabel = new LinkedHashMap<>();
+        this.stewardship = new Stewardship();
     }
 
     Bucket triage() {
@@ -46,6 +48,10 @@ public final class Lottery {
         return maintenanceByLabel.computeIfAbsent(areaLabel, Maintenance::new);
     }
 
+    Bucket stewardship() {
+        return stewardship.bucket;
+    }
+
     public void draw(GitHubRepository repo, LotteryHistory lotteryHistory) throws IOException {
         // We run draws for separate buckets in parallel,
         // because buckets may compete for issues
@@ -53,21 +59,26 @@ public final class Lottery {
         // and we want to spread the load uniformly across buckets.
         List<Draw> draws = new ArrayList<>();
         // This is to avoid notifying twice about the same issue in parallel draws.
-        Set<Integer> allWinnings = new HashSet<>();
-        triage.createDraws(repo, lotteryHistory, draws);
+        Set<Integer> allTriageWinnings = new HashSet<>();
+        Set<Integer> allMaintenanceWinnings = new HashSet<>();
+        Set<Integer> allStewardshipWinnings = new HashSet<>();
+        triage.createDraws(repo, lotteryHistory, draws, allTriageWinnings);
         for (Maintenance maintenance : maintenanceByLabel.values()) {
-            maintenance.createDraws(repo, lotteryHistory, draws);
+            maintenance.createDraws(repo, lotteryHistory, draws, allMaintenanceWinnings);
         }
+        stewardship.createDraws(repo, lotteryHistory, draws, allStewardshipWinnings);
         while (!draws.isEmpty()) {
             var drawsIterator = draws.iterator();
             while (drawsIterator.hasNext()) {
-                var state = drawsIterator.next().runSingleRound(allWinnings);
+                var state = drawsIterator.next().runSingleRound();
                 if (Draw.State.DRAINED.equals(state)) {
                     drawsIterator.remove();
                 }
             }
         }
-        Log.infof("Winnings of lottery for repository %s: %s", repo.ref(), allWinnings);
+        Log.infof("Winnings of lottery for repository %s / triage: %s", repo.ref(), allTriageWinnings);
+        Log.infof("Winnings of lottery for repository %s / maintenance: %s", repo.ref(), allMaintenanceWinnings);
+        Log.infof("Winnings of lottery for repository %s / stewardship: %s", repo.ref(), allStewardshipWinnings);
     }
 
     final class Triage {
@@ -77,14 +88,16 @@ public final class Lottery {
             bucket = new Bucket("triage");
         }
 
-        void createDraws(GitHubRepository repo, LotteryHistory lotteryHistory, List<Draw> draws) throws IOException {
+        void createDraws(GitHubRepository repo, LotteryHistory lotteryHistory, List<Draw> draws,
+                Set<Integer> allWinnings) throws IOException {
             if (triage.bucket.hasParticipation()) {
                 String label = config.triage().label();
                 var cutoff = now.minus(config.triage().notification().delay());
                 var history = lotteryHistory.triage();
                 draws.add(triage.bucket.createDraw(repo.issuesWithLabelLastUpdatedBefore(label, cutoff)
                         .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
-                        .iterator()));
+                        .iterator(),
+                        allWinnings));
             }
         }
     }
@@ -115,7 +128,8 @@ public final class Lottery {
             return stale;
         }
 
-        void createDraws(GitHubRepository repo, LotteryHistory lotteryHistory, List<Draw> draws) throws IOException {
+        void createDraws(GitHubRepository repo, LotteryHistory lotteryHistory, List<Draw> draws,
+                Set<Integer> allWinnings) throws IOException {
             String needReproducerLabel = config.maintenance().reproducer().label();
             if (reproducerNeeded.hasParticipation()) {
                 var cutoff = now.minus(config.maintenance().reproducer().needed().notification().delay());
@@ -124,7 +138,8 @@ public final class Lottery {
                         repo.issuesLastActedOnByAndLastUpdatedBefore(needReproducerLabel, areaLabel,
                                 IssueActionSide.TEAM, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
-                                .iterator()));
+                                .iterator(),
+                        allWinnings));
             }
             if (reproducerProvided.hasParticipation()) {
                 var cutoff = now.minus(config.maintenance().reproducer().provided().notification().delay());
@@ -133,7 +148,8 @@ public final class Lottery {
                         repo.issuesLastActedOnByAndLastUpdatedBefore(needReproducerLabel, areaLabel,
                                 IssueActionSide.OUTSIDER, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
-                                .iterator()));
+                                .iterator(),
+                        allWinnings));
             }
             if (stale.hasParticipation()) {
                 var cutoff = now.minus(config.maintenance().stale().notification().delay());
@@ -141,7 +157,29 @@ public final class Lottery {
                 draws.add(stale.createDraw(
                         repo.issuesWithLabelLastUpdatedBefore(areaLabel, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
-                                .iterator()));
+                                .iterator(),
+                        allWinnings));
+            }
+        }
+    }
+
+    final class Stewardship {
+        private final Bucket bucket;
+
+        Stewardship() {
+            bucket = new Bucket("stewardship");
+        }
+
+        void createDraws(GitHubRepository repo, LotteryHistory lotteryHistory, List<Draw> draws,
+                Set<Integer> allWinnings) throws IOException {
+            if (stewardship.bucket.hasParticipation()) {
+                var cutoff = now.minus(config.stewardship().notification().delay());
+                var history = lotteryHistory.stewardship();
+                draws.add(bucket.createDraw(
+                        repo.issuesLastUpdatedBefore(cutoff)
+                                .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
+                                .iterator(),
+                        allWinnings));
             }
         }
     }
@@ -167,11 +205,11 @@ public final class Lottery {
             return !participations.isEmpty();
         }
 
-        Draw createDraw(Iterator<Issue> issueIterator) {
+        Draw createDraw(Iterator<Issue> issueIterator, Set<Integer> allWinnings) {
             // Shuffle participations so that prizes are not always assigned in the same order.
             List<Participation> shuffledParticipations = new ArrayList<>(participations);
             Collections.shuffle(shuffledParticipations, random);
-            return new Draw(name, shuffledParticipations, issueIterator);
+            return new Draw(name, shuffledParticipations, issueIterator, allWinnings);
         }
     }
 
@@ -179,11 +217,13 @@ public final class Lottery {
         private final String name;
         private final List<Participation> shuffledParticipations;
         private final Iterator<Issue> issueIterator;
+        private final Set<Integer> allWinnings;
 
-        Draw(String name, List<Participation> shuffledParticipations, Iterator<Issue> issueIterator) {
+        Draw(String name, List<Participation> shuffledParticipations, Iterator<Issue> issueIterator, Set<Integer> allWinnings) {
             this.name = name;
             this.shuffledParticipations = shuffledParticipations;
             this.issueIterator = issueIterator;
+            this.allWinnings = allWinnings;
         }
 
         @Override
@@ -191,7 +231,7 @@ public final class Lottery {
             return "Draw[" + name + "]";
         }
 
-        State runSingleRound(Set<Integer> allWinnings) {
+        State runSingleRound() {
             Log.tracef("Start of round for draw %s...", name);
 
             // Participations may have reached their max number of issues in parallel draws

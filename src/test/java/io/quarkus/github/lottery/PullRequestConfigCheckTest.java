@@ -95,6 +95,9 @@ public class PullRequestConfigCheckTest {
                                         stale:
                                           delay: P60D
                                           timeout: P14D
+                                      stewardship:
+                                        delay: P60D
+                                        timeout: P14D
                                     participants:
                                       - username: "yrodiere"
                                         triage:
@@ -165,6 +168,9 @@ public class PullRequestConfigCheckTest {
                                         stale:
                                           delay: P60D
                                           timeout: P14D
+                                      stewardship:
+                                        delay: P60D
+                                        timeout: P14D
                                     participants:
                                       - username: "yrodiere"
                                         triage:

@@ -58,7 +58,9 @@ public class HistoryServiceTest {
                                         new LotteryConfig.Buckets.Maintenance.Reproducer.Provided(
                                                 Duration.ofDays(7), Duration.ofDays(3))),
                                 new LotteryConfig.Buckets.Maintenance.Stale(
-                                        Duration.ofDays(60), Duration.ofDays(14)))),
+                                        Duration.ofDays(60), Duration.ofDays(14))),
+                        new LotteryConfig.Buckets.Stewardship(
+                                Duration.ofDays(60), Duration.ofDays(14))),
                 List.of());
     }
 
@@ -133,10 +135,12 @@ public class HistoryServiceTest {
                 .thenReturn(List.of(
                         new LotteryReport.Serialized(now.minus(2, ChronoUnit.DAYS), "jane",
                                 Optional.of(new LotteryReport.Bucket.Serialized(List.of(6, 7))),
-                                Optional.empty(), Optional.empty(), Optional.empty()),
+                                Optional.empty(), Optional.empty(), Optional.empty(),
+                                Optional.empty()),
                         new LotteryReport.Serialized(now.minus(1, ChronoUnit.HOURS), "gsmet",
                                 Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2))),
-                                Optional.empty(), Optional.empty(), Optional.empty())));
+                                Optional.empty(), Optional.empty(), Optional.empty(),
+                                Optional.empty())));
 
         var history = historyService.fetch(drawRef, config);
 
@@ -167,13 +171,16 @@ public class HistoryServiceTest {
                 .thenReturn(List.of(
                         new LotteryReport.Serialized(now.minus(2, ChronoUnit.DAYS), "jane",
                                 Optional.of(new LotteryReport.Bucket.Serialized(List.of(6, 7))),
-                                Optional.empty(), Optional.empty(), Optional.empty()),
+                                Optional.empty(), Optional.empty(), Optional.empty(),
+                                Optional.empty()),
                         new LotteryReport.Serialized(now.minus(1, ChronoUnit.HOURS), "gsmet",
                                 Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2))),
-                                Optional.empty(), Optional.empty(), Optional.empty()),
+                                Optional.empty(), Optional.empty(), Optional.empty(),
+                                Optional.empty()),
                         new LotteryReport.Serialized(now.minus(9, ChronoUnit.HOURS), "yrodiere",
                                 Optional.of(new LotteryReport.Bucket.Serialized(List.of(4, 5))),
-                                Optional.empty(), Optional.empty(), Optional.empty())));
+                                Optional.empty(), Optional.empty(), Optional.empty(),
+                                Optional.empty())));
 
         var history = historyService.fetch(drawRef, config);
 
@@ -228,10 +235,12 @@ public class HistoryServiceTest {
                 .thenReturn(List.of(
                         new LotteryReport.Serialized(now.minus(1, ChronoUnit.DAYS), "gsmet",
                                 Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2))),
-                                Optional.empty(), Optional.empty(), Optional.empty()),
+                                Optional.empty(), Optional.empty(), Optional.empty(),
+                                Optional.empty()),
                         new LotteryReport.Serialized(now.minus(7, ChronoUnit.DAYS), "yrodiere",
                                 Optional.of(new LotteryReport.Bucket.Serialized(List.of(42))),
-                                Optional.empty(), Optional.empty(), Optional.empty())));
+                                Optional.empty(), Optional.empty(), Optional.empty(),
+                                Optional.empty())));
 
         var history = historyService.fetch(drawRef, config);
 

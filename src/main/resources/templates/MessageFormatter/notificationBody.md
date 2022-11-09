@@ -16,6 +16,10 @@ Hey @{report.username}, here's your report for {report.repositoryName} on {repor
 # Stale
 {#include MessageFormatter/notificationBodyBucketContent bucket=report.stale.get() /}
 {/if}
+{#if report.stewardship.present}
+# Stewardship
+{#include MessageFormatter/notificationBodyBucketContent bucket=report.stewardship.get() /}
+{/if}
 
 ---
 <sup>If you no longer want to receive these notifications, just close [any issue assigned to you in the notification repository](https://github.com/{notificationRepositoryName}/issues/assigned/@me). Reopening the issue will resume the notifications.</sup>

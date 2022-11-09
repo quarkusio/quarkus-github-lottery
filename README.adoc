@@ -1,6 +1,6 @@
 = Quarkus GitHub Lottery
 
-> A Quarkus-powered GitHub App that regularly sends short lists of GitHub issues for triagers/maintainers to consider.
+> A Quarkus-powered GitHub App that regularly sends short lists of GitHub issues for triagers/maintainers/stewards to consider.
 
 [[intro]]
 == Introduction
@@ -29,12 +29,12 @@ see <<maintainers>> for more information, but here's what an email notification 
 image::documentation/screenshots/notification.png[Example of an email notification,align="center"]
 
 [[maintainers]]
-== Triagers/Maintainers: how to get notifications
+== Triagers/Maintainers/Stewards: how to get notifications
 
 [[participants-basics]]
 === Basics
 
-As a Quarkus triager or a Quarkus core/extension maintainer,
+As a Quarkus triager, a Quarkus core/extension maintainer, or a Quarkus steward,
 in order to get notifications about Quarkus issues on GitHub:
 
 * Make sure you have access to the https://github.com/quarkusio/quarkus-github-lottery-reports["notification" repository]
@@ -64,6 +64,9 @@ participants:
           maxIssues: 2
       stale:
         maxIssues: 5
+    stewardship:
+      days: ["MONDAY"]
+      maxIssues: 5
 ----
 
 `username`::
@@ -82,10 +85,14 @@ See <<participants-triage>> for details.
 Optional section for maintainers.
 +
 See <<participants-maintenance>> for details.
+`stewardship`::
+Optional section for stewards.
++
+See <<participants-stewardship>> for details.
 
-The `triage` and `maintenance` sections are both optional;
-you may participate in triage but not maintain an area of Quarkus, and vice-versa,
-or do both.
+The `triage`, `maintenance` and `stewardship` sections are all optional;
+you may participate in triage but not maintain an area of Quarkus nor do any stewardship, and vice-versa,
+or do everything.
 See below for details about each section.
 
 [[participants-triage]]
@@ -206,6 +213,48 @@ for each notification.
 +
 Integer, mandatory, no default.
 
+[[participants-stewardship]]
+=== Stewardship
+
+IMPORTANT: This section should only be of interest to stewards:
+core contributors who spend significant time working on GitHub issues.
+If you don't already know what this section is about,
+you probably don't want to use it.
+
+If the `stewardship` section is present, you will get notified about issues that just became stale,
+across the whole project, without any consideration for the labels assigned to those issues.
+
+Depending on the actual content of the issue, you might want to simply continue the conversation,
+ping someone, close the issue, or even do nothing at all:
+it's all up to you, and issues that don't change will reappear in another notification, a few days later.
+
+NOTE: Notifications to stewards are sent independently of notifications to maintainers,
+so that the work of maintainers won't be affected by the work of stewards.
+It is entirely possible for a maintainer to be notified about an issue
+at the same time as a steward.
+
+The `stewardship` section will look like this:
+
+[source,yaml]
+----
+# [...]
+participants:
+  - username: "yrodiere"
+    stewardship:
+      days: ["MONDAY"]
+      maxIssues: 5
+----
+
+`days`::
+On which days you wish to get notified about stewardship.
++
+Array of ``WeekDay``s, mandatory, no default.
+`maxIssues`::
+How many issues, at most, you wish to be included in the "stewardship" category
+for each notification.
++
+Integer, mandatory, no default.
+
 [[participants-suspending]]
 === Suspending notifications
 
@@ -271,6 +320,9 @@ buckets:
     stale:
       delay: P60D
       timeout: P14D
+  stewardship:
+    delay: P60D
+    timeout: P14D
 # [...]
 ----
 
@@ -324,6 +376,16 @@ String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration for
 `buckets.maintenance.stale.timeout`::
 How much time to wait after an issue was last notified about
 before including it again in the lottery in the "stale" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.stewardship.delay`::
+How much time to wait after the last update on an issue
+before including it in the lottery in the "stewardship" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.stewardship.timeout`::
+How much time to wait after an issue was last notified about
+before including it again in the lottery in the "stewardship" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
 

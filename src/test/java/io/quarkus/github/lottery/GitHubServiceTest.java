@@ -149,6 +149,9 @@ public class GitHubServiceTest {
                                         stale:
                                           delay: P60D
                                           timeout: P14D
+                                      stewardship:
+                                        delay: P60D
+                                        timeout: P14D
                                     participants:
                                       - username: "yrodiere"
                                         triage:
@@ -180,6 +183,10 @@ public class GitHubServiceTest {
                                               maxIssues: 1
                                           stale:
                                             maxIssues: 5
+                                      - username: "geoand"
+                                        stewardship:
+                                          days: ["MONDAY"]
+                                          maxIssues: 10
                                     """);
                 })
                 .when(() -> {
@@ -203,7 +210,9 @@ public class GitHubServiceTest {
                                                             new LotteryConfig.Buckets.Maintenance.Reproducer.Provided(
                                                                     Duration.ofDays(7), Duration.ofDays(3))),
                                                     new LotteryConfig.Buckets.Maintenance.Stale(
-                                                            Duration.ofDays(60), Duration.ofDays(14)))),
+                                                            Duration.ofDays(60), Duration.ofDays(14))),
+                                            new LotteryConfig.Buckets.Stewardship(
+                                                    Duration.ofDays(60), Duration.ofDays(14))),
                                     List.of(
                                             new LotteryConfig.Participant("yrodiere",
                                                     Optional.empty(),
@@ -216,12 +225,14 @@ public class GitHubServiceTest {
                                                             new LotteryConfig.Participant.Maintenance.Reproducer(
                                                                     new LotteryConfig.Participant.Participation(4),
                                                                     new LotteryConfig.Participant.Participation(2)),
-                                                            new LotteryConfig.Participant.Participation(5)))),
+                                                            new LotteryConfig.Participant.Participation(5))),
+                                                    Optional.empty()),
                                             new LotteryConfig.Participant("gsmet",
                                                     Optional.of(ZoneId.of("Europe/Paris")),
                                                     Optional.of(new LotteryConfig.Participant.Triage(
                                                             Set.of(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY),
                                                             new LotteryConfig.Participant.Participation(10))),
+                                                    Optional.empty(),
                                                     Optional.empty()),
                                             new LotteryConfig.Participant("jsmith",
                                                     Optional.empty(),
@@ -232,9 +243,56 @@ public class GitHubServiceTest {
                                                             new LotteryConfig.Participant.Maintenance.Reproducer(
                                                                     new LotteryConfig.Participant.Participation(1),
                                                                     new LotteryConfig.Participant.Participation(1)),
-                                                            new LotteryConfig.Participant.Participation(5)))))));
+                                                            new LotteryConfig.Participant.Participation(5))),
+                                                    Optional.empty()),
+                                            new LotteryConfig.Participant("geoand",
+                                                    Optional.empty(),
+                                                    Optional.empty(),
+                                                    Optional.empty(),
+                                                    Optional.of(new LotteryConfig.Participant.Stewardship(
+                                                            Set.of(DayOfWeek.MONDAY),
+                                                            new LotteryConfig.Participant.Participation(10)))))));
                 })
                 .then().github(mocks -> {
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
+    void issuesLastUpdatedBefore() throws IOException {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
+
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        Instant cutoff = now.minus(1, ChronoUnit.DAYS);
+        Date beforeCutoff = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
+        Date afterCutoff = Date.from(cutoff.plus(1, ChronoUnit.HOURS));
+
+        var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        given()
+                .github(mocks -> {
+                    var repositoryMock = mocks.repository(repoRef.repositoryName());
+
+                    when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    var issue1Mock = mockIssueForLottery(mocks, 1, beforeCutoff);
+                    var issue2Mock = mockIssueForLottery(mocks, 3, beforeCutoff);
+                    var issue3Mock = mockIssueForLottery(mocks, 2, beforeCutoff);
+                    var issue4Mock = mockIssueForLottery(mocks, 4, beforeCutoff);
+                    var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, afterCutoff);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock);
+                    when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.issuesLastUpdatedBefore(cutoff))
+                            .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
+                })
+                .then().github(mocks -> {
+                    verify(queryIssuesBuilderMock).state(GHIssueState.OPEN);
+                    verify(queryIssuesBuilderMock).sort(GHIssueQueryBuilder.Sort.UPDATED);
+                    verify(queryIssuesBuilderMock).direction(GHDirection.DESC);
+                    verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
     }

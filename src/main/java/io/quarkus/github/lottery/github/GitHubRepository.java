@@ -101,9 +101,27 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     /**
+     * Lists issues that were last updated before the given instant.
+     *
+     * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
+     * @return A lazily populated stream of matching issues.
+     * @throws IOException In case of I/O failure.
+     * @throws java.io.UncheckedIOException In case of I/O failure.
+     */
+    public Stream<Issue> issuesLastUpdatedBefore(Instant updatedBefore) throws IOException {
+        return toStream(repository().queryIssues()
+                .state(GHIssueState.OPEN)
+                .sort(GHIssueQueryBuilder.Sort.UPDATED)
+                .direction(GHDirection.DESC)
+                .list())
+                .filter(updatedBefore(updatedBefore))
+                .map(toIssueRecord());
+    }
+
+    /**
      * Lists issues with the given label that were last updated before the given instant.
      *
-     * @param label A GitHub label; all returned issues must have been assigned that label.
+     * @param label A GitHub label; if non-null, all returned issues must have been assigned that label.
      * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
      * @return A lazily populated stream of matching issues.
      * @throws IOException In case of I/O failure.
