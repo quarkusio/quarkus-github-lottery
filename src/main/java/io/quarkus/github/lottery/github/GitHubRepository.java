@@ -117,6 +117,7 @@ public class GitHubRepository implements AutoCloseable {
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
                 .list())
+                .filter(notPullRequest())
                 .filter(updatedBefore(updatedBefore))
                 .map(toIssueRecord());
     }
@@ -136,6 +137,7 @@ public class GitHubRepository implements AutoCloseable {
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
                 .list())
+                .filter(notPullRequest())
                 .filter(updatedBefore(updatedBefore))
                 .map(toIssueRecord());
     }
@@ -162,6 +164,7 @@ public class GitHubRepository implements AutoCloseable {
                 .sort(GHIssueQueryBuilder.Sort.UPDATED)
                 .direction(GHDirection.DESC)
                 .list())
+                .filter(notPullRequest())
                 .filter(updatedBefore(updatedBefore))
                 .filter(uncheckedIO((GHIssue ghIssue) -> lastActionSide
                         .equals(lastActionSide(ghIssue, initialActionLabel)))::apply)
@@ -170,6 +173,10 @@ public class GitHubRepository implements AutoCloseable {
 
     private Predicate<GHIssue> updatedBefore(Instant updatedBefore) {
         return uncheckedIO((GHIssue ghIssue) -> ghIssue.getUpdatedAt().toInstant().isBefore(updatedBefore))::apply;
+    }
+
+    private Predicate<GHIssue> notPullRequest() {
+        return (GHIssue ghIssue) -> !ghIssue.isPullRequest();
     }
 
     private IssueActionSide lastActionSide(GHIssue ghIssue, String initialActionLabel) throws IOException {

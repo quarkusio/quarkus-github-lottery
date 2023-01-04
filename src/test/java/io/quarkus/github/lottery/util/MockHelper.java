@@ -18,6 +18,7 @@ import io.quarkus.github.lottery.github.Issue;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueEvent;
 import org.kohsuke.github.GHLabel;
+import org.kohsuke.github.GHPullRequest;
 import org.kohsuke.github.GHPullRequestFileDetail;
 import org.kohsuke.github.PagedIterator;
 import org.kohsuke.github.PagedSearchIterable;
@@ -62,6 +63,7 @@ public class MockHelper {
     public static GHIssue mockIssueForLottery(GitHubMockContext context, int number, Date updatedAt)
             throws IOException {
         GHIssue mock = context.issue(10000L + number);
+        when(mock.isPullRequest()).thenReturn(false);
         when(mock.getNumber()).thenReturn(number);
         when(mock.getTitle()).thenReturn("Title for issue " + number);
         when(mock.getHtmlUrl()).thenReturn(url(number));
@@ -72,7 +74,14 @@ public class MockHelper {
     public static GHIssue mockIssueForLotteryFilteredOutByRepository(GitHubMockContext context, int number, Date updatedAt)
             throws IOException {
         GHIssue mock = context.issue(10000L + number);
+        when(mock.isPullRequest()).thenReturn(false);
         when(mock.getUpdatedAt()).thenReturn(updatedAt);
+        return mock;
+    }
+
+    public static GHPullRequest mockPullRequestForLotteryFilteredOutByRepository(GitHubMockContext context, int number) {
+        GHPullRequest mock = context.pullRequest(10000L + number);
+        when(mock.isPullRequest()).thenReturn(true);
         return mock;
     }
 
