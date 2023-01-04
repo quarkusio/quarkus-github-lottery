@@ -16,6 +16,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.quarkus.github.lottery.message.MessageFormatter;
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
@@ -41,6 +42,7 @@ public class GitHubRepository implements AutoCloseable {
     private final Clock clock;
     private final GitHubClientProvider clientProvider;
     private final GitHubConfigFileProvider configFileProvider;
+    private final MessageFormatter messageFormatter;
     private final GitHubRepositoryRef ref;
 
     private GitHub client;
@@ -48,10 +50,11 @@ public class GitHubRepository implements AutoCloseable {
     private DynamicGraphQLClient graphQLClient;
 
     public GitHubRepository(Clock clock, GitHubClientProvider clientProvider, GitHubConfigFileProvider configFileProvider,
-            GitHubRepositoryRef ref) {
+            MessageFormatter messageFormatter, GitHubRepositoryRef ref) {
         this.clock = clock;
         this.clientProvider = clientProvider;
         this.configFileProvider = configFileProvider;
+        this.messageFormatter = messageFormatter;
         this.ref = ref;
     }
 
@@ -259,8 +262,14 @@ public class GitHubRepository implements AutoCloseable {
             } catch (Exception e) {
                 Log.errorf(e, "Failed to minimize last notification for issue %s#%s", ref.repositoryName(), issue.getNumber());
             }
+
+            // Update the issue description with the content of the latest comment,
+            // for convenience.
+            // This must be done before the comment, so that notifications triggered by the comment are only sent
+            // when the issue is fully updated.
+            issue.setBody(messageFormatter.formatDedicatedIssueBodyMarkdown(topic, markdownBody));
         } else {
-            issue = createDedicatedIssue(assignee, targetTitle, topic);
+            issue = createDedicatedIssue(assignee, targetTitle, topic, markdownBody);
         }
 
         issue.comment(markdownBody);
@@ -288,10 +297,11 @@ public class GitHubRepository implements AutoCloseable {
         return Optional.empty();
     }
 
-    private GHIssue createDedicatedIssue(String username, String title, String topic) throws IOException {
+    private GHIssue createDedicatedIssue(String username, String title, String topic, String lastCommentMarkdownBody)
+            throws IOException {
         return repository().createIssue(title)
                 .assignee(username)
-                .body("This issue is dedicated to " + topic + ".")
+                .body(messageFormatter.formatDedicatedIssueBodyMarkdown(topic, lastCommentMarkdownBody))
                 .create();
     }
 

@@ -47,6 +47,22 @@ public class MessageFormatterTest {
     }
 
     @Test
+    void dedicatedIssueBodyMarkdown() {
+        assertThat(messageFormatter.formatDedicatedIssueBodyMarkdown("yrodiere's report for quarkusio/quarkus",
+                """
+                        Some report over
+                        multiple lines."""))
+                .isEqualTo("""
+                        This issue is dedicated to yrodiere's report for quarkusio/quarkus.
+
+                        Latest update:
+
+                        > Some report over
+                        > multiple lines.
+                        """);
+    }
+
+    @Test
     void formatNotificationTopicText() {
         assertThat(messageFormatter.formatNotificationTopicText(drawRef, "yrodiere"))
                 .isEqualTo("yrodiere's report for quarkusio/quarkus");
