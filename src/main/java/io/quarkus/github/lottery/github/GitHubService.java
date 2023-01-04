@@ -9,6 +9,7 @@ import javax.inject.Inject;
 
 import io.quarkiverse.githubapp.GitHubClientProvider;
 import io.quarkiverse.githubapp.GitHubConfigFileProvider;
+import io.quarkus.github.lottery.message.MessageFormatter;
 import org.kohsuke.github.GHApp;
 import org.kohsuke.github.GHAppInstallation;
 import org.kohsuke.github.GHRepository;
@@ -23,6 +24,8 @@ public class GitHubService {
     GitHubClientProvider clientProvider;
     @Inject
     GitHubConfigFileProvider configFileProvider;
+    @Inject
+    MessageFormatter messageFormatter;
 
     public List<GitHubRepositoryRef> listRepositories() throws IOException {
         List<GitHubRepositoryRef> result = new ArrayList<>();
@@ -41,6 +44,6 @@ public class GitHubService {
     }
 
     public GitHubRepository repository(GitHubRepositoryRef ref) {
-        return new GitHubRepository(clock, clientProvider, configFileProvider, ref);
+        return new GitHubRepository(clock, clientProvider, configFileProvider, messageFormatter, ref);
     }
 }

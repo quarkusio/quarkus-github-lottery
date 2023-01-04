@@ -33,11 +33,14 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import io.quarkus.github.lottery.github.IssueActionSide;
+import io.quarkus.github.lottery.message.MessageFormatter;
 import io.quarkus.test.junit.QuarkusMock;
 import org.kohsuke.github.GHApp;
 import org.kohsuke.github.GHAppInstallation;
@@ -76,6 +79,14 @@ public class GitHubServiceTest {
 
     @Inject
     GitHubService gitHubService;
+
+    MessageFormatter messageFormatterMock;
+
+    @BeforeEach
+    void setup() {
+        messageFormatterMock = Mockito.mock(MessageFormatter.class);
+        QuarkusMock.installMockForType(messageFormatterMock, MessageFormatter.class);
+    }
 
     @Test
     void listRepositories() throws IOException {
@@ -821,6 +832,10 @@ public class GitHubServiceTest {
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
 
                     when(issue2Comment2Mock.getNodeId()).thenReturn(commentToMinimizeNodeId);
+
+                    when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("yrodiere's report for quarkusio/quarkus",
+                            "Some content"))
+                            .thenReturn("Dedicated issue body");
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -839,6 +854,7 @@ public class GitHubServiceTest {
                             .executeSync(anyString(), mapCaptor.capture());
 
                     verify(mocks.issue(2)).setTitle("yrodiere's report for quarkusio/quarkus (updated 2017-11-06T06:00:00Z)");
+                    verify(mocks.issue(2)).setBody("Dedicated issue body");
                     verify(mocks.issue(2)).comment("Some content");
 
                     verifyNoMoreInteractions(queryIssuesBuilderMock);
@@ -891,6 +907,10 @@ public class GitHubServiceTest {
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
 
                     when(issue2Comment2Mock.getNodeId()).thenReturn(commentToMinimizeNodeId);
+
+                    when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("Lottery history for quarkusio/quarkus",
+                            "Some content"))
+                            .thenReturn("Dedicated issue body");
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -908,9 +928,10 @@ public class GitHubServiceTest {
                     verify(mocks.installationGraphQLClient(installationRef.installationId()))
                             .executeSync(anyString(), mapCaptor.capture());
 
+                    verify(mocks.issue(2)).setBody("Dedicated issue body");
                     verify(mocks.issue(2)).comment("Some content");
 
-                    verifyNoMoreInteractions(queryIssuesBuilderMock);
+                    verifyNoMoreInteractions(messageFormatterMock, queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
 
                     assertThat(mapCaptor.getValue()).containsValue(commentToMinimizeNodeId);
@@ -961,6 +982,10 @@ public class GitHubServiceTest {
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
 
                     when(issue2Comment2Mock.getNodeId()).thenReturn(commentToMinimizeNodeId);
+
+                    when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("yrodiere's report for quarkusio/quarkus",
+                            "Some content"))
+                            .thenReturn("Dedicated issue body");
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -981,9 +1006,10 @@ public class GitHubServiceTest {
                     verify(mocks.installationGraphQLClient(installationRef.installationId()))
                             .executeSync(anyString(), mapCaptor.capture());
 
+                    verify(mocks.issue(2)).setBody("Dedicated issue body");
                     verify(mocks.issue(2)).comment("Some content");
 
-                    verifyNoMoreInteractions(queryIssuesBuilderMock);
+                    verifyNoMoreInteractions(messageFormatterMock, queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
 
                     assertThat(mapCaptor.getValue()).containsValue(commentToMinimizeNodeId);
@@ -1010,6 +1036,10 @@ public class GitHubServiceTest {
                     when(repositoryMock.createIssue(any())).thenReturn(issueBuilderMock);
                     var issue2Mock = mocks.issue(2);
                     when(issueBuilderMock.create()).thenReturn(issue2Mock);
+
+                    when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("yrodiere's report for quarkusio/quarkus",
+                            "Some content"))
+                            .thenReturn("Dedicated issue body");
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -1026,9 +1056,10 @@ public class GitHubServiceTest {
                     verify(repositoryMock)
                             .createIssue("yrodiere's report for quarkusio/quarkus (updated 2017-11-06T06:00:00Z)");
                     verify(issueBuilderMock).assignee("yrodiere");
-                    verify(issueBuilderMock).body("This issue is dedicated to yrodiere's report for quarkusio/quarkus.");
-                    verifyNoMoreInteractions(queryIssuesBuilderMock, issueBuilderMock);
+                    verify(issueBuilderMock).body("Dedicated issue body");
                     verify(mocks.issue(2)).comment("Some content");
+
+                    verifyNoMoreInteractions(messageFormatterMock, queryIssuesBuilderMock, issueBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
     }

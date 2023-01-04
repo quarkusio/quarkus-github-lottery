@@ -2,6 +2,7 @@ package io.quarkus.github.lottery.message;
 
 import java.time.temporal.Temporal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -29,6 +30,10 @@ public class MessageFormatter {
 
     @Inject
     ObjectMapper jsonObjectMapper;
+
+    public String formatDedicatedIssueBodyMarkdown(String topic, String latestCommentBodyMarkdown) {
+        return Templates.dedicatedIssueBody(topic, latestCommentBodyMarkdown).render();
+    }
 
     public String formatNotificationTopicText(DrawRef drawRef, String username) {
         return Qute.fmt("{}'s report for {}", username, drawRef.repositoryRef().repositoryName());
@@ -66,6 +71,8 @@ public class MessageFormatter {
     @CheckedTemplate
     private static class Templates {
 
+        public static native TemplateInstance dedicatedIssueBody(String topic, String latestCommentBodyMarkdown);
+
         public static native TemplateInstance historyBody(DrawRef drawRef, List<LotteryReport.Serialized> reports,
                 String payload);
 
@@ -76,6 +83,10 @@ public class MessageFormatter {
     @TemplateExtension
     @SuppressWarnings("unused")
     private static class TemplateExtensions {
+
+        static String asMarkdownQuote(String string) {
+            return string.lines().map(s -> "> " + s).collect(Collectors.joining("\n"));
+        }
 
         static Temporal localDate(LotteryReport report) {
             var instant = report.drawRef().instant();
