@@ -7,6 +7,7 @@ import static io.quarkus.github.lottery.util.MockHelper.mockIssueForLotteryFilte
 import static io.quarkus.github.lottery.util.MockHelper.mockIssueForNotification;
 import static io.quarkus.github.lottery.util.MockHelper.mockLabel;
 import static io.quarkus.github.lottery.util.MockHelper.mockPagedIterable;
+import static io.quarkus.github.lottery.util.MockHelper.mockPullRequestForLotteryFilteredOutByRepository;
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -285,12 +286,13 @@ public class GitHubServiceTest {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
                     when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    var prMock = mockPullRequestForLotteryFilteredOutByRepository(mocks, 0);
                     var issue1Mock = mockIssueForLottery(mocks, 1, beforeCutoff);
                     var issue2Mock = mockIssueForLottery(mocks, 3, beforeCutoff);
                     var issue3Mock = mockIssueForLottery(mocks, 2, beforeCutoff);
                     var issue4Mock = mockIssueForLottery(mocks, 4, beforeCutoff);
                     var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, afterCutoff);
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock);
+                    var issuesMocks = mockPagedIterable(prMock, issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
@@ -324,12 +326,13 @@ public class GitHubServiceTest {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
                     when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    var prMock = mockPullRequestForLotteryFilteredOutByRepository(mocks, 0);
                     var issue1Mock = mockIssueForLottery(mocks, 1, beforeCutoff);
                     var issue2Mock = mockIssueForLottery(mocks, 3, beforeCutoff);
                     var issue3Mock = mockIssueForLottery(mocks, 2, beforeCutoff);
                     var issue4Mock = mockIssueForLottery(mocks, 4, beforeCutoff);
                     var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, afterCutoff);
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock);
+                    var issuesMocks = mockPagedIterable(prMock, issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
@@ -376,13 +379,14 @@ public class GitHubServiceTest {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
                     when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    var prMock = mockPullRequestForLotteryFilteredOutByRepository(mocks, 0);
                     var issue1Mock = mockIssueForLottery(mocks, 1, beforeCutoff);
                     var issue2Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 2, beforeCutoff);
                     var issue3Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 3, beforeCutoff);
                     var issue4Mock = mockIssueForLottery(mocks, 4, beforeCutoff);
                     var issue5Mock = mockIssueForLottery(mocks, 5, beforeCutoff);
                     var issue6Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 6, afterCutoff);
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock,
+                    var issuesMocks = mockPagedIterable(prMock, issue1Mock, issue2Mock, issue3Mock,
                             issue4Mock, issue5Mock, issue6Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
@@ -508,13 +512,15 @@ public class GitHubServiceTest {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
                     when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    // Pull requests should always be filtered out
+                    var prMock = mockPullRequestForLotteryFilteredOutByRepository(mocks, 0);
                     var issue1Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 1, beforeCutoff);
                     var issue2Mock = mockIssueForLottery(mocks, 2, beforeCutoff);
                     var issue3Mock = mockIssueForLottery(mocks, 3, beforeCutoff);
                     var issue4Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 4, beforeCutoff);
                     var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, beforeCutoff);
                     var issue6Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 6, afterCutoff);
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock,
+                    var issuesMocks = mockPagedIterable(prMock, issue1Mock, issue2Mock, issue3Mock,
                             issue4Mock, issue5Mock, issue6Mock);
                     when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
