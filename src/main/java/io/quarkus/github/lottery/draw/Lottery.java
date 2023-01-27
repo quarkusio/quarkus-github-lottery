@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -130,12 +131,13 @@ public final class Lottery {
 
         void createDraws(GitHubRepository repo, LotteryHistory lotteryHistory, List<Draw> draws,
                 Set<Integer> allWinnings) throws IOException {
-            String needFeedbackLabel = config.maintenance().feedback().label();
+            // Remove duplicates, but preserve order
+            Set<String> needFeedbackLabels = new LinkedHashSet<>(config.maintenance().feedback().labels());
             if (feedbackNeeded.hasParticipation()) {
                 var cutoff = now.minus(config.maintenance().feedback().needed().notification().delay());
                 var history = lotteryHistory.feedbackNeeded();
                 draws.add(feedbackNeeded.createDraw(
-                        repo.issuesLastActedOnByAndLastUpdatedBefore(needFeedbackLabel, areaLabel,
+                        repo.issuesLastActedOnByAndLastUpdatedBefore(needFeedbackLabels, areaLabel,
                                 IssueActionSide.TEAM, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                                 .iterator(),
@@ -145,7 +147,7 @@ public final class Lottery {
                 var cutoff = now.minus(config.maintenance().feedback().provided().notification().delay());
                 var history = lotteryHistory.feedbackProvided();
                 draws.add(feedbackProvided.createDraw(
-                        repo.issuesLastActedOnByAndLastUpdatedBefore(needFeedbackLabel, areaLabel,
+                        repo.issuesLastActedOnByAndLastUpdatedBefore(needFeedbackLabels, areaLabel,
                                 IssueActionSide.OUTSIDER, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                                 .iterator(),

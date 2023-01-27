@@ -51,7 +51,7 @@ public record LotteryConfig(
                 @JsonProperty(required = true) Stale stale) {
 
             public record Feedback(
-                    @JsonProperty(required = true) String label,
+                    @JsonProperty(required = true) List<String> labels,
                     @JsonProperty(required = true) Needed needed,
                     @JsonProperty(required = true) Provided provided) {
 

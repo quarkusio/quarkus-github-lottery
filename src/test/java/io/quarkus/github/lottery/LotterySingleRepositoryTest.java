@@ -64,7 +64,7 @@ public class LotterySingleRepositoryTest {
                                 Duration.ZERO, Duration.ofDays(3)),
                         new LotteryConfig.Buckets.Maintenance(
                                 new LotteryConfig.Buckets.Maintenance.Feedback(
-                                        "needs-reproducer",
+                                        List.of("triage/needs-reproducer", "triage/needs-feedback"),
                                         new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
                                                 Duration.ofDays(21), Duration.ofDays(3)),
                                         new LotteryConfig.Buckets.Maintenance.Feedback.Provided(
@@ -373,19 +373,23 @@ public class LotterySingleRepositoryTest {
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-orm", IssueActionSide.TEAM, feedbackNeededCutoff))
                 .thenAnswer(ignored -> stubIssueList(101, 102, 103, 104, 105).stream());
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-orm", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(201, 202, 203).stream());
         when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-orm", staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(301, 302, 303, 304, 305, 306).stream());
 
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.TEAM, feedbackNeededCutoff))
                 .thenAnswer(ignored -> stubIssueList(401, 402, 403, 404, 405).stream());
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(501, 502, 503).stream());
         when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
@@ -443,19 +447,23 @@ public class LotterySingleRepositoryTest {
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-orm", IssueActionSide.TEAM, feedbackNeededCutoff))
                 .thenAnswer(ignored -> stubIssueList(101, 102, 103, 104, 105).stream());
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-orm", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(201, 202, 203).stream());
         when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-orm", staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(301, 302, 303, 304, 305, 306).stream());
 
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.TEAM, feedbackNeededCutoff))
                 .thenAnswer(ignored -> stubIssueList(401, 402, 403, 404, 405).stream());
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(501, 502, 503).stream());
         when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
@@ -610,10 +618,12 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Participation(10))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.TEAM, feedbackNeededCutoff))
                 .thenAnswer(ignored -> stubIssueList(401, 402, 403, 404, 405).stream());
-        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+        when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
+                Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(501, 502, 503).stream());
         when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))

@@ -52,7 +52,7 @@ public class HistoryServiceTest {
                                 Duration.ZERO, Duration.ofDays(3)),
                         new LotteryConfig.Buckets.Maintenance(
                                 new LotteryConfig.Buckets.Maintenance.Feedback(
-                                        "needs-reproducer",
+                                        List.of("triage/needs-reproducer", "triage/needs-feedback"),
                                         new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
                                                 Duration.ofDays(21), Duration.ofDays(3)),
                                         new LotteryConfig.Buckets.Maintenance.Feedback.Provided(

@@ -1,6 +1,6 @@
 package io.quarkus.github.lottery.github;
 
-import static io.quarkus.github.lottery.github.GitHubUtils.toStream;
+import static io.quarkus.github.lottery.util.Streams.toStream;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
@@ -11,12 +11,14 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import io.quarkus.github.lottery.message.MessageFormatter;
+import io.quarkus.github.lottery.util.Streams;
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
@@ -146,7 +148,7 @@ public class GitHubRepository implements AutoCloseable {
      * Lists issues with the given labels that were last acted on (label applied or comment)
      * by the given "side" (team or outsider) and were last updated before the given instant.
      *
-     * @param initialActionLabel A GitHub label; all returned issues must have been assigned that label.
+     * @param initialActionLabels A set of GitHub labels; all returned issues must have been assigned one of these labels.
      *        The last time this label was assigned is considered the first "action" on an issue.
      * @param filterLabel A secondary GitHub label; all returned issues must have been assigned that label.
      *        This label is not relevant to determining the last action.
@@ -155,20 +157,24 @@ public class GitHubRepository implements AutoCloseable {
      * @throws IOException In case of I/O failure.
      * @throws java.io.UncheckedIOException In case of I/O failure.
      */
-    public Stream<Issue> issuesLastActedOnByAndLastUpdatedBefore(String initialActionLabel, String filterLabel,
+    public Stream<Issue> issuesLastActedOnByAndLastUpdatedBefore(Set<String> initialActionLabels, String filterLabel,
             IssueActionSide lastActionSide, Instant updatedBefore) throws IOException {
-        return toStream(repository().queryIssues()
-                .label(initialActionLabel)
-                .label(filterLabel)
-                .state(GHIssueState.OPEN)
-                .sort(GHIssueQueryBuilder.Sort.UPDATED)
-                .direction(GHDirection.DESC)
-                .list())
-                .filter(notPullRequest())
-                .filter(updatedBefore(updatedBefore))
-                .filter(uncheckedIO((GHIssue ghIssue) -> lastActionSide
-                        .equals(lastActionSide(ghIssue, initialActionLabel)))::apply)
-                .map(toIssueRecord());
+        var theRepository = repository();
+        var streams = initialActionLabels.stream()
+                .map(initialActionLabel -> toStream(theRepository.queryIssues()
+                        .label(initialActionLabel)
+                        .label(filterLabel)
+                        .state(GHIssueState.OPEN)
+                        .sort(GHIssueQueryBuilder.Sort.UPDATED)
+                        .direction(GHDirection.DESC)
+                        .list())
+                        .filter(notPullRequest())
+                        .filter(updatedBefore(updatedBefore))
+                        .filter(uncheckedIO((GHIssue ghIssue) -> lastActionSide
+                                .equals(lastActionSide(ghIssue, initialActionLabels)))::apply)
+                        .map(toIssueRecord()))
+                .toList();
+        return Streams.interleave(streams);
     }
 
     private Predicate<GHIssue> updatedBefore(Instant updatedBefore) {
@@ -179,13 +185,13 @@ public class GitHubRepository implements AutoCloseable {
         return (GHIssue ghIssue) -> !ghIssue.isPullRequest();
     }
 
-    private IssueActionSide lastActionSide(GHIssue ghIssue, String initialActionLabel) throws IOException {
+    private IssueActionSide lastActionSide(GHIssue ghIssue, Set<String> initialActionLabels) throws IOException {
         // Optimization: don't even fetch older comments as they wouldn't affect the result
         // (we're looking for the *last* action).
         Instant lastEventActionSideInstant = null;
         for (GHIssueEvent event : ghIssue.listEvents()) {
             if (io.quarkiverse.githubapp.event.Issue.Labeled.NAME.equals(event.getEvent())
-                    && initialActionLabel.equals(event.getLabel().getName())) {
+                    && initialActionLabels.contains(event.getLabel().getName())) {
                 lastEventActionSideInstant = event.getCreatedAt().toInstant();
             }
         }
