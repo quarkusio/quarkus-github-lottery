@@ -147,14 +147,15 @@ quite some time ago.
 +
 Depending on the actual content of the issue, you might want to:
 +
-* send a (gentle!) reminder to the reporter that we need feedback before we can do anything.
+* send a (gentle!) reminder to the reporter that we need feedback (a reproducer, more information, ...) before we can do anything.
 * or, if it's really been too long, close the issue because we cannot work on it.
 Feedback Provided::
 These issues have the `triage/needs-reproducer` label,
 and it looks like someone who is not from the Quarkus team was the last to comment on the issue,
 quite some time ago.
 +
-There might be feedback there, in which case you might want to remove the `triage/needs-reproducer` label
+There might be feedback (a reproducer, more information, ...) there,
+in which case you might want to remove the `triage/needs-reproducer` label
 and have a closer look.
 Stale::
 These issues have not been updated for a very long time.
@@ -345,7 +346,7 @@ before including it again in the lottery in the "triage" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
 `buckets.maintenance.feedback.label`::
-The label identifying GitHub issues for which feedback was requested.
+The label identifying GitHub issues for which feedback (a reproducer, more information, ...) was requested.
 +
 String, mandatory, no default.
 `buckets.maintenance.feedback.needed.delay`::

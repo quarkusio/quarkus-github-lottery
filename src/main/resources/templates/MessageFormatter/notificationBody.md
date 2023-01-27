@@ -5,11 +5,11 @@ Hey @{report.username}, here's your report for {report.repositoryName} on {repor
 {#include MessageFormatter/notificationBodyBucketContent bucket=report.triage.get() /}
 {/if}
 {#if report.feedbackNeeded.present}
-# Feedback needed
+# Feedback needed (reproducer, information, ...)
 {#include MessageFormatter/notificationBodyBucketContent bucket=report.feedbackNeeded.get() /}
 {/if}
 {#if report.feedbackProvided.present}
-# Feedback provided
+# Feedback provided (reproducer, information, ...)
 {#include MessageFormatter/notificationBodyBucketContent bucket=report.feedbackProvided.get() /}
 {/if}
 {#if report.stale.present}

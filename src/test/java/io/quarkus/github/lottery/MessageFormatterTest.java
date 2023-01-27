@@ -142,9 +142,9 @@ public class MessageFormatterTest {
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                                # Feedback needed
+                                # Feedback needed (reproducer, information, ...)
                                 No issues in this category this time.
-                                # Feedback provided
+                                # Feedback provided (reproducer, information, ...)
                                 No issues in this category this time.
                                 # Stale
                                 No issues in this category this time.
@@ -169,10 +169,10 @@ public class MessageFormatterTest {
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                                # Feedback needed
+                                # Feedback needed (reproducer, information, ...)
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                                # Feedback provided
+                                # Feedback provided (reproducer, information, ...)
                                 No issues in this category this time.
                                 # Stale
                                 No issues in this category this time.
@@ -197,10 +197,10 @@ public class MessageFormatterTest {
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                                # Feedback needed
+                                # Feedback needed (reproducer, information, ...)
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                                # Feedback provided
+                                # Feedback provided (reproducer, information, ...)
                                  - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
                                  - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
                                 # Stale
@@ -273,10 +273,10 @@ public class MessageFormatterTest {
                                 # Triage
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                                # Feedback needed
+                                # Feedback needed (reproducer, information, ...)
                                  - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
                                  - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
-                                # Feedback provided
+                                # Feedback provided (reproducer, information, ...)
                                  - [#2](http://github.com/quarkusio/quarkus/issues/2) Title for issue 2
                                  - [#7](http://github.com/quarkusio/quarkus/issues/7) Title for issue 7
                                 # Stale
