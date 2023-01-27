@@ -47,10 +47,10 @@ public record LotteryConfig(
         }
 
         public record Maintenance(
-                @JsonProperty(required = true) Reproducer reproducer,
+                @JsonProperty(required = true) Feedback feedback,
                 @JsonProperty(required = true) Stale stale) {
 
-            public record Reproducer(
+            public record Feedback(
                     @JsonProperty(required = true) String label,
                     @JsonProperty(required = true) Needed needed,
                     @JsonProperty(required = true) Provided provided) {
@@ -126,9 +126,9 @@ public record LotteryConfig(
                 // TODO default to all labels configured for this user in .github/quarkus-bot.yml
                 @JsonProperty(required = true) List<String> labels,
                 @JsonProperty(required = true) @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
-                Reproducer reproducer,
+                Feedback feedback,
                 @JsonProperty(required = true) Participation stale) {
-            public record Reproducer(
+            public record Feedback(
                     @JsonProperty(required = true) Participation needed,
                     @JsonProperty(required = true) Participation provided) {
             }

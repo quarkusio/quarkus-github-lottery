@@ -80,46 +80,46 @@ public final class Participant {
     public LotteryReport report() {
         return new LotteryReport(drawRef, username, timezone,
                 triage.map(Participation::issues).map(LotteryReport.Bucket::new),
-                maintenance.flatMap(m -> m.reproducerNeeded).map(Participation::issues).map(LotteryReport.Bucket::new),
-                maintenance.flatMap(m -> m.reproducerProvided).map(Participation::issues).map(LotteryReport.Bucket::new),
+                maintenance.flatMap(m -> m.feedbackNeeded).map(Participation::issues).map(LotteryReport.Bucket::new),
+                maintenance.flatMap(m -> m.feedbackProvided).map(Participation::issues).map(LotteryReport.Bucket::new),
                 maintenance.flatMap(m -> m.stale).map(Participation::issues).map(LotteryReport.Bucket::new),
                 stewardship.map(Participation::issues).map(LotteryReport.Bucket::new));
     }
 
     private static final class Maintenance {
         public static Optional<Maintenance> create(String username, LotteryConfig.Participant.Maintenance config) {
-            var reproducerNeeded = Participation.create(username, config.reproducer().needed());
-            var reproducerProvided = Participation.create(username, config.reproducer().provided());
+            var feedbackNeeded = Participation.create(username, config.feedback().needed());
+            var feedbackProvided = Participation.create(username, config.feedback().provided());
             var stale = Participation.create(username, config.stale());
 
-            if (reproducerNeeded.isEmpty() && reproducerProvided.isEmpty() && stale.isEmpty()) {
+            if (feedbackNeeded.isEmpty() && feedbackProvided.isEmpty() && stale.isEmpty()) {
                 return Optional.empty();
             }
 
-            return Optional.of(new Maintenance(config.labels(), reproducerNeeded, reproducerProvided, stale));
+            return Optional.of(new Maintenance(config.labels(), feedbackNeeded, feedbackProvided, stale));
         }
 
         private final Set<String> labels;
 
-        private final Optional<Participation> reproducerNeeded;
-        private final Optional<Participation> reproducerProvided;
+        private final Optional<Participation> feedbackNeeded;
+        private final Optional<Participation> feedbackProvided;
         private final Optional<Participation> stale;
 
-        private Maintenance(List<String> labels, Optional<Participation> reproducerNeeded,
-                Optional<Participation> reproducerProvided,
+        private Maintenance(List<String> labels, Optional<Participation> feedbackNeeded,
+                Optional<Participation> feedbackProvided,
                 Optional<Participation> stale) {
             // Remove duplicates, but preserve order
             this.labels = new LinkedHashSet<>(labels);
-            this.reproducerNeeded = reproducerNeeded;
-            this.reproducerProvided = reproducerProvided;
+            this.feedbackNeeded = feedbackNeeded;
+            this.feedbackProvided = feedbackProvided;
             this.stale = stale;
         }
 
         public void participate(Lottery lottery) {
             for (String label : labels) {
                 Lottery.Maintenance maintenance = lottery.maintenance(label);
-                reproducerNeeded.ifPresent(maintenance.reproducerNeeded()::participate);
-                reproducerProvided.ifPresent(maintenance.reproducerProvided()::participate);
+                feedbackNeeded.ifPresent(maintenance.feedbackNeeded()::participate);
+                feedbackProvided.ifPresent(maintenance.feedbackProvided()::participate);
                 stale.ifPresent(maintenance.stale()::participate);
             }
         }

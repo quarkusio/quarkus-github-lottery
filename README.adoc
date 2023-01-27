@@ -57,7 +57,7 @@ participants:
     maintenance:
       labels: ["area/hibernate-orm", "area/hibernate-search"]
       days: ["TUESDAY"]
-      reproducer:
+      feedback:
         needed:
           maxIssues: 4
         provided:
@@ -140,21 +140,21 @@ that may be stalled and require intervention from maintainers or reporters.
 
 Issues in "maintenance" notifications will be split in three categories:
 
-Reproducer Needed::
-These issues have the `needs-reproducer` label,
+Feedback Needed::
+These issues have the `triage/needs-reproducer` label,
 and it looks like the Quarkus team was the last to comment on the issue,
 quite some time ago.
 +
 Depending on the actual content of the issue, you might want to:
 +
-* send a (gentle!) reminder to the reporter that we need a reproducer before we can do anything.
-* or, if it's really been too long, close the issue because we cannot reproduce it.
-Reproducer Provided::
-These issues have the `needs-reproducer` label,
+* send a (gentle!) reminder to the reporter that we need feedback before we can do anything.
+* or, if it's really been too long, close the issue because we cannot work on it.
+Feedback Provided::
+These issues have the `triage/needs-reproducer` label,
 and it looks like someone who is not from the Quarkus team was the last to comment on the issue,
 quite some time ago.
 +
-There might be a reproducer there, in which case you might want to remove the `needs-reproducer` label
+There might be feedback there, in which case you might want to remove the `triage/needs-reproducer` label
 and have a closer look.
 Stale::
 These issues have not been updated for a very long time.
@@ -179,7 +179,7 @@ participants:
     maintenance:
       labels: ["area/hibernate-orm", "area/hibernate-search", "area/elasticsearch"]
       days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
-      reproducer:
+      feedback:
         needed:
           maxIssues: 4
         provided:
@@ -197,13 +197,13 @@ Array of Strings, mandatory, no default.
 On which days you wish to get notified about maintenance.
 +
 Array of ``WeekDay``s, mandatory, no default.
-`reproducer.needed.maxIssues`::
-How many issues, at most, you wish to be included in the "Reproducer needed" category
+`feedback.needed.maxIssues`::
+How many issues, at most, you wish to be included in the "Feedback needed" category
 for each notification.
 +
 Integer, mandatory, no default.
-`reproducer.provided.maxIssues`::
-How many issues, at most, you wish to be included in the "Reproducer provided" category
+`feedback.provided.maxIssues`::
+How many issues, at most, you wish to be included in the "Feedback provided" category
 for each notification.
 +
 Integer, mandatory, no default.
@@ -309,8 +309,8 @@ buckets:
     delay: PT0S
     timeout: P3D
   maintenance:
-    reproducer:
-      label: "needs-reproducer"
+    feedback:
+      label: "triage/needs-reproducer"
       needed:
         delay: P21D
         timeout: P3D
@@ -344,28 +344,28 @@ How much time to wait after an issue was last notified about
 before including it again in the lottery in the "triage" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
-`buckets.maintenance.reproducer.label`::
-The label identifying GitHub issues for which a reproducer was requested.
+`buckets.maintenance.feedback.label`::
+The label identifying GitHub issues for which feedback was requested.
 +
 String, mandatory, no default.
-`buckets.maintenance.reproducer.needed.delay`::
+`buckets.maintenance.feedback.needed.delay`::
 How much time to wait after the last update on an issue
-before including it in the lottery in the "reproducer needed" bucket.
+before including it in the lottery in the "feedback needed" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
-`buckets.maintenance.reproducer.needed.timeout`::
+`buckets.maintenance.feedback.needed.timeout`::
 How much time to wait after an issue was last notified about
-before including it again in the lottery in the "reproducer needed" bucket.
+before including it again in the lottery in the "feedback needed" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
-`buckets.maintenance.reproducer.provided.delay`::
+`buckets.maintenance.feedback.provided.delay`::
 How much time to wait after the last update on an issue
-before including it in the lottery in the "reproducer provided" bucket.
+before including it in the lottery in the "feedback provided" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
-`buckets.maintenance.reproducer.provided.timeout`::
+`buckets.maintenance.feedback.provided.timeout`::
 How much time to wait after an issue was last notified about
-before including it again in the lottery in the "reproducer provided" bucket.
+before including it again in the lottery in the "feedback provided" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
 `buckets.maintenance.stale.delay`::

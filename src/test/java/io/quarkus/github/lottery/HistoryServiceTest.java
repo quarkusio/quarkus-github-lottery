@@ -51,11 +51,11 @@ public class HistoryServiceTest {
                                 "triage/needs-triage",
                                 Duration.ZERO, Duration.ofDays(3)),
                         new LotteryConfig.Buckets.Maintenance(
-                                new LotteryConfig.Buckets.Maintenance.Reproducer(
+                                new LotteryConfig.Buckets.Maintenance.Feedback(
                                         "needs-reproducer",
-                                        new LotteryConfig.Buckets.Maintenance.Reproducer.Needed(
+                                        new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
                                                 Duration.ofDays(21), Duration.ofDays(3)),
-                                        new LotteryConfig.Buckets.Maintenance.Reproducer.Provided(
+                                        new LotteryConfig.Buckets.Maintenance.Feedback.Provided(
                                                 Duration.ofDays(7), Duration.ofDays(3))),
                                 new LotteryConfig.Buckets.Maintenance.Stale(
                                         Duration.ofDays(60), Duration.ofDays(14))),

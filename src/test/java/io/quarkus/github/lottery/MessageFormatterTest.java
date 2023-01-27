@@ -142,9 +142,9 @@ public class MessageFormatterTest {
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                                # Reproducer needed
+                                # Feedback needed
                                 No issues in this category this time.
-                                # Reproducer provided
+                                # Feedback provided
                                 No issues in this category this time.
                                 # Stale
                                 No issues in this category this time.
@@ -169,10 +169,10 @@ public class MessageFormatterTest {
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                                # Reproducer needed
+                                # Feedback needed
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                                # Reproducer provided
+                                # Feedback provided
                                 No issues in this category this time.
                                 # Stale
                                 No issues in this category this time.
@@ -197,10 +197,10 @@ public class MessageFormatterTest {
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                                # Reproducer needed
+                                # Feedback needed
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                                # Reproducer provided
+                                # Feedback provided
                                  - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
                                  - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
                                 # Stale
@@ -273,10 +273,10 @@ public class MessageFormatterTest {
                                 # Triage
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                                # Reproducer needed
+                                # Feedback needed
                                  - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
                                  - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
-                                # Reproducer provided
+                                # Feedback provided
                                  - [#2](http://github.com/quarkusio/quarkus/issues/2) Title for issue 2
                                  - [#7](http://github.com/quarkusio/quarkus/issues/7) Title for issue 7
                                 # Stale
@@ -362,10 +362,10 @@ public class MessageFormatterTest {
                         No issues in this category this time.
 
                         # jane
-                        ## Reproducer needed
+                        ## Feedback needed
                          - quarkusio/quarkus#7
                          - quarkusio/quarkus#8
-                        ## Reproducer provided
+                        ## Feedback provided
                          - quarkusio/quarkus#9
                         ## Stale
                          - quarkusio/quarkus#10
@@ -376,10 +376,10 @@ public class MessageFormatterTest {
                         ## Triage
                          - quarkusio/quarkus#25
                          - quarkusio/quarkus#26
-                        ## Reproducer needed
+                        ## Feedback needed
                          - quarkusio/quarkus#27
                          - quarkusio/quarkus#28
-                        ## Reproducer provided
+                        ## Feedback provided
                          - quarkusio/quarkus#29
                         ## Stale
                          - quarkusio/quarkus#30
@@ -402,4 +402,50 @@ public class MessageFormatterTest {
                 .isEqualTo(lotteryReports);
     }
 
+    @Test
+    void extractPayloadFromHistoryBodyMarkdown_oldFormatWithReproducer() throws IOException {
+        var lotteryReports = List.of(
+                new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 3))),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty()),
+                new LotteryReport.Serialized(drawRef.instant(), "gsmet",
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(2, 4))),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty()),
+                new LotteryReport.Serialized(drawRef.instant(), "rick",
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of())),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty()),
+                new LotteryReport.Serialized(drawRef.instant(), "jane",
+                        Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(7, 8))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(9))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(10, 11, 12))),
+                        Optional.empty()),
+                new LotteryReport.Serialized(drawRef.instant(), "jsmith",
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(25, 26))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(27, 28))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(29))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(30, 31, 32))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(41, 42)))),
+                new LotteryReport.Serialized(drawRef.instant(), "geoand",
+                        Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(51, 52)))));
+        String formatted = """
+                Foo
+
+                bar
+                <span>foobar</span>
+
+                <!--:payload:
+                [{"instant":"2017-11-06T06:00:00Z","username":"yrodiere","triage":{"issueNumbers":[1,3]},"reproducerNeeded":null,"reproducerProvided":null,"stale":null,"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"gsmet","triage":{"issueNumbers":[2,4]},"reproducerNeeded":null,"reproducerProvided":null,"stale":null,"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"rick","triage":{"issueNumbers":[]},"reproducerNeeded":null,"reproducerProvided":null,"stale":null,"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"jane","triage":null,"reproducerNeeded":{"issueNumbers":[7,8]},"reproducerProvided":{"issueNumbers":[9]},"stale":{"issueNumbers":[10,11,12]},"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"jsmith","triage":{"issueNumbers":[25,26]},"reproducerNeeded":{"issueNumbers":[27,28]},"reproducerProvided":{"issueNumbers":[29]},"stale":{"issueNumbers":[30,31,32]},"stewardship":{"issueNumbers":[41,42]}},{"instant":"2017-11-06T06:00:00Z","username":"geoand","triage":null,"reproducerNeeded":null,"reproducerProvided":null,"stale":null,"stewardship":{"issueNumbers":[51,52]}}]
+                :payload:-->
+                """;
+
+        assertThat(messageFormatter.extractPayloadFromHistoryBodyMarkdown(formatted))
+                .usingRecursiveFieldByFieldElementComparator()
+                .isEqualTo(lotteryReports);
+    }
 }

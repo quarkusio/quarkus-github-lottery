@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import io.quarkus.github.lottery.github.Issue;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
@@ -15,8 +16,8 @@ public record LotteryReport(
         String username,
         Optional<ZoneId> timezone,
         Optional<Bucket> triage,
-        Optional<Bucket> reproducerNeeded,
-        Optional<Bucket> reproducerProvided,
+        Optional<Bucket> feedbackNeeded,
+        Optional<Bucket> feedbackProvided,
         Optional<Bucket> stale,
         Optional<Bucket> stewardship) {
 
@@ -34,8 +35,8 @@ public record LotteryReport(
 
     public Serialized serialized() {
         return new Serialized(drawRef.instant(), username, triage.map(Bucket::serialized),
-                reproducerNeeded.map(Bucket::serialized),
-                reproducerProvided.map(Bucket::serialized),
+                feedbackNeeded.map(Bucket::serialized),
+                feedbackProvided.map(Bucket::serialized),
                 stale.map(Bucket::serialized),
                 stewardship.map(Bucket::serialized));
     }
@@ -44,8 +45,8 @@ public record LotteryReport(
             Instant instant,
             String username,
             Optional<Bucket.Serialized> triage,
-            Optional<Bucket.Serialized> reproducerNeeded,
-            Optional<Bucket.Serialized> reproducerProvided,
+            @JsonAlias("reproducerNeeded") Optional<Bucket.Serialized> feedbackNeeded,
+            @JsonAlias("reproducerProvided") Optional<Bucket.Serialized> feedbackProvided,
             Optional<Bucket.Serialized> stale,
             Optional<Bucket.Serialized> stewardship) {
     }

@@ -4,13 +4,13 @@ Hey @{report.username}, here's your report for {report.repositoryName} on {repor
 # Triage
 {#include MessageFormatter/notificationBodyBucketContent bucket=report.triage.get() /}
 {/if}
-{#if report.reproducerNeeded.present}
-# Reproducer needed
-{#include MessageFormatter/notificationBodyBucketContent bucket=report.reproducerNeeded.get() /}
+{#if report.feedbackNeeded.present}
+# Feedback needed
+{#include MessageFormatter/notificationBodyBucketContent bucket=report.feedbackNeeded.get() /}
 {/if}
-{#if report.reproducerProvided.present}
-# Reproducer provided
-{#include MessageFormatter/notificationBodyBucketContent bucket=report.reproducerProvided.get() /}
+{#if report.feedbackProvided.present}
+# Feedback provided
+{#include MessageFormatter/notificationBodyBucketContent bucket=report.feedbackProvided.get() /}
 {/if}
 {#if report.stale.present}
 # Stale

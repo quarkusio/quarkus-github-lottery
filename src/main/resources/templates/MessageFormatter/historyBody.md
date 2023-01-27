@@ -6,13 +6,13 @@ Here are the reports for {drawRef.repositoryName} on {drawRef.instant}.
 ## Triage
 {#include MessageFormatter/historyBodyBucketContent bucket=report.triage.get() /}
 {/if}
-{#if report.reproducerNeeded.present}
-## Reproducer needed
-{#include MessageFormatter/historyBodyBucketContent bucket=report.reproducerNeeded.get() /}
+{#if report.feedbackNeeded.present}
+## Feedback needed
+{#include MessageFormatter/historyBodyBucketContent bucket=report.feedbackNeeded.get() /}
 {/if}
-{#if report.reproducerProvided.present}
-## Reproducer provided
-{#include MessageFormatter/historyBodyBucketContent bucket=report.reproducerProvided.get() /}
+{#if report.feedbackProvided.present}
+## Feedback provided
+{#include MessageFormatter/historyBodyBucketContent bucket=report.feedbackProvided.get() /}
 {/if}
 {#if report.stale.present}
 ## Stale

@@ -38,7 +38,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import io.quarkus.github.lottery.github.IssueActionSide;
 import io.quarkus.github.lottery.message.MessageFormatter;
@@ -150,7 +149,7 @@ public class GitHubServiceTest {
                                         delay: PT0S
                                         timeout: P3D
                                       maintenance:
-                                        reproducer:
+                                        feedback:
                                           label: "needs-reproducer"
                                           needed:
                                             delay: P21D
@@ -172,7 +171,7 @@ public class GitHubServiceTest {
                                         maintenance:
                                           labels: ["area/hibernate-orm", "area/hibernate-search"]
                                           days: ["MONDAY"]
-                                          reproducer:
+                                          feedback:
                                             needed:
                                               maxIssues: 4
                                             provided:
@@ -188,7 +187,7 @@ public class GitHubServiceTest {
                                         maintenance:
                                           labels: ["area/someobscurelibrary"]
                                           days: ["MONDAY"]
-                                          reproducer:
+                                          feedback:
                                             needed:
                                               maxIssues: 1
                                             provided:
@@ -215,11 +214,11 @@ public class GitHubServiceTest {
                                                     "triage/needs-triage",
                                                     Duration.ZERO, Duration.ofDays(3)),
                                             new LotteryConfig.Buckets.Maintenance(
-                                                    new LotteryConfig.Buckets.Maintenance.Reproducer(
+                                                    new LotteryConfig.Buckets.Maintenance.Feedback(
                                                             "needs-reproducer",
-                                                            new LotteryConfig.Buckets.Maintenance.Reproducer.Needed(
+                                                            new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
                                                                     Duration.ofDays(21), Duration.ofDays(3)),
-                                                            new LotteryConfig.Buckets.Maintenance.Reproducer.Provided(
+                                                            new LotteryConfig.Buckets.Maintenance.Feedback.Provided(
                                                                     Duration.ofDays(7), Duration.ofDays(3))),
                                                     new LotteryConfig.Buckets.Maintenance.Stale(
                                                             Duration.ofDays(60), Duration.ofDays(14))),
@@ -234,7 +233,7 @@ public class GitHubServiceTest {
                                                     Optional.of(new LotteryConfig.Participant.Maintenance(
                                                             List.of("area/hibernate-orm", "area/hibernate-search"),
                                                             Set.of(DayOfWeek.MONDAY),
-                                                            new LotteryConfig.Participant.Maintenance.Reproducer(
+                                                            new LotteryConfig.Participant.Maintenance.Feedback(
                                                                     new LotteryConfig.Participant.Participation(4),
                                                                     new LotteryConfig.Participant.Participation(2)),
                                                             new LotteryConfig.Participant.Participation(5))),
@@ -252,7 +251,7 @@ public class GitHubServiceTest {
                                                     Optional.of(new LotteryConfig.Participant.Maintenance(
                                                             List.of("area/someobscurelibrary"),
                                                             Set.of(DayOfWeek.MONDAY),
-                                                            new LotteryConfig.Participant.Maintenance.Reproducer(
+                                                            new LotteryConfig.Participant.Maintenance.Feedback(
                                                                     new LotteryConfig.Participant.Participation(1),
                                                                     new LotteryConfig.Participant.Participation(1)),
                                                             new LotteryConfig.Participant.Participation(5))),
