@@ -27,6 +27,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -38,7 +39,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import io.quarkus.github.lottery.github.IssueActionSide;
 import io.quarkus.github.lottery.message.MessageFormatter;
@@ -150,8 +150,8 @@ public class GitHubServiceTest {
                                         delay: PT0S
                                         timeout: P3D
                                       maintenance:
-                                        reproducer:
-                                          label: "needs-reproducer"
+                                        feedback:
+                                          labels: ["triage/needs-feedback", "triage/needs-reproducer"]
                                           needed:
                                             delay: P21D
                                             timeout: P3D
@@ -172,7 +172,7 @@ public class GitHubServiceTest {
                                         maintenance:
                                           labels: ["area/hibernate-orm", "area/hibernate-search"]
                                           days: ["MONDAY"]
-                                          reproducer:
+                                          feedback:
                                             needed:
                                               maxIssues: 4
                                             provided:
@@ -188,7 +188,7 @@ public class GitHubServiceTest {
                                         maintenance:
                                           labels: ["area/someobscurelibrary"]
                                           days: ["MONDAY"]
-                                          reproducer:
+                                          feedback:
                                             needed:
                                               maxIssues: 1
                                             provided:
@@ -215,11 +215,11 @@ public class GitHubServiceTest {
                                                     "triage/needs-triage",
                                                     Duration.ZERO, Duration.ofDays(3)),
                                             new LotteryConfig.Buckets.Maintenance(
-                                                    new LotteryConfig.Buckets.Maintenance.Reproducer(
-                                                            "needs-reproducer",
-                                                            new LotteryConfig.Buckets.Maintenance.Reproducer.Needed(
+                                                    new LotteryConfig.Buckets.Maintenance.Feedback(
+                                                            List.of("triage/needs-feedback", "triage/needs-reproducer"),
+                                                            new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
                                                                     Duration.ofDays(21), Duration.ofDays(3)),
-                                                            new LotteryConfig.Buckets.Maintenance.Reproducer.Provided(
+                                                            new LotteryConfig.Buckets.Maintenance.Feedback.Provided(
                                                                     Duration.ofDays(7), Duration.ofDays(3))),
                                                     new LotteryConfig.Buckets.Maintenance.Stale(
                                                             Duration.ofDays(60), Duration.ofDays(14))),
@@ -234,7 +234,7 @@ public class GitHubServiceTest {
                                                     Optional.of(new LotteryConfig.Participant.Maintenance(
                                                             List.of("area/hibernate-orm", "area/hibernate-search"),
                                                             Set.of(DayOfWeek.MONDAY),
-                                                            new LotteryConfig.Participant.Maintenance.Reproducer(
+                                                            new LotteryConfig.Participant.Maintenance.Feedback(
                                                                     new LotteryConfig.Participant.Participation(4),
                                                                     new LotteryConfig.Participant.Participation(2)),
                                                             new LotteryConfig.Participant.Participation(5))),
@@ -252,7 +252,7 @@ public class GitHubServiceTest {
                                                     Optional.of(new LotteryConfig.Participant.Maintenance(
                                                             List.of("area/someobscurelibrary"),
                                                             Set.of(DayOfWeek.MONDAY),
-                                                            new LotteryConfig.Participant.Maintenance.Reproducer(
+                                                            new LotteryConfig.Participant.Maintenance.Feedback(
                                                                     new LotteryConfig.Participant.Participation(1),
                                                                     new LotteryConfig.Participant.Participation(1)),
                                                             new LotteryConfig.Participant.Participation(5))),
@@ -362,7 +362,9 @@ public class GitHubServiceTest {
         Date issue1ActionLabelEvent = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
         Date issue2ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
 
-        var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
+        var queryIssuesNeedsFeedbackBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var queryIssuesNeedsReproducerBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
         var issue1QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -378,7 +380,8 @@ public class GitHubServiceTest {
                 .github(mocks -> {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
-                    when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    when(repositoryMock.queryIssues()).thenReturn(queryIssuesNeedsFeedbackBuilderMock)
+                            .thenReturn(queryIssuesNeedsReproducerBuilderMock);
                     var prMock = mockPullRequestForLotteryFilteredOutByRepository(mocks, 0);
                     var issue1Mock = mockIssueForLottery(mocks, 1, beforeCutoff);
                     var issue2Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 2, beforeCutoff);
@@ -386,9 +389,10 @@ public class GitHubServiceTest {
                     var issue4Mock = mockIssueForLottery(mocks, 4, beforeCutoff);
                     var issue5Mock = mockIssueForLottery(mocks, 5, beforeCutoff);
                     var issue6Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 6, afterCutoff);
-                    var issuesMocks = mockPagedIterable(prMock, issue1Mock, issue2Mock, issue3Mock,
-                            issue4Mock, issue5Mock, issue6Mock);
-                    when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
+                    var issuesNeedsFeedbackMocks = mockPagedIterable(issue1Mock, issue3Mock, issue5Mock);
+                    when(queryIssuesNeedsFeedbackBuilderMock.list()).thenReturn(issuesNeedsFeedbackMocks);
+                    var issuesNeedsReproducerMocks = mockPagedIterable(prMock, issue2Mock, issue4Mock, issue6Mock);
+                    when(queryIssuesNeedsReproducerBuilderMock.list()).thenReturn(issuesNeedsReproducerMocks);
 
                     var adminUser = mocks.ghObject(GHUser.class, 1L);
                     when(repositoryMock.getPermission(adminUser)).thenReturn(GHPermissionType.ADMIN);
@@ -399,7 +403,7 @@ public class GitHubServiceTest {
                     var noneUser = mocks.ghObject(GHUser.class, 4L);
                     when(repositoryMock.getPermission(noneUser)).thenReturn(GHPermissionType.NONE);
 
-                    var needsReproducerLabelMock = mockLabel("needs-reproducer");
+                    var needsReproducerLabelMock = mockLabel("triage/needs-reproducer");
                     var areaHibernateSearchLabelMock = mockLabel("area/hibernate-search");
 
                     var issue1Event1Mock = mockIssueEvent("created");
@@ -465,21 +469,27 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+                    assertThat(repo.issuesLastActedOnByAndLastUpdatedBefore(
+                            new LinkedHashSet<>(List.of("triage/needs-feedback", "triage/needs-reproducer")),
                             "area/hibernate-search", IssueActionSide.TEAM, cutoff))
                             .containsExactlyElementsOf(stubIssueList(1, 4, 5));
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).state(GHIssueState.OPEN);
-                    verify(queryIssuesBuilderMock).sort(GHIssueQueryBuilder.Sort.UPDATED);
-                    verify(queryIssuesBuilderMock).direction(GHDirection.DESC);
-                    verify(queryIssuesBuilderMock).label("needs-reproducer");
-                    verify(queryIssuesBuilderMock).label("area/hibernate-search");
+                    verify(queryIssuesNeedsFeedbackBuilderMock).state(GHIssueState.OPEN);
+                    verify(queryIssuesNeedsFeedbackBuilderMock).sort(GHIssueQueryBuilder.Sort.UPDATED);
+                    verify(queryIssuesNeedsFeedbackBuilderMock).direction(GHDirection.DESC);
+                    verify(queryIssuesNeedsFeedbackBuilderMock).label("triage/needs-feedback");
+                    verify(queryIssuesNeedsFeedbackBuilderMock).label("area/hibernate-search");
+                    verify(queryIssuesNeedsReproducerBuilderMock).state(GHIssueState.OPEN);
+                    verify(queryIssuesNeedsReproducerBuilderMock).sort(GHIssueQueryBuilder.Sort.UPDATED);
+                    verify(queryIssuesNeedsReproducerBuilderMock).direction(GHDirection.DESC);
+                    verify(queryIssuesNeedsReproducerBuilderMock).label("triage/needs-reproducer");
+                    verify(queryIssuesNeedsReproducerBuilderMock).label("area/hibernate-search");
+                    verifyNoMoreInteractions(queryIssuesNeedsReproducerBuilderMock, queryIssuesNeedsFeedbackBuilderMock);
 
                     verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
                     verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
 
-                    verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
     }
@@ -495,7 +505,9 @@ public class GitHubServiceTest {
         Date issue1ActionLabelEvent = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
         Date issue2ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
 
-        var queryIssuesBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
+        var queryIssuesNeedsReproducerBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var queryIssuesNeedsFeedbackBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
         var issue1QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -511,7 +523,9 @@ public class GitHubServiceTest {
                 .github(mocks -> {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
-                    when(repositoryMock.queryIssues()).thenReturn(queryIssuesBuilderMock);
+                    when(repositoryMock.queryIssues())
+                            .thenReturn(queryIssuesNeedsFeedbackBuilderMock)
+                            .thenReturn(queryIssuesNeedsReproducerBuilderMock);
                     // Pull requests should always be filtered out
                     var prMock = mockPullRequestForLotteryFilteredOutByRepository(mocks, 0);
                     var issue1Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 1, beforeCutoff);
@@ -520,9 +534,10 @@ public class GitHubServiceTest {
                     var issue4Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 4, beforeCutoff);
                     var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, beforeCutoff);
                     var issue6Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 6, afterCutoff);
-                    var issuesMocks = mockPagedIterable(prMock, issue1Mock, issue2Mock, issue3Mock,
-                            issue4Mock, issue5Mock, issue6Mock);
-                    when(queryIssuesBuilderMock.list()).thenReturn(issuesMocks);
+                    var issuesNeedsFeedbackMocks = mockPagedIterable(prMock, issue2Mock, issue4Mock, issue6Mock);
+                    when(queryIssuesNeedsFeedbackBuilderMock.list()).thenReturn(issuesNeedsFeedbackMocks);
+                    var issuesNeedsReproducerMocks = mockPagedIterable(issue1Mock, issue3Mock, issue5Mock);
+                    when(queryIssuesNeedsReproducerBuilderMock.list()).thenReturn(issuesNeedsReproducerMocks);
 
                     var adminUser = mocks.ghObject(GHUser.class, 1L);
                     when(repositoryMock.getPermission(adminUser)).thenReturn(GHPermissionType.ADMIN);
@@ -533,7 +548,7 @@ public class GitHubServiceTest {
                     var noneUser = mocks.ghObject(GHUser.class, 4L);
                     when(repositoryMock.getPermission(noneUser)).thenReturn(GHPermissionType.NONE);
 
-                    var needsReproducerLabelMock = mockLabel("needs-reproducer");
+                    var needsReproducerLabelMock = mockLabel("triage/needs-reproducer");
                     var areaHibernateSearchLabelMock = mockLabel("area/hibernate-search");
 
                     var issue1Event1Mock = mockIssueEvent("created");
@@ -599,21 +614,27 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.issuesLastActedOnByAndLastUpdatedBefore("needs-reproducer",
+                    assertThat(repo.issuesLastActedOnByAndLastUpdatedBefore(
+                            new LinkedHashSet<>(List.of("triage/needs-feedback", "triage/needs-reproducer")),
                             "area/hibernate-search", IssueActionSide.OUTSIDER, cutoff))
                             .containsExactlyElementsOf(stubIssueList(2, 3));
                 })
                 .then().github(mocks -> {
-                    verify(queryIssuesBuilderMock).state(GHIssueState.OPEN);
-                    verify(queryIssuesBuilderMock).sort(GHIssueQueryBuilder.Sort.UPDATED);
-                    verify(queryIssuesBuilderMock).direction(GHDirection.DESC);
-                    verify(queryIssuesBuilderMock).label("needs-reproducer");
-                    verify(queryIssuesBuilderMock).label("area/hibernate-search");
+                    verify(queryIssuesNeedsFeedbackBuilderMock).state(GHIssueState.OPEN);
+                    verify(queryIssuesNeedsFeedbackBuilderMock).sort(GHIssueQueryBuilder.Sort.UPDATED);
+                    verify(queryIssuesNeedsFeedbackBuilderMock).direction(GHDirection.DESC);
+                    verify(queryIssuesNeedsFeedbackBuilderMock).label("triage/needs-feedback");
+                    verify(queryIssuesNeedsFeedbackBuilderMock).label("area/hibernate-search");
+                    verify(queryIssuesNeedsReproducerBuilderMock).state(GHIssueState.OPEN);
+                    verify(queryIssuesNeedsReproducerBuilderMock).sort(GHIssueQueryBuilder.Sort.UPDATED);
+                    verify(queryIssuesNeedsReproducerBuilderMock).direction(GHDirection.DESC);
+                    verify(queryIssuesNeedsReproducerBuilderMock).label("triage/needs-reproducer");
+                    verify(queryIssuesNeedsReproducerBuilderMock).label("area/hibernate-search");
+                    verifyNoMoreInteractions(queryIssuesNeedsReproducerBuilderMock, queryIssuesNeedsFeedbackBuilderMock);
 
                     verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
                     verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
 
-                    verifyNoMoreInteractions(queryIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
     }

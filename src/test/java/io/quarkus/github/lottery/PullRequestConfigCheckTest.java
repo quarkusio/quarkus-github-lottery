@@ -84,8 +84,8 @@ public class PullRequestConfigCheckTest {
                                         delay: PT0S
                                         timeout: P3D
                                       maintenance:
-                                        reproducer:
-                                          label: "needs-reproducer"
+                                        feedback:
+                                          labels: ["triage/needs-reproducer", "triage/needs-feedback"]
                                           needed:
                                             delay: P21D
                                             timeout: P3D
@@ -157,8 +157,8 @@ public class PullRequestConfigCheckTest {
                                         delay: PT0S
                                         timeout: P3D
                                       maintenance:
-                                        reproducer:
-                                          label: "needs-reproducer"
+                                        feedback:
+                                          labels: ["triage/needs-reproducer", "triage/needs-feedback"]
                                           needed:
                                             delay: P21D
                                             timeout: P3D

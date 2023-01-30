@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -55,7 +56,7 @@ public final class Lottery {
     public void draw(GitHubRepository repo, LotteryHistory lotteryHistory) throws IOException {
         // We run draws for separate buckets in parallel,
         // because buckets may compete for issues
-        // (e.g. an issue needing a reproducer, but annotated with two different area labels)
+        // (e.g. an issue needing feedback, but annotated with two different area labels)
         // and we want to spread the load uniformly across buckets.
         List<Draw> draws = new ArrayList<>();
         // This is to avoid notifying twice about the same issue in parallel draws.
@@ -104,24 +105,24 @@ public final class Lottery {
 
     final class Maintenance {
         private final String areaLabel;
-        private final Bucket reproducerNeeded;
-        private final Bucket reproducerProvided;
+        private final Bucket feedbackNeeded;
+        private final Bucket feedbackProvided;
         private final Bucket stale;
 
         Maintenance(String areaLabel) {
             this.areaLabel = areaLabel;
             String namePrefix = "maintenance - '" + areaLabel + "' - ";
-            reproducerNeeded = new Bucket(namePrefix + "reproducerNeeded");
-            reproducerProvided = new Bucket(namePrefix + "reproducerProvided");
+            feedbackNeeded = new Bucket(namePrefix + "feedbackNeeded");
+            feedbackProvided = new Bucket(namePrefix + "feedbackProvided");
             stale = new Bucket(namePrefix + "stale");
         }
 
-        Bucket reproducerNeeded() {
-            return reproducerNeeded;
+        Bucket feedbackNeeded() {
+            return feedbackNeeded;
         }
 
-        Bucket reproducerProvided() {
-            return reproducerProvided;
+        Bucket feedbackProvided() {
+            return feedbackProvided;
         }
 
         Bucket stale() {
@@ -130,22 +131,23 @@ public final class Lottery {
 
         void createDraws(GitHubRepository repo, LotteryHistory lotteryHistory, List<Draw> draws,
                 Set<Integer> allWinnings) throws IOException {
-            String needReproducerLabel = config.maintenance().reproducer().label();
-            if (reproducerNeeded.hasParticipation()) {
-                var cutoff = now.minus(config.maintenance().reproducer().needed().notification().delay());
-                var history = lotteryHistory.reproducerNeeded();
-                draws.add(reproducerNeeded.createDraw(
-                        repo.issuesLastActedOnByAndLastUpdatedBefore(needReproducerLabel, areaLabel,
+            // Remove duplicates, but preserve order
+            Set<String> needFeedbackLabels = new LinkedHashSet<>(config.maintenance().feedback().labels());
+            if (feedbackNeeded.hasParticipation()) {
+                var cutoff = now.minus(config.maintenance().feedback().needed().notification().delay());
+                var history = lotteryHistory.feedbackNeeded();
+                draws.add(feedbackNeeded.createDraw(
+                        repo.issuesLastActedOnByAndLastUpdatedBefore(needFeedbackLabels, areaLabel,
                                 IssueActionSide.TEAM, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                                 .iterator(),
                         allWinnings));
             }
-            if (reproducerProvided.hasParticipation()) {
-                var cutoff = now.minus(config.maintenance().reproducer().provided().notification().delay());
-                var history = lotteryHistory.reproducerProvided();
-                draws.add(reproducerProvided.createDraw(
-                        repo.issuesLastActedOnByAndLastUpdatedBefore(needReproducerLabel, areaLabel,
+            if (feedbackProvided.hasParticipation()) {
+                var cutoff = now.minus(config.maintenance().feedback().provided().notification().delay());
+                var history = lotteryHistory.feedbackProvided();
+                draws.add(feedbackProvided.createDraw(
+                        repo.issuesLastActedOnByAndLastUpdatedBefore(needFeedbackLabels, areaLabel,
                                 IssueActionSide.OUTSIDER, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                                 .iterator(),
