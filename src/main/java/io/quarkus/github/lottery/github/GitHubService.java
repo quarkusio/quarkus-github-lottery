@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import io.quarkiverse.githubapp.GitHubClientProvider;
 import io.quarkiverse.githubapp.GitHubConfigFileProvider;

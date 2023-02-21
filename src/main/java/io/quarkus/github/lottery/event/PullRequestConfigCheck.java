@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Date;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import io.quarkus.github.lottery.util.Streams;
 import org.apache.commons.lang3.exception.ExceptionUtils;

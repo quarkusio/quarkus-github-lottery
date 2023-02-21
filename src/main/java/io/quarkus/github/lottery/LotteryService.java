@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
