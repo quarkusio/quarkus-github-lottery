@@ -46,7 +46,7 @@ jobs:
       run: oc delete is ubi-quarkus-native-binary-s2i || true
 
     - name: Build Kubernetes client
-      run: mvn -f kubernetes-client clean install -DskipTests -DskipITs
+      run: cd kubernetes-client && mvn clean install -DskipTests -DskipITs
 
     - name: Build and deploy
       run: mvn clean package -Dquarkus.kubernetes.deploy=true -Dquarkus.native.container-build=true -Dnative -Drevision=${{ github.sha }}
