@@ -28,9 +28,10 @@ jobs:
     - uses: actions/checkout@v2
 
     - uses: actions/checkout@v2
-      directory: kubernetes-client
-      repository: vietj/kubernetes-client
-      ref: fix-stack-overflow
+      with:
+        directory: kubernetes-client
+        repository: vietj/kubernetes-client
+        ref: fix-stack-overflow
 
     - name: Set up JDK 17
       uses: actions/setup-java@v2
