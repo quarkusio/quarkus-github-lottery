@@ -45,13 +45,6 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>io.fabric8</groupId>
-        <artifactId>kubernetes-client-bom</artifactId>
-        <version>6.6-SNAPSHOT</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-      <dependency>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>${quarkus.platform.artifact-id}</artifactId>
         <version>${quarkus.version}</version>

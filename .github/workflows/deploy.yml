@@ -27,12 +27,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: actions/checkout@v2
-      with:
-        path: kubernetes-client
-        repository: vietj/kubernetes-client
-        ref: fix-stack-overflow
-
     - name: Set up JDK 17
       uses: actions/setup-java@v2
       with:
@@ -44,9 +38,6 @@ jobs:
 
     - name: Delete problematic image
       run: oc delete is ubi-quarkus-native-binary-s2i || true
-
-    - name: Build Kubernetes client
-      run: cd kubernetes-client && mvn clean install -DskipTests -DskipITs
 
     - name: Build and deploy
       run: mvn clean package -Dquarkus.kubernetes.deploy=true -Dquarkus.native.container-build=true -Dnative -Drevision=${{ github.sha }}
