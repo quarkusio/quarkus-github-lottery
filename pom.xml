@@ -39,7 +39,6 @@
     <quarkus-github-app.version>2.0.0.Alpha2</quarkus-github-app.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.0.0</surefire-plugin.version>
-    <version.buildnumber.plugin>3.0.0</version.buildnumber.plugin>
     <version.formatter.plugin>2.22.0</version.formatter.plugin>
   </properties>
   <dependencyManagement>
@@ -69,6 +68,10 @@
     <dependency>
       <groupId>io.quarkus</groupId>
       <artifactId>quarkus-qute</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-info</artifactId>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -124,35 +127,11 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>buildnumber-maven-plugin</artifactId>
-        <version>${version.buildnumber.plugin}</version>
-        <executions>
-          <execution>
-            <id>get-scm-revision</id>
-            <phase>initialize</phase>
-            <goals>
-              <goal>create</goal>
-            </goals>
-            <configuration>
-              <doCheck>false</doCheck>
-              <doUpdate>false</doUpdate>
-              <revisionOnScmFailure>UNKNOWN</revisionOnScmFailure>
-              <getRevisionOnlyOnce>true</getRevisionOnlyOnce>
-              <shortRevisionLength>7</shortRevisionLength>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>${quarkus.platform.group-id}</groupId>
         <artifactId>quarkus-maven-plugin</artifactId>
         <version>${quarkus.version}</version>
         <extensions>true</extensions>
         <configuration>
-          <systemProperties>
-            <buildNumber>${buildNumber}</buildNumber>
-          </systemProperties>
         </configuration>
         <executions>
           <execution>
