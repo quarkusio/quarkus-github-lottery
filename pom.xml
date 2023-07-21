@@ -36,7 +36,7 @@
     <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
     <quarkus.version>3.2.3.Final</quarkus.version>
     <assertj.version>3.24.2</assertj.version>
-    <quarkus-github-app.version>2.0.2</quarkus-github-app.version>
+    <quarkus-github-app.version>2.0.4</quarkus-github-app.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.1.2</surefire-plugin.version>
     <version.formatter.plugin>2.23.0</version.formatter.plugin>
