@@ -207,7 +207,7 @@ public class GitHubRepository implements AutoCloseable {
         }
         return switch (repository().getPermission(lastComment.get().getUser())) {
             case ADMIN, WRITE -> IssueActionSide.TEAM;
-            case READ, NONE -> IssueActionSide.OUTSIDER;
+            case READ, UNKNOWN, NONE -> IssueActionSide.OUTSIDER;
         };
     }
 
