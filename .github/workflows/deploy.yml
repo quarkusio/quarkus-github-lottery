@@ -34,7 +34,11 @@ jobs:
         java-version: 17
 
     - name: Log in to OpenShift
-      run: oc login --token=${{ secrets.QUARKUS_GITHUB_LOTTERY_OC_DEPLOY_TOKEN }} --server=${{ secrets.QUARKUS_GITHUB_LOTTERY_OC_DEPLOY_SERVER }}
+      uses: redhat-actions/oc-login@v1
+      with:
+        openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
+        openshift_token: ${{ secrets.OPENSHIFT_TOKEN }}
+        namespace: ${{ env.OPENSHIFT_NAMESPACE }}
 
     - name: Delete problematic image
       run: oc delete is ubi-quarkus-native-binary-s2i || true
