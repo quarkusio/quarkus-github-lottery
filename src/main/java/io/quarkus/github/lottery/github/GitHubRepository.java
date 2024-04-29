@@ -302,6 +302,17 @@ public class GitHubRepository implements AutoCloseable {
             builder.assignee(assignee);
         }
         builder.state(GHIssueState.ALL);
+        // Try exact match first to avoid confusion if there are two issues and one is
+        // the exact topic while the other just starts with the topic.
+        // Example:
+        //     topic = Lottery history for quarkusio/quarkus
+        //     issue1.title = Lottery history for quarkusio/quarkusio.github.io
+        //     issue2.title = Lottery history for quarkusio/quarkus
+        for (var issue : builder.list()) {
+            if (issue.getTitle().equals(topic)) {
+                return Optional.of(issue);
+            }
+        }
         for (var issue : builder.list()) {
             if (issue.getTitle().startsWith(topic)) {
                 return Optional.of(issue);
