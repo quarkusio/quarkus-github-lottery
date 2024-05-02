@@ -116,7 +116,7 @@ public class LotteryService {
                 continue;
             }
 
-            if (notifier.hasClosedDedicatedIssue(username)) {
+            if (notifier.isIgnoring(username)) {
                 Log.debugf("Skipping user %s whose dedicated issue is closed", username);
                 continue;
             }
