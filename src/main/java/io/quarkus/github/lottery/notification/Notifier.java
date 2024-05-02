@@ -5,6 +5,7 @@ import java.io.IOException;
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.GitHubRepository;
+import io.quarkus.github.lottery.github.TopicRef;
 import io.quarkus.github.lottery.message.MessageFormatter;
 
 public class Notifier implements AutoCloseable {
@@ -24,9 +25,9 @@ public class Notifier implements AutoCloseable {
         notificationRepository.close();
     }
 
-    public boolean hasClosedDedicatedIssue(String username) throws IOException {
-        String topic = formatter.formatNotificationTopicText(drawRef, username);
-        return notificationRepository.hasClosedDedicatedIssue(username, topic);
+    public boolean isIgnoring(String username) throws IOException {
+        return notificationRepository.topic(notificationTopic(username))
+                .isClosed();
     }
 
     public void send(LotteryReport report) throws IOException {
@@ -34,9 +35,13 @@ public class Notifier implements AutoCloseable {
             throw new IllegalStateException("Cannot send reports for different draws; expected '" + drawRef
                     + "', got '" + report.drawRef() + "'.");
         }
-        String topic = formatter.formatNotificationTopicText(drawRef, report.username());
         String topicSuffix = formatter.formatNotificationTopicSuffixText(report);
         String body = formatter.formatNotificationBodyMarkdown(report, notificationRepository.ref());
-        notificationRepository.commentOnDedicatedIssue(report.username(), topic, topicSuffix, body);
+        notificationRepository.topic(notificationTopic(report.username()))
+                .comment(topicSuffix, body);
+    }
+
+    private TopicRef notificationTopic(String username) {
+        return TopicRef.notification(username, formatter.formatNotificationTopicText(drawRef, username));
     }
 }

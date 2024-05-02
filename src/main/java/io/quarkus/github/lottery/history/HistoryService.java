@@ -5,6 +5,7 @@ import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 import java.io.IOException;
 import java.util.List;
 
+import io.quarkus.github.lottery.github.TopicRef;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -27,8 +28,7 @@ public class HistoryService {
     public LotteryHistory fetch(DrawRef drawRef, LotteryConfig config) throws IOException {
         var persistenceRepo = persistenceRepo(drawRef, config);
         var history = new LotteryHistory(drawRef.instant(), config.buckets());
-        String historyTopic = messageFormatter.formatHistoryTopicText(drawRef);
-        persistenceRepo.extractCommentsFromDedicatedIssue(null, historyTopic, history.since())
+        persistenceRepo.topic(historyTopic(drawRef)).extractComments(history.since())
                 .flatMap(uncheckedIO(message -> messageFormatter.extractPayloadFromHistoryBodyMarkdown(message).stream()))
                 .forEach(history::add);
         return history;
@@ -36,9 +36,12 @@ public class HistoryService {
 
     public void append(DrawRef drawRef, LotteryConfig config, List<LotteryReport.Serialized> reports) throws IOException {
         var persistenceRepo = persistenceRepo(drawRef, config);
-        String historyTopic = messageFormatter.formatHistoryTopicText(drawRef);
         String commentBody = messageFormatter.formatHistoryBodyMarkdown(drawRef, reports);
-        persistenceRepo.commentOnDedicatedIssue(null, historyTopic, "", commentBody);
+        persistenceRepo.topic(historyTopic(drawRef)).comment("", commentBody);
+    }
+
+    private TopicRef historyTopic(DrawRef drawRef) {
+        return TopicRef.history(messageFormatter.formatHistoryTopicText(drawRef));
     }
 
     GitHubRepository persistenceRepo(DrawRef drawRef, LotteryConfig config) {

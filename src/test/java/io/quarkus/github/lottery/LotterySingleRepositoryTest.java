@@ -141,7 +141,7 @@ public class LotterySingleRepositoryTest {
 
     private void mockNotifiable(String username, ZoneId timezone) throws IOException {
         when(historyMock.lastNotificationToday(username, timezone)).thenReturn(Optional.empty());
-        when(notifierMock.hasClosedDedicatedIssue(username)).thenReturn(false);
+        when(notifierMock.isIgnoring(username)).thenReturn(false);
     }
 
     @Test
@@ -240,7 +240,7 @@ public class LotterySingleRepositoryTest {
     }
 
     @Test
-    void closedDedicatedIssue() throws IOException {
+    void ignoring() throws IOException {
         var config = defaultConfig(List.of(
                 new LotteryConfig.Participant("yrodiere",
                         Optional.empty(),
@@ -261,7 +261,7 @@ public class LotterySingleRepositoryTest {
         when(repoMock.ref()).thenReturn(repoRef);
 
         when(historyMock.lastNotificationToday("yrodiere", ZoneOffset.UTC)).thenReturn(Optional.empty());
-        when(notifierMock.hasClosedDedicatedIssue("yrodiere")).thenReturn(true);
+        when(notifierMock.isIgnoring("yrodiere")).thenReturn(true);
 
         lotteryService.draw();
 

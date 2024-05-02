@@ -23,16 +23,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
+import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
+import io.quarkus.github.lottery.github.TopicRef;
 import io.quarkus.github.lottery.history.HistoryService;
 import io.quarkus.github.lottery.message.MessageFormatter;
 import io.quarkus.test.junit.QuarkusMock;
@@ -66,6 +67,7 @@ public class HistoryServiceTest {
 
     GitHubService gitHubServiceMock;
     GitHubRepository persistenceRepoMock;
+    GitHubRepository.Topic topicMock;
 
     MessageFormatter messageFormatterMock;
 
@@ -85,6 +87,7 @@ public class HistoryServiceTest {
         repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         persistenceRepoMock = Mockito.mock(GitHubRepository.class);
+        topicMock = Mockito.mock(GitHubRepository.Topic.class);
 
         now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         drawRef = new DrawRef(repoRef, now);
@@ -103,7 +106,9 @@ public class HistoryServiceTest {
 
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
-        when(persistenceRepoMock.extractCommentsFromDedicatedIssue(isNull(), eq(topic), any()))
+        when(persistenceRepoMock.topic(TopicRef.history(topic)))
+                .thenReturn(topicMock);
+        when(topicMock.extractComments(any()))
                 .thenAnswer(ignored -> Stream.of());
 
         var history = historyService.fetch(drawRef, config);
@@ -129,7 +134,9 @@ public class HistoryServiceTest {
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String historyBody = "Some content";
-        when(persistenceRepoMock.extractCommentsFromDedicatedIssue(isNull(), eq(topic), any()))
+        when(persistenceRepoMock.topic(TopicRef.history(topic)))
+                .thenReturn(topicMock);
+        when(topicMock.extractComments(any()))
                 .thenAnswer(ignored -> Stream.of(historyBody));
         when(messageFormatterMock.extractPayloadFromHistoryBodyMarkdown(historyBody))
                 .thenReturn(List.of(
@@ -165,7 +172,9 @@ public class HistoryServiceTest {
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String historyBody = "Some content";
-        when(persistenceRepoMock.extractCommentsFromDedicatedIssue(isNull(), eq(topic), any()))
+        when(persistenceRepoMock.topic(TopicRef.history(topic)))
+                .thenReturn(topicMock);
+        when(topicMock.extractComments(any()))
                 .thenAnswer(ignored -> Stream.of(historyBody));
         when(messageFormatterMock.extractPayloadFromHistoryBodyMarkdown(historyBody))
                 .thenReturn(List.of(
@@ -207,7 +216,9 @@ public class HistoryServiceTest {
 
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
-        when(persistenceRepoMock.extractCommentsFromDedicatedIssue(isNull(), eq(topic), any()))
+        when(persistenceRepoMock.topic(TopicRef.history(topic)))
+                .thenReturn(topicMock);
+        when(topicMock.extractComments(any()))
                 .thenAnswer(ignored -> Stream.of());
 
         var history = historyService.fetch(drawRef, config);
@@ -229,7 +240,9 @@ public class HistoryServiceTest {
         String topic = "Lottery history for quarkusio/quarkus";
         when(messageFormatterMock.formatHistoryTopicText(drawRef)).thenReturn(topic);
         String historyBody = "Some content";
-        when(persistenceRepoMock.extractCommentsFromDedicatedIssue(isNull(), eq(topic), any()))
+        when(persistenceRepoMock.topic(TopicRef.history(topic)))
+                .thenReturn(topicMock);
+        when(topicMock.extractComments(any()))
                 .thenAnswer(ignored -> Stream.of(historyBody));
         when(messageFormatterMock.extractPayloadFromHistoryBodyMarkdown(historyBody))
                 .thenReturn(List.of(

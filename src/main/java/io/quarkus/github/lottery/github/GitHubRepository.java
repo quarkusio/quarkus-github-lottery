@@ -12,13 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import io.quarkus.github.lottery.message.MessageFormatter;
-import io.quarkus.github.lottery.util.Streams;
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
@@ -33,6 +30,8 @@ import io.quarkiverse.githubapp.ConfigFile;
 import io.quarkiverse.githubapp.GitHubClientProvider;
 import io.quarkiverse.githubapp.GitHubConfigFileProvider;
 import io.quarkus.github.lottery.config.LotteryConfig;
+import io.quarkus.github.lottery.message.MessageFormatter;
+import io.quarkus.github.lottery.util.Streams;
 import io.quarkus.logging.Log;
 import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
 
@@ -200,7 +199,7 @@ public class GitHubRepository implements AutoCloseable {
             queryCommentsBuilder.since(Date.from(lastEventActionSideInstant));
         }
 
-        Optional<GHIssueComment> lastComment = toStream(queryCommentsBuilder.list()).reduce(last());
+        Optional<GHIssueComment> lastComment = toStream(queryCommentsBuilder.list()).reduce(Streams.last());
         if (lastComment.isEmpty()) {
             // No action since the label was assigned.
             return IssueActionSide.TEAM;
@@ -216,117 +215,124 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     /**
-     * Checks whether an issue identified by its assignee and topic (title prefix) exists, but has been closed.
+     * Retrieves a topic backed by GitHub issues.
      *
-     * @param assignee The GitHub username of issue assignee.
-     * @param topic The issue's topic, a string that should be prefixed to the issue title.
-     *
-     * @throws IOException If a GitHub API call fails.
-     * @throws java.io.UncheckedIOException If a GitHub API call fails.
-     * @see #commentOnDedicatedIssue(String, String, String, String)
+     * @param ref The topic reference.
      */
-    public boolean hasClosedDedicatedIssue(String assignee, String topic)
-            throws IOException {
-        var existingIssue = getDedicatedIssue(assignee, topic);
-        return existingIssue.isPresent() && GHIssueState.CLOSED.equals(existingIssue.get().getState());
+    public Topic topic(TopicRef ref) {
+        return new Topic(ref);
     }
 
-    /**
-     * Adds a comment to an issue identified by its assignee and topic (title prefix).
-     *
-     * @param assignee The GitHub username of issue assignee.
-     *        Two calls with the same username + topic will result in a comment on the same issue.
-     * @param topic The issue's topic, a string that will be prefixed to the issue title.
-     *        Two calls with the same username + topic will result in a comment on the same issue.
-     * @param topicSuffix A string that should be appended to the topic in the issue title.
-     *        Each time that suffix changes for a new comment,
-     *        the issue title will be updated,
-     *        and so will the subject of any email notification sent as a result of that comment.
-     *        In conversation-based email clients such as GMail,
-     *        this will result in the comment appearing in a new conversation,
-     *        which can be useful to avoid huge conversations
-     * @param markdownBody The body of the comment to add.
-     *
-     * @throws IOException If a GitHub API call fails.
-     * @throws java.io.UncheckedIOException If a GitHub API call fails.
-     */
-    public void commentOnDedicatedIssue(String assignee, String topic, String topicSuffix, String markdownBody)
-            throws IOException {
-        String targetTitle = topic + topicSuffix;
-        var existingIssue = getDedicatedIssue(assignee, topic);
-        GHIssue issue;
-        if (existingIssue.isPresent()) {
-            issue = existingIssue.get();
-            if (!issue.getTitle().equals(targetTitle)) {
-                issue.setTitle(targetTitle);
-            }
-            if (GHIssueState.CLOSED.equals(issue.getState())) {
-                issue.reopen();
-            }
-            try {
-                // We try to minimize the last comment on a best-effort basis,
-                // taking into account only recent comments,
-                // to avoid performance hogs on issues with many comments.
-                // (There's no way to retrieve comments of an issue in anti-chronological order...)
-                Optional<GHIssueComment> lastRecentComment = getAppCommentsSince(issue,
-                        clock.instant().minus(21, ChronoUnit.DAYS))
-                        .reduce(last());
-                lastRecentComment.ifPresent(this::minimizeOutdatedComment);
-            } catch (Exception e) {
-                Log.errorf(e, "Failed to minimize last notification for issue %s#%s", ref.repositoryName(), issue.getNumber());
-            }
+    public class Topic {
+        private final TopicRef ref;
 
-            // Update the issue description with the content of the latest comment,
-            // for convenience.
-            // This must be done before the comment, so that notifications triggered by the comment are only sent
-            // when the issue is fully updated.
-            issue.setBody(messageFormatter.formatDedicatedIssueBodyMarkdown(topic, markdownBody));
-        } else {
-            issue = createDedicatedIssue(assignee, targetTitle, topic, markdownBody);
+        private Topic(TopicRef ref) {
+            this.ref = ref;
         }
 
-        issue.comment(markdownBody);
-    }
-
-    public Stream<String> extractCommentsFromDedicatedIssue(String assignee, String topic, Instant since)
-            throws IOException {
-        return getDedicatedIssue(assignee, topic)
-                .map(uncheckedIO(issue -> getAppCommentsSince(issue, since)))
-                .orElse(Stream.of())
-                .map(GHIssueComment::getBody);
-    }
-
-    private Optional<GHIssue> getDedicatedIssue(String assignee, String topic) throws IOException {
-        var builder = repository().queryIssues().creator(appLogin());
-        if (assignee != null) {
-            builder.assignee(assignee);
+        /**
+         * Checks whether all issues of this topic exist, but have been closed.
+         *
+         * @throws IOException If a GitHub API call fails.
+         * @throws java.io.UncheckedIOException If a GitHub API call fails.
+         * @see #comment(String, String)
+         */
+        public boolean isClosed() throws IOException {
+            var existingIssue = getDedicatedIssues().findFirst();
+            return existingIssue.isPresent() && GHIssueState.CLOSED.equals(existingIssue.get().getState());
         }
-        builder.state(GHIssueState.ALL);
-        // Try exact match first to avoid confusion if there are two issues and one is
-        // the exact topic while the other just starts with the topic.
-        // Example:
-        //     topic = Lottery history for quarkusio/quarkus
-        //     issue1.title = Lottery history for quarkusio/quarkusio.github.io
-        //     issue2.title = Lottery history for quarkusio/quarkus
-        for (var issue : builder.list()) {
-            if (issue.getTitle().equals(topic)) {
-                return Optional.of(issue);
+
+        /**
+         * Adds a comment to an issue identified by its assignee and topic (title prefix).
+         *
+         * @param topicSuffix A string that should be appended to the topic in the issue title.
+         *        Each time that suffix changes for a new comment,
+         *        the issue title will be updated,
+         *        and so will the subject of any email notification sent as a result of that comment.
+         *        In conversation-based email clients such as GMail,
+         *        this will result in the comment appearing in a new conversation,
+         *        which can be useful to avoid huge conversations.
+         * @param markdownBody The body of the comment to add.
+         *
+         * @throws IOException If a GitHub API call fails.
+         * @throws java.io.UncheckedIOException If a GitHub API call fails.
+         */
+        public void comment(String topicSuffix, String markdownBody)
+                throws IOException {
+            var dedicatedIssue = getDedicatedIssues().findFirst();
+            if (ref.expectedSuffixStart() != null && !topicSuffix.startsWith(ref.expectedSuffixStart())
+                    || ref.expectedSuffixStart() == null && !topicSuffix.isEmpty()) {
+                throw new IllegalArgumentException(
+                        "expectedSuffixStart = '%s' but topicSuffix = '%s'".formatted(ref.expectedSuffixStart(), topicSuffix));
             }
-        }
-        for (var issue : builder.list()) {
-            if (issue.getTitle().startsWith(topic)) {
-                return Optional.of(issue);
-            }
-        }
-        return Optional.empty();
-    }
+            String targetTitle = ref.topic() + topicSuffix;
+            GHIssue issue;
+            if (dedicatedIssue.isPresent()) {
+                issue = dedicatedIssue.get();
+                if (!issue.getTitle().equals(targetTitle)) {
+                    issue.setTitle(targetTitle);
+                }
+                if (GHIssueState.CLOSED.equals(issue.getState())) {
+                    issue.reopen();
+                }
+                try {
+                    // We try to minimize the last comment on a best-effort basis,
+                    // taking into account only recent comments,
+                    // to avoid performance hogs on issues with many comments.
+                    // (There's no way to retrieve comments of an issue in anti-chronological order...)
+                    Optional<GHIssueComment> lastRecentComment = getAppCommentsSince(issue,
+                            clock.instant().minus(21, ChronoUnit.DAYS))
+                            .reduce(Streams.last());
+                    lastRecentComment.ifPresent(GitHubRepository.this::minimizeOutdatedComment);
+                } catch (Exception e) {
+                    Log.errorf(e, "Failed to minimize last notification for issue %s#%s",
+                            GitHubRepository.this.ref.repositoryName(), issue.getNumber());
+                }
 
-    private GHIssue createDedicatedIssue(String username, String title, String topic, String lastCommentMarkdownBody)
-            throws IOException {
-        return repository().createIssue(title)
-                .assignee(username)
-                .body(messageFormatter.formatDedicatedIssueBodyMarkdown(topic, lastCommentMarkdownBody))
-                .create();
+                // Update the issue description with the content of the latest comment,
+                // for convenience.
+                // This must be done before the comment, so that notifications triggered by the comment are only sent
+                // when the issue is fully updated.
+                issue.setBody(messageFormatter.formatDedicatedIssueBodyMarkdown(ref.topic(), markdownBody));
+            } else {
+                issue = createDedicatedIssue(targetTitle, markdownBody);
+            }
+
+            issue.comment(markdownBody);
+        }
+
+        private Stream<GHIssue> getDedicatedIssues() throws IOException {
+            var builder = repository().queryIssues().creator(appLogin());
+            if (ref.assignee() != null) {
+                builder.assignee(ref.assignee());
+            }
+            builder.state(GHIssueState.ALL);
+            return Streams.toStream(builder.list())
+                    .filter(ref.expectedSuffixStart() != null
+                            ? issue -> issue.getTitle().startsWith(ref.topic() + ref.expectedSuffixStart())
+                            // Try exact match in this case to avoid confusion if there are two issues and one is
+                            // the exact topic while the other just starts with the topic.
+                            // Example:
+                            //     topic = Lottery history for quarkusio/quarkus
+                            //     issue1.title = Lottery history for quarkusio/quarkusio.github.io
+                            //     issue2.title = Lottery history for quarkusio/quarkus
+                            : issue -> issue.getTitle().equals(ref.topic()));
+        }
+
+        public Stream<String> extractComments(Instant since)
+                throws IOException {
+            return getDedicatedIssues()
+                    .flatMap(uncheckedIO(issue -> getAppCommentsSince(issue, since)))
+                    .map(GHIssueComment::getBody);
+        }
+
+        private GHIssue createDedicatedIssue(String title, String lastCommentMarkdownBody)
+                throws IOException {
+            return repository().createIssue(title)
+                    .assignee(ref.assignee())
+                    .body(messageFormatter.formatDedicatedIssueBodyMarkdown(ref.topic(), lastCommentMarkdownBody))
+                    .create();
+        }
     }
 
     private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) {
@@ -355,7 +361,4 @@ public class GitHubRepository implements AutoCloseable {
         }
     }
 
-    private <T> BinaryOperator<T> last() {
-        return (first, second) -> second;
-    }
 }
