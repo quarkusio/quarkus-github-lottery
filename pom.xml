@@ -39,7 +39,7 @@
     <quarkus-github-app.version>2.5.1</quarkus-github-app.version>
     <skipITs>true</skipITs>
     <surefire-plugin.version>3.2.5</surefire-plugin.version>
-    <version.formatter.plugin>2.23.0</version.formatter.plugin>
+    <version.formatter.plugin>2.24.1</version.formatter.plugin>
   </properties>
   <dependencyManagement>
     <dependencies>
