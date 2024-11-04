@@ -9,9 +9,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection(ignoreNested = false) // For deserialization from the GitHub repository
@@ -36,7 +38,7 @@ public record LotteryConfig(
 
         public record Triage(
                 String label,
-                @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+                @JsonIgnore Notification notification) {
             // https://stackoverflow.com/a/71539100/6692043
             // Also gives us a less verbose constructor for tests
             @JsonCreator
@@ -56,7 +58,7 @@ public record LotteryConfig(
                     @JsonProperty(required = true) Provided provided) {
 
                 public record Needed(
-                        @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+                        @JsonIgnore Notification notification) {
                     // https://stackoverflow.com/a/71539100/6692043
                     // Also gives us a less verbose constructor for tests
                     @JsonCreator
@@ -67,7 +69,7 @@ public record LotteryConfig(
                 }
 
                 public record Provided(
-                        @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+                        @JsonIgnore Notification notification) {
                     // https://stackoverflow.com/a/71539100/6692043
                     // Also gives us a less verbose constructor for tests
                     @JsonCreator
@@ -114,7 +116,7 @@ public record LotteryConfig(
 
         public record Triage(
                 @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
-                @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Participation participation) {
+                @JsonIgnore Participation participation) {
             // https://stackoverflow.com/a/71539100/6692043
             @JsonCreator
             public Triage(@JsonProperty(required = true) Set<DayOfWeek> days, @JsonProperty(required = true) int maxIssues) {
@@ -136,7 +138,7 @@ public record LotteryConfig(
 
         public record Stewardship(
                 @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
-                @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Participation participation) {
+                @JsonIgnore Participation participation) {
             // https://stackoverflow.com/a/71539100/6692043
             @JsonCreator
             public Stewardship(@JsonProperty(required = true) Set<DayOfWeek> days,
