@@ -200,6 +200,15 @@ public class GitHubServiceTest {
                                         stewardship:
                                           days: ["MONDAY"]
                                           maxIssues: 10
+                                      - username: "jblack"
+                                        maintenance:
+                                          labels: ["area/someotherobscurelibrary"]
+                                          days: ["MONDAY"]
+                                          feedback:
+                                            needed:
+                                              maxIssues: 1
+                                            provided:
+                                              maxIssues: 1
                                     """);
                 })
                 .when(() -> {
@@ -235,10 +244,10 @@ public class GitHubServiceTest {
                                                     Optional.of(new LotteryConfig.Participant.Maintenance(
                                                             List.of("area/hibernate-orm", "area/hibernate-search"),
                                                             Set.of(DayOfWeek.MONDAY),
-                                                            new LotteryConfig.Participant.Maintenance.Feedback(
+                                                            Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                                                     new LotteryConfig.Participant.Participation(4),
-                                                                    new LotteryConfig.Participant.Participation(2)),
-                                                            new LotteryConfig.Participant.Participation(5))),
+                                                                    new LotteryConfig.Participant.Participation(2))),
+                                                            Optional.of(new LotteryConfig.Participant.Participation(5)))),
                                                     Optional.empty()),
                                             new LotteryConfig.Participant("gsmet",
                                                     Optional.of(ZoneId.of("Europe/Paris")),
@@ -253,10 +262,10 @@ public class GitHubServiceTest {
                                                     Optional.of(new LotteryConfig.Participant.Maintenance(
                                                             List.of("area/someobscurelibrary"),
                                                             Set.of(DayOfWeek.MONDAY),
-                                                            new LotteryConfig.Participant.Maintenance.Feedback(
+                                                            Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                                                     new LotteryConfig.Participant.Participation(1),
-                                                                    new LotteryConfig.Participant.Participation(1)),
-                                                            new LotteryConfig.Participant.Participation(5))),
+                                                                    new LotteryConfig.Participant.Participation(1))),
+                                                            Optional.of(new LotteryConfig.Participant.Participation(5)))),
                                                     Optional.empty()),
                                             new LotteryConfig.Participant("geoand",
                                                     Optional.empty(),
@@ -264,7 +273,18 @@ public class GitHubServiceTest {
                                                     Optional.empty(),
                                                     Optional.of(new LotteryConfig.Participant.Stewardship(
                                                             Set.of(DayOfWeek.MONDAY),
-                                                            new LotteryConfig.Participant.Participation(10)))))));
+                                                            new LotteryConfig.Participant.Participation(10)))),
+                                            new LotteryConfig.Participant("jblack",
+                                                    Optional.empty(),
+                                                    Optional.empty(),
+                                                    Optional.of(new LotteryConfig.Participant.Maintenance(
+                                                            List.of("area/someotherobscurelibrary"),
+                                                            Set.of(DayOfWeek.MONDAY),
+                                                            Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
+                                                                    new LotteryConfig.Participant.Participation(1),
+                                                                    new LotteryConfig.Participant.Participation(1))),
+                                                            Optional.empty())),
+                                                    Optional.empty()))));
                 })
                 .then().github(mocks -> {
                     verifyNoMoreInteractions(mocks.ghObjects());
