@@ -24,6 +24,7 @@ import org.kohsuke.github.GHIssueEvent;
 import org.kohsuke.github.GHIssueQueryBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 
 import io.quarkiverse.githubapp.ConfigFile;
@@ -202,9 +203,20 @@ public class GitHubRepository implements AutoCloseable {
             // No action since the label was assigned.
             return IssueActionSide.TEAM;
         }
-        return switch (repository().getPermission(lastComment.get().getUser())) {
-            case ADMIN, WRITE -> IssueActionSide.TEAM;
-            case READ, UNKNOWN, NONE -> IssueActionSide.OUTSIDER;
+        return getIssueActionSide(ghIssue, lastComment.get().getUser());
+    }
+
+    private IssueActionSide getIssueActionSide(GHIssue issue, GHUser user) throws IOException {
+        if (issue.getUser().getLogin().equals(user.getLogin())) {
+            // This is the reporter; even if part of the team,
+            // we'll consider he's acting as an outsider here,
+            // because he's unlikely to ask for feedback from himself.
+            return IssueActionSide.OUTSIDER;
+        }
+
+        return switch (repository().getPermission(user)) {
+            case ADMIN, WRITE, UNKNOWN -> IssueActionSide.TEAM; // "Unknown" includes "triage"
+            case READ, NONE -> IssueActionSide.OUTSIDER;
         };
     }
 

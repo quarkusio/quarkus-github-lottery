@@ -76,6 +76,18 @@ public class MockHelper {
         return mock;
     }
 
+    public static GHIssue mockIssueForLottery(GitHubMockContext context, int number, Date updatedAt, GHUser reporter)
+            throws IOException {
+        GHIssue mock = context.issue(10000L + number);
+        when(mock.isPullRequest()).thenReturn(false);
+        when(mock.getNumber()).thenReturn(number);
+        when(mock.getTitle()).thenReturn("Title for issue " + number);
+        when(mock.getHtmlUrl()).thenReturn(url(number));
+        when(mock.getUpdatedAt()).thenReturn(updatedAt);
+        when(mock.getUser()).thenReturn(reporter);
+        return mock;
+    }
+
     public static GHIssue mockIssueForLotteryFilteredOutByRepository(GitHubMockContext context, int number, Date updatedAt)
             throws IOException {
         GHIssue mock = context.issue(10000L + number);
@@ -87,6 +99,16 @@ public class MockHelper {
     public static GHPullRequest mockPullRequestForLotteryFilteredOutByRepository(GitHubMockContext context, int number) {
         GHPullRequest mock = context.pullRequest(10000L + number);
         when(mock.isPullRequest()).thenReturn(true);
+        return mock;
+    }
+
+    public static GHIssue mockIssueForLotteryFilteredOutByRepository(GitHubMockContext context, int number, Date updatedAt,
+            GHUser reporter)
+            throws IOException {
+        GHIssue mock = context.issue(10000L + number);
+        when(mock.isPullRequest()).thenReturn(false);
+        when(mock.getUpdatedAt()).thenReturn(updatedAt);
+        when(mock.getUser()).thenReturn(reporter);
         return mock;
     }
 
