@@ -780,11 +780,8 @@ public class GitHubServiceTest {
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
-                    var issue2Comment1Mock = mocks.issueComment(201);
-                    when(issue2Comment1Mock.getUser()).thenReturn(someoneElseMock);
-                    var issue2Comment2Mock = mocks.issueComment(202);
-                    when(issue2Comment2Mock.getUser()).thenReturn(someoneElseMock);
-                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock);
+                    var issue2CommentMocks = mockPagedIterable(mockIssueComment(mocks, 201, someoneElseMock),
+                            mockIssueComment(mocks, 202, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
                 })
                 .when(() -> {
@@ -871,15 +868,10 @@ public class GitHubServiceTest {
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
-                    var issue2Comment1Mock = mocks.issueComment(202);
-                    when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
-                    when(issue2Comment1Mock.getBody()).thenReturn("issue2Comment1Mock#body");
-                    var issue2Comment2Mock = mocks.issueComment(203);
-                    when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
-                    when(issue2Comment2Mock.getBody()).thenReturn("issue2Comment2Mock#body");
-                    var issue2Comment3Mock = mocks.issueComment(204);
-                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
-                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
+                    var issue2CommentMocks = mockPagedIterable(
+                            mockIssueComment(mocks, 201, mySelfMock, "issue2Comment1Mock#body"),
+                            mockIssueComment(mocks, 202, mySelfMock, "issue2Comment2Mock#body"),
+                            mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
                 })
                 .when(() -> {
@@ -925,14 +917,9 @@ public class GitHubServiceTest {
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
-                    var issue2Comment1Mock = mocks.issueComment(202);
-                    when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
-                    when(issue2Comment1Mock.getBody()).thenReturn("issue2Comment1Mock#body");
-                    var issue2Comment2Mock = mocks.issueComment(203);
-                    when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
-                    when(issue2Comment2Mock.getBody()).thenReturn("issue2Comment2Mock#body");
-                    var issue2Comment3Mock = mocks.issueComment(204);
-                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
+                    var issue2Comment1Mock = mockIssueComment(mocks, 202, mySelfMock, "issue2Comment1Mock#body");
+                    var issue2Comment2Mock = mockIssueComment(mocks, 203, mySelfMock, "issue2Comment2Mock#body");
+                    var issue2Comment3Mock = mockIssueComment(mocks, 204, someoneElseMock);
                     var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
                 })
@@ -987,16 +974,12 @@ public class GitHubServiceTest {
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
-                    var issue2Comment1Mock = mocks.issueComment(201);
-                    when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
-                    var issue2Comment2Mock = mocks.issueComment(202);
-                    when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
-                    var issue2Comment3Mock = mocks.issueComment(203);
-                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
-                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
+                    var commentToMinimizeMock = mockIssueComment(mocks, 202, mySelfMock);
+                    when(commentToMinimizeMock.getNodeId()).thenReturn(commentToMinimizeNodeId);
+                    var issue2CommentMocks = mockPagedIterable(mockIssueComment(mocks, 201, mySelfMock),
+                            commentToMinimizeMock,
+                            mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
-
-                    when(issue2Comment2Mock.getNodeId()).thenReturn(commentToMinimizeNodeId);
 
                     when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("yrodiere's report for quarkusio/quarkus",
                             "Some content"))
@@ -1062,16 +1045,12 @@ public class GitHubServiceTest {
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
-                    var issue2Comment1Mock = mocks.issueComment(201);
-                    when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
-                    var issue2Comment2Mock = mocks.issueComment(202);
-                    when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
-                    var issue2Comment3Mock = mocks.issueComment(203);
-                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
-                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
+                    var commentToMinimizeMock = mockIssueComment(mocks, 202, mySelfMock);
+                    when(commentToMinimizeMock.getNodeId()).thenReturn(commentToMinimizeNodeId);
+                    var issue2CommentMocks = mockPagedIterable(mockIssueComment(mocks, 201, mySelfMock),
+                            mockIssueComment(mocks, 202, mySelfMock),
+                            mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
-
-                    when(issue2Comment2Mock.getNodeId()).thenReturn(commentToMinimizeNodeId);
 
                     when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("Lottery history for quarkusio/quarkus",
                             "Some content"))
@@ -1135,16 +1114,12 @@ public class GitHubServiceTest {
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
-                    var issue2Comment1Mock = mocks.issueComment(201);
-                    when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
-                    var issue2Comment2Mock = mocks.issueComment(202);
-                    when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
-                    var issue2Comment3Mock = mocks.issueComment(203);
-                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
-                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
+                    var commentToMinimizeMock = mockIssueComment(mocks, 202, mySelfMock);
+                    when(commentToMinimizeMock.getNodeId()).thenReturn(commentToMinimizeNodeId);
+                    var issue2CommentMocks = mockPagedIterable(mockIssueComment(mocks, 201, mySelfMock),
+                            mockIssueComment(mocks, 202, mySelfMock),
+                            mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
-
-                    when(issue2Comment2Mock.getNodeId()).thenReturn(commentToMinimizeNodeId);
 
                     when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("Lottery history for quarkusio/quarkus",
                             "Some content"))
@@ -1209,16 +1184,12 @@ public class GitHubServiceTest {
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
-                    var issue2Comment1Mock = mocks.issueComment(201);
-                    when(issue2Comment1Mock.getUser()).thenReturn(mySelfMock);
-                    var issue2Comment2Mock = mocks.issueComment(202);
-                    when(issue2Comment2Mock.getUser()).thenReturn(mySelfMock);
-                    var issue2Comment3Mock = mocks.issueComment(203);
-                    when(issue2Comment3Mock.getUser()).thenReturn(someoneElseMock);
-                    var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
+                    var commentToMinimizeMock = mockIssueComment(mocks, 202, mySelfMock);
+                    when(commentToMinimizeMock.getNodeId()).thenReturn(commentToMinimizeNodeId);
+                    var issue2CommentMocks = mockPagedIterable(mockIssueComment(mocks, 201, mySelfMock),
+                            mockIssueComment(mocks, 202, mySelfMock),
+                            mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
-
-                    when(issue2Comment2Mock.getNodeId()).thenReturn(commentToMinimizeNodeId);
 
                     when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("yrodiere's report for quarkusio/quarkus",
                             "Some content"))
