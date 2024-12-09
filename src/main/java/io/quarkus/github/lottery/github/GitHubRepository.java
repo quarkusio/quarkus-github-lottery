@@ -31,6 +31,7 @@ import io.quarkiverse.githubapp.GitHubClientProvider;
 import io.quarkiverse.githubapp.GitHubConfigFileProvider;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.message.MessageFormatter;
+import io.quarkus.github.lottery.util.GitHubConstants;
 import io.quarkus.github.lottery.util.Streams;
 import io.quarkus.logging.Log;
 import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
@@ -194,12 +195,9 @@ public class GitHubRepository implements AutoCloseable {
                 lastEventActionSideInstant = event.getCreatedAt().toInstant();
             }
         }
-        GHIssueCommentQueryBuilder queryCommentsBuilder = ghIssue.queryComments();
-        if (lastEventActionSideInstant != null) {
-            queryCommentsBuilder.since(Date.from(lastEventActionSideInstant));
-        }
 
-        Optional<GHIssueComment> lastComment = toStream(queryCommentsBuilder.list()).reduce(Streams.last());
+        Optional<GHIssueComment> lastComment = getNonBotCommentsSince(ghIssue, lastEventActionSideInstant)
+                .reduce(Streams.last());
         if (lastComment.isEmpty()) {
             // No action since the label was assigned.
             return IssueActionSide.TEAM;
@@ -337,8 +335,23 @@ public class GitHubRepository implements AutoCloseable {
 
     private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) {
         String appLogin = appLogin();
-        return toStream(issue.queryComments().since(Date.from(since)).list())
+        GHIssueCommentQueryBuilder queryCommentsBuilder = issue.queryComments();
+        if (since != null) {
+            queryCommentsBuilder.since(Date.from(since));
+        }
+        return toStream(queryCommentsBuilder.list())
                 .filter(uncheckedIO((GHIssueComment comment) -> appLogin.equals(comment.getUser().getLogin()))::apply);
+    }
+
+    private Stream<GHIssueComment> getNonBotCommentsSince(GHIssue issue, Instant since) {
+        GHIssueCommentQueryBuilder queryCommentsBuilder = issue.queryComments();
+        if (since != null) {
+            queryCommentsBuilder.since(Date.from(since));
+        }
+        return toStream(queryCommentsBuilder.list())
+                // Relying on the login rather than getType(), because that would involve an additional request.
+                .filter(uncheckedIO((GHIssueComment comment) -> !comment.getUser().getLogin()
+                        .endsWith(GitHubConstants.BOT_LOGIN_SUFFIX))::apply);
     }
 
     private void minimizeOutdatedComment(GHIssueComment comment) {

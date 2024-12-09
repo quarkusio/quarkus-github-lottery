@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery;
 
 import static io.quarkiverse.githubapp.testing.GitHubAppTesting.given;
+import static io.quarkus.github.lottery.util.MockHelper.mockIssueComment;
 import static io.quarkus.github.lottery.util.MockHelper.mockIssueEvent;
 import static io.quarkus.github.lottery.util.MockHelper.mockIssueForLottery;
 import static io.quarkus.github.lottery.util.MockHelper.mockIssueForLotteryFilteredOutByRepository;
@@ -8,6 +9,7 @@ import static io.quarkus.github.lottery.util.MockHelper.mockIssueForNotification
 import static io.quarkus.github.lottery.util.MockHelper.mockLabel;
 import static io.quarkus.github.lottery.util.MockHelper.mockPagedIterable;
 import static io.quarkus.github.lottery.util.MockHelper.mockPullRequestForLotteryFilteredOutByRepository;
+import static io.quarkus.github.lottery.util.MockHelper.mockUserForInspectedComments;
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -382,6 +384,7 @@ public class GitHubServiceTest {
         Date afterCutoff = Date.from(cutoff.plus(1, ChronoUnit.HOURS));
         Date issue1ActionLabelEvent = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
         Date issue2ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
+        Date issue7ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
 
         var queryIssuesNeedsFeedbackBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -397,6 +400,8 @@ public class GitHubServiceTest {
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
         var issue5QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue7QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
         given()
                 .github(mocks -> {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
@@ -410,19 +415,20 @@ public class GitHubServiceTest {
                     var issue4Mock = mockIssueForLottery(mocks, 4, beforeCutoff);
                     var issue5Mock = mockIssueForLottery(mocks, 5, beforeCutoff);
                     var issue6Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 6, afterCutoff);
+                    var issue7Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 7, beforeCutoff);
                     var issuesNeedsFeedbackMocks = mockPagedIterable(issue1Mock, issue3Mock, issue5Mock);
                     when(queryIssuesNeedsFeedbackBuilderMock.list()).thenReturn(issuesNeedsFeedbackMocks);
-                    var issuesNeedsReproducerMocks = mockPagedIterable(prMock, issue2Mock, issue4Mock, issue6Mock);
+                    var issuesNeedsReproducerMocks = mockPagedIterable(prMock, issue2Mock, issue4Mock, issue6Mock, issue7Mock);
                     when(queryIssuesNeedsReproducerBuilderMock.list()).thenReturn(issuesNeedsReproducerMocks);
 
-                    var adminUser = mocks.ghObject(GHUser.class, 1L);
-                    when(repositoryMock.getPermission(adminUser)).thenReturn(GHPermissionType.ADMIN);
-                    var writeUser = mocks.ghObject(GHUser.class, 2L);
-                    when(repositoryMock.getPermission(writeUser)).thenReturn(GHPermissionType.WRITE);
-                    var readUser = mocks.ghObject(GHUser.class, 3L);
-                    when(repositoryMock.getPermission(readUser)).thenReturn(GHPermissionType.READ);
-                    var noneUser = mocks.ghObject(GHUser.class, 4L);
-                    when(repositoryMock.getPermission(noneUser)).thenReturn(GHPermissionType.NONE);
+                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, "someadmin",
+                            GHPermissionType.ADMIN);
+                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, "somewriter",
+                            GHPermissionType.WRITE);
+                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, "somereader", GHPermissionType.READ);
+                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, "somestranger",
+                            GHPermissionType.NONE);
+                    var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, "somebot[bot]");
 
                     var needsReproducerLabelMock = mockLabel("triage/needs-reproducer");
                     var areaHibernateSearchLabelMock = mockLabel("area/hibernate-search");
@@ -437,10 +443,8 @@ public class GitHubServiceTest {
                     var issue1EventsMocks = mockPagedIterable(issue1Event1Mock,
                             issue1Event2Mock, issue1Event3Mock, issue1Event4Mock);
                     when(issue1Mock.listEvents()).thenReturn(issue1EventsMocks);
-                    var issue1Comment1Mock = mocks.issueComment(101);
-                    var issue1Comment2Mock = mocks.issueComment(102);
-                    when(issue1Comment2Mock.getUser()).thenReturn(adminUser);
-                    var issue1CommentsMocks = mockPagedIterable(issue1Comment1Mock, issue1Comment2Mock);
+                    var issue1CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 101, noneUser),
+                            mockIssueComment(mocks, 102, adminUser));
                     when(issue1Mock.queryComments()).thenReturn(issue1QueryCommentsBuilderMock);
                     when(issue1QueryCommentsBuilderMock.list()).thenReturn(issue1CommentsMocks);
 
@@ -454,19 +458,15 @@ public class GitHubServiceTest {
                     var issue2EventsMocks = mockPagedIterable(issue2Event1Mock,
                             issue2Event2Mock, issue2Event3Mock, issue2Event4Mock);
                     when(issue2Mock.listEvents()).thenReturn(issue2EventsMocks);
-                    var issue2Comment1Mock = mocks.issueComment(201);
-                    var issue2Comment2Mock = mocks.issueComment(202);
-                    when(issue2Comment2Mock.getUser()).thenReturn(readUser);
-                    var issue2CommentsMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock);
+                    var issue2CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 201, adminUser),
+                            mockIssueComment(mocks, 202, readUser));
                     when(issue2Mock.queryComments()).thenReturn(issue2QueryCommentsBuilderMock);
                     when(issue2QueryCommentsBuilderMock.list()).thenReturn(issue2CommentsMocks);
 
                     PagedSearchIterable<GHIssueEvent> issue3EventsMocks = mockPagedIterable();
                     when(issue3Mock.listEvents()).thenReturn(issue3EventsMocks);
-                    var issue3Comment1Mock = mocks.issueComment(301);
-                    var issue3Comment2Mock = mocks.issueComment(302);
-                    when(issue3Comment2Mock.getUser()).thenReturn(noneUser);
-                    var issue3CommentsMocks = mockPagedIterable(issue3Comment1Mock, issue3Comment2Mock);
+                    var issue3CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 301, adminUser),
+                            mockIssueComment(mocks, 302, noneUser));
                     when(issue3Mock.queryComments()).thenReturn(issue3QueryCommentsBuilderMock);
                     when(issue3QueryCommentsBuilderMock.list()).thenReturn(issue3CommentsMocks);
 
@@ -480,12 +480,27 @@ public class GitHubServiceTest {
                     var issue5Event2Mock = mockIssueEvent("locked");
                     var issue5EventsMocks = mockPagedIterable(issue5Event1Mock, issue5Event2Mock);
                     when(issue5Mock.listEvents()).thenReturn(issue5EventsMocks);
-                    var issue5Comment1Mock = mocks.issueComment(501);
-                    var issue5Comment2Mock = mocks.issueComment(502);
-                    when(issue5Comment2Mock.getUser()).thenReturn(writeUser);
-                    var issue5CommentsMocks = mockPagedIterable(issue5Comment1Mock, issue5Comment2Mock);
+                    var issue5CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 501, noneUser),
+                            mockIssueComment(mocks, 502, writeUser));
                     when(issue5Mock.queryComments()).thenReturn(issue5QueryCommentsBuilderMock);
                     when(issue5QueryCommentsBuilderMock.list()).thenReturn(issue5CommentsMocks);
+
+                    // This is like issue 2, but a bot commented after the user -- which should be ignored.
+                    var issue7Event1Mock = mockIssueEvent("created");
+                    var issue7Event2Mock = mockIssueEvent("labeled");
+                    when(issue7Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
+                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent);
+                    var issue7Event3Mock = mockIssueEvent("labeled");
+                    when(issue7Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
+                    var issue7Event4Mock = mockIssueEvent("locked");
+                    var issue7EventsMocks = mockPagedIterable(issue7Event1Mock,
+                            issue7Event2Mock, issue7Event3Mock, issue7Event4Mock);
+                    when(issue7Mock.listEvents()).thenReturn(issue7EventsMocks);
+                    var issue7CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 701, noneUser),
+                            mockIssueComment(mocks, 702, readUser),
+                            mockIssueComment(mocks, 703, botUser));
+                    when(issue7Mock.queryComments()).thenReturn(issue7QueryCommentsBuilderMock);
+                    when(issue7QueryCommentsBuilderMock.list()).thenReturn(issue7CommentsMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -510,6 +525,7 @@ public class GitHubServiceTest {
 
                     verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
                     verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
+                    verify(issue7QueryCommentsBuilderMock).since(issue7ActionLabelEvent);
 
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
@@ -525,6 +541,7 @@ public class GitHubServiceTest {
         Date afterCutoff = Date.from(cutoff.plus(1, ChronoUnit.HOURS));
         Date issue1ActionLabelEvent = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
         Date issue2ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
+        Date issue7ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
 
         var queryIssuesNeedsReproducerBuilderMock = Mockito.mock(GHIssueQueryBuilder.ForRepository.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -539,6 +556,8 @@ public class GitHubServiceTest {
         var issue4QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
         var issue5QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue7QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
         given()
                 .github(mocks -> {
@@ -555,19 +574,20 @@ public class GitHubServiceTest {
                     var issue4Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 4, beforeCutoff);
                     var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, beforeCutoff);
                     var issue6Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 6, afterCutoff);
-                    var issuesNeedsFeedbackMocks = mockPagedIterable(prMock, issue2Mock, issue4Mock, issue6Mock);
+                    var issue7Mock = mockIssueForLottery(mocks, 7, beforeCutoff);
+                    var issuesNeedsFeedbackMocks = mockPagedIterable(prMock, issue2Mock, issue4Mock, issue6Mock, issue7Mock);
                     when(queryIssuesNeedsFeedbackBuilderMock.list()).thenReturn(issuesNeedsFeedbackMocks);
                     var issuesNeedsReproducerMocks = mockPagedIterable(issue1Mock, issue3Mock, issue5Mock);
                     when(queryIssuesNeedsReproducerBuilderMock.list()).thenReturn(issuesNeedsReproducerMocks);
 
-                    var adminUser = mocks.ghObject(GHUser.class, 1L);
-                    when(repositoryMock.getPermission(adminUser)).thenReturn(GHPermissionType.ADMIN);
-                    var writeUser = mocks.ghObject(GHUser.class, 2L);
-                    when(repositoryMock.getPermission(writeUser)).thenReturn(GHPermissionType.WRITE);
-                    var readUser = mocks.ghObject(GHUser.class, 3L);
-                    when(repositoryMock.getPermission(readUser)).thenReturn(GHPermissionType.READ);
-                    var noneUser = mocks.ghObject(GHUser.class, 4L);
-                    when(repositoryMock.getPermission(noneUser)).thenReturn(GHPermissionType.NONE);
+                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, "someadmin",
+                            GHPermissionType.ADMIN);
+                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, "somewriter",
+                            GHPermissionType.WRITE);
+                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, "somereader", GHPermissionType.READ);
+                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, "somestranger",
+                            GHPermissionType.NONE);
+                    var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, "somebot[bot]");
 
                     var needsReproducerLabelMock = mockLabel("triage/needs-reproducer");
                     var areaHibernateSearchLabelMock = mockLabel("area/hibernate-search");
@@ -582,10 +602,8 @@ public class GitHubServiceTest {
                     var issue1EventsMocks = mockPagedIterable(issue1Event1Mock,
                             issue1Event2Mock, issue1Event3Mock, issue1Event4Mock);
                     when(issue1Mock.listEvents()).thenReturn(issue1EventsMocks);
-                    var issue1Comment1Mock = mocks.issueComment(101);
-                    var issue1Comment2Mock = mocks.issueComment(102);
-                    when(issue1Comment2Mock.getUser()).thenReturn(adminUser);
-                    var issue1CommentsMocks = mockPagedIterable(issue1Comment1Mock, issue1Comment2Mock);
+                    var issue1CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 101, noneUser),
+                            mockIssueComment(mocks, 102, adminUser));
                     when(issue1Mock.queryComments()).thenReturn(issue1QueryCommentsBuilderMock);
                     when(issue1QueryCommentsBuilderMock.list()).thenReturn(issue1CommentsMocks);
 
@@ -599,19 +617,15 @@ public class GitHubServiceTest {
                     var issue2EventsMocks = mockPagedIterable(issue2Event1Mock,
                             issue2Event2Mock, issue2Event3Mock, issue2Event4Mock);
                     when(issue2Mock.listEvents()).thenReturn(issue2EventsMocks);
-                    var issue2Comment1Mock = mocks.issueComment(201);
-                    var issue2Comment2Mock = mocks.issueComment(202);
-                    when(issue2Comment2Mock.getUser()).thenReturn(readUser);
-                    var issue2CommentsMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock);
+                    var issue2CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 201, adminUser),
+                            mockIssueComment(mocks, 202, readUser));
                     when(issue2Mock.queryComments()).thenReturn(issue2QueryCommentsBuilderMock);
                     when(issue2QueryCommentsBuilderMock.list()).thenReturn(issue2CommentsMocks);
 
                     PagedSearchIterable<GHIssueEvent> issue3EventsMocks = mockPagedIterable();
                     when(issue3Mock.listEvents()).thenReturn(issue3EventsMocks);
-                    var issue3Comment1Mock = mocks.issueComment(301);
-                    var issue3Comment2Mock = mocks.issueComment(302);
-                    when(issue3Comment2Mock.getUser()).thenReturn(noneUser);
-                    var issue3CommentsMocks = mockPagedIterable(issue3Comment1Mock, issue3Comment2Mock);
+                    var issue3CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 301, adminUser),
+                            mockIssueComment(mocks, 302, noneUser));
                     when(issue3Mock.queryComments()).thenReturn(issue3QueryCommentsBuilderMock);
                     when(issue3QueryCommentsBuilderMock.list()).thenReturn(issue3CommentsMocks);
 
@@ -625,12 +639,27 @@ public class GitHubServiceTest {
                     var issue5Event2Mock = mockIssueEvent("locked");
                     var issue5EventsMocks = mockPagedIterable(issue5Event1Mock, issue5Event2Mock);
                     when(issue5Mock.listEvents()).thenReturn(issue5EventsMocks);
-                    var issue5Comment1Mock = mocks.issueComment(501);
-                    var issue5Comment2Mock = mocks.issueComment(502);
-                    when(issue5Comment2Mock.getUser()).thenReturn(writeUser);
-                    var issue5CommentsMocks = mockPagedIterable(issue5Comment1Mock, issue5Comment2Mock);
+                    var issue5CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 501, noneUser),
+                            mockIssueComment(mocks, 502, writeUser));
                     when(issue5Mock.queryComments()).thenReturn(issue5QueryCommentsBuilderMock);
                     when(issue5QueryCommentsBuilderMock.list()).thenReturn(issue5CommentsMocks);
+
+                    // This is like issue 2, but a bot commented after the user -- which should be ignored.
+                    var issue7Event1Mock = mockIssueEvent("created");
+                    var issue7Event2Mock = mockIssueEvent("labeled");
+                    when(issue7Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
+                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent);
+                    var issue7Event3Mock = mockIssueEvent("labeled");
+                    when(issue7Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
+                    var issue7Event4Mock = mockIssueEvent("locked");
+                    var issue7EventsMocks = mockPagedIterable(issue7Event1Mock,
+                            issue7Event2Mock, issue7Event3Mock, issue7Event4Mock);
+                    when(issue7Mock.listEvents()).thenReturn(issue7EventsMocks);
+                    var issue7CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 701, adminUser),
+                            mockIssueComment(mocks, 702, readUser),
+                            mockIssueComment(mocks, 703, botUser));
+                    when(issue7Mock.queryComments()).thenReturn(issue7QueryCommentsBuilderMock);
+                    when(issue7QueryCommentsBuilderMock.list()).thenReturn(issue7CommentsMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -638,7 +667,7 @@ public class GitHubServiceTest {
                     assertThat(repo.issuesLastActedOnByAndLastUpdatedBefore(
                             new LinkedHashSet<>(List.of("triage/needs-feedback", "triage/needs-reproducer")),
                             "area/hibernate-search", IssueActionSide.OUTSIDER, cutoff))
-                            .containsExactlyElementsOf(stubIssueList(2, 3));
+                            .containsExactlyElementsOf(stubIssueList(2, 3, 7));
                 })
                 .then().github(mocks -> {
                     verify(queryIssuesNeedsFeedbackBuilderMock).state(GHIssueState.OPEN);
@@ -655,6 +684,7 @@ public class GitHubServiceTest {
 
                     verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
                     verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
+                    verify(issue7QueryCommentsBuilderMock).since(issue7ActionLabelEvent);
 
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });

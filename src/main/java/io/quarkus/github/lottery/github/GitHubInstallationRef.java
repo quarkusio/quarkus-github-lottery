@@ -1,5 +1,7 @@
 package io.quarkus.github.lottery.github;
 
+import io.quarkus.github.lottery.util.GitHubConstants;
+
 /**
  * A reference to a GitHub application installation.
  *
@@ -9,7 +11,7 @@ package io.quarkus.github.lottery.github;
 public record GitHubInstallationRef(String appSlug, long installationId) {
 
     public String appLogin() {
-        return appSlug() + "[bot]";
+        return appSlug() + GitHubConstants.BOT_LOGIN_SUFFIX;
     }
 
 }
