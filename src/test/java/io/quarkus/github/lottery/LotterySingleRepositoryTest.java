@@ -155,10 +155,10 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.TUESDAY),
-                                new LotteryConfig.Participant.Maintenance.Feedback(
+                                Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
-                                        new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))),
+                                        new LotteryConfig.Participant.Participation(2))),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)))),
                         Optional.of(new LotteryConfig.Participant.Stewardship(
                                 Set.of(DayOfWeek.TUESDAY),
                                 new LotteryConfig.Participant.Participation(10))))));
@@ -185,10 +185,10 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Maintenance.Feedback(
+                                Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
-                                        new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))),
+                                        new LotteryConfig.Participant.Participation(2))),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)))),
                         Optional.of(new LotteryConfig.Participant.Stewardship(
                                 Set.of(DayOfWeek.TUESDAY),
                                 new LotteryConfig.Participant.Participation(10))))));
@@ -217,10 +217,10 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Maintenance.Feedback(
+                                Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
-                                        new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))),
+                                        new LotteryConfig.Participant.Participation(2))),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)))),
                         Optional.of(new LotteryConfig.Participant.Stewardship(
                                 Set.of(DayOfWeek.TUESDAY),
                                 new LotteryConfig.Participant.Participation(10))))));
@@ -250,10 +250,10 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Maintenance.Feedback(
+                                Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
-                                        new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))),
+                                        new LotteryConfig.Participant.Participation(2))),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)))),
                         Optional.of(new LotteryConfig.Participant.Stewardship(
                                 Set.of(DayOfWeek.TUESDAY),
                                 new LotteryConfig.Participant.Participation(10))))));
@@ -366,10 +366,10 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Maintenance.Feedback(
+                                Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
-                                        new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))),
+                                        new LotteryConfig.Participant.Participation(2))),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)))),
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
@@ -440,10 +440,10 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Maintenance.Feedback(
+                                Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
-                                        new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))),
+                                        new LotteryConfig.Participant.Participation(2))),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)))),
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
@@ -604,10 +604,10 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
-                                new LotteryConfig.Participant.Maintenance.Feedback(
+                                Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
-                                        new LotteryConfig.Participant.Participation(2)),
-                                new LotteryConfig.Participant.Participation(5))),
+                                        new LotteryConfig.Participant.Participation(2))),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)))),
                         Optional.empty()),
                 new LotteryConfig.Participant("gsmet",
                         Optional.empty(),

@@ -88,9 +88,12 @@ public final class Participant {
 
     private static final class Maintenance {
         public static Optional<Maintenance> create(String username, LotteryConfig.Participant.Maintenance config) {
-            var feedbackNeeded = Participation.create(username, config.feedback().needed());
-            var feedbackProvided = Participation.create(username, config.feedback().provided());
-            var stale = Participation.create(username, config.stale());
+            var feedbackNeeded = config.feedback().map(LotteryConfig.Participant.Maintenance.Feedback::needed)
+                    .flatMap(p -> Participation.create(username, p));
+            var feedbackProvided = config.feedback().map(LotteryConfig.Participant.Maintenance.Feedback::provided)
+                    .flatMap(p -> Participation.create(username, p));
+            var stale = config.stale()
+                    .flatMap(p -> Participation.create(username, p));
 
             if (feedbackNeeded.isEmpty() && feedbackProvided.isEmpty() && stale.isEmpty()) {
                 return Optional.empty();
