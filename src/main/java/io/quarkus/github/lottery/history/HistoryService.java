@@ -4,8 +4,8 @@ import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
-import io.quarkus.github.lottery.github.TopicRef;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -14,6 +14,7 @@ import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubService;
+import io.quarkus.github.lottery.github.TopicRef;
 import io.quarkus.github.lottery.message.MessageFormatter;
 import io.quarkus.github.lottery.notification.NotificationService;
 
@@ -36,8 +37,8 @@ public class HistoryService {
 
     public void append(DrawRef drawRef, LotteryConfig config, List<LotteryReport.Serialized> reports) throws IOException {
         var persistenceRepo = persistenceRepo(drawRef, config);
-        String commentBody = messageFormatter.formatHistoryBodyMarkdown(drawRef, reports);
-        persistenceRepo.topic(historyTopic(drawRef)).comment("", commentBody);
+        String body = messageFormatter.formatHistoryBodyMarkdown(drawRef, reports);
+        persistenceRepo.topic(historyTopic(drawRef)).update("", body, true);
     }
 
     private TopicRef historyTopic(DrawRef drawRef) {

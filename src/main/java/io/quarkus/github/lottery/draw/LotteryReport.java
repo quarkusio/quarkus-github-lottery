@@ -5,8 +5,10 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+
 import io.quarkus.github.lottery.github.Issue;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
@@ -21,8 +23,22 @@ public record LotteryReport(
         Optional<Bucket> stale,
         Optional<Bucket> stewardship) {
 
+    Stream<Bucket> buckets() {
+        return Stream.of(triage, feedbackNeeded, feedbackProvided, stale, stewardship)
+                .filter(Optional::isPresent)
+                .map(Optional::get);
+    }
+
+    public boolean hasContent() {
+        return buckets().anyMatch(Bucket::hasContent);
+    }
+
     public record Bucket(
             List<Issue> issues) {
+
+        public boolean hasContent() {
+            return !issues().isEmpty();
+        }
 
         public Serialized serialized() {
             return new Serialized(issues.stream().map(Issue::number).collect(Collectors.toList()));

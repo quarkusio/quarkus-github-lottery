@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.kohsuke.github.GHDirection;
@@ -234,7 +233,7 @@ public class GitHubRepository implements AutoCloseable {
          *
          * @throws IOException If a GitHub API call fails.
          * @throws java.io.UncheckedIOException If a GitHub API call fails.
-         * @see #comment(String, String)
+         * @see #update(String, String, Optional)
          */
         public boolean isClosed() throws IOException {
             var existingIssue = getDedicatedIssues().findFirst();
@@ -242,7 +241,8 @@ public class GitHubRepository implements AutoCloseable {
         }
 
         /**
-         * Adds a comment to an issue identified by its assignee and topic (title prefix).
+         * Updates an issue identified by its assignee and topic (title prefix),
+         * changing the summary in its description and commenting if necessary.
          *
          * @param topicSuffix A string that should be appended to the topic in the issue title.
          *        Each time that suffix changes for a new comment,
@@ -251,12 +251,13 @@ public class GitHubRepository implements AutoCloseable {
          *        In conversation-based email clients such as GMail,
          *        this will result in the comment appearing in a new conversation,
          *        which can be useful to avoid huge conversations.
-         * @param markdownBody The body of the comment to add.
+         * @param markdownBody The body of the description to update.
+         * @param comment Whether The body should also be added as a comment, triggering a GitHub notification.
          *
          * @throws IOException If a GitHub API call fails.
          * @throws java.io.UncheckedIOException If a GitHub API call fails.
          */
-        public void comment(String topicSuffix, String markdownBody)
+        public void update(String topicSuffix, String markdownBody, boolean comment)
                 throws IOException {
             var dedicatedIssue = getDedicatedIssues().findFirst();
             if (ref.expectedSuffixStart() != null && !topicSuffix.startsWith(ref.expectedSuffixStart())
@@ -297,7 +298,9 @@ public class GitHubRepository implements AutoCloseable {
                 issue = createDedicatedIssue(targetTitle, markdownBody);
             }
 
-            issue.comment(markdownBody);
+            if (comment) {
+                issue.comment(markdownBody);
+            }
         }
 
         private Stream<GHIssue> getDedicatedIssues() throws IOException {
