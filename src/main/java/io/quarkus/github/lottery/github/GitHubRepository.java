@@ -1,5 +1,12 @@
 package io.quarkus.github.lottery.github;
 
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.anyLabel;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.assignee;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.author;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.isIssue;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.label;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.repo;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.updatedBefore;
 import static io.quarkus.github.lottery.util.Streams.toStream;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
@@ -95,8 +102,8 @@ public class GitHubRepository implements AutoCloseable {
 
     private GHIssueSearchBuilder searchIssues() {
         return client().searchIssues()
-                .q(GitHubSearchClauses.repo(ref))
-                .q(GitHubSearchClauses.isIssue());
+                .q(repo(ref))
+                .q(isIssue());
     }
 
     private DynamicGraphQLClient graphQLClient() {
@@ -121,7 +128,7 @@ public class GitHubRepository implements AutoCloseable {
     public Stream<Issue> issuesLastUpdatedBefore(Instant updatedBefore) {
         return toStream(searchIssues()
                 .isOpen()
-                .q(GitHubSearchClauses.updatedBefore(updatedBefore))
+                .q(updatedBefore(updatedBefore))
                 .sort(GHIssueSearchBuilder.Sort.UPDATED)
                 .order(GHDirection.DESC)
                 .list())
@@ -139,8 +146,8 @@ public class GitHubRepository implements AutoCloseable {
     public Stream<Issue> issuesWithLabelLastUpdatedBefore(String label, Instant updatedBefore) {
         return toStream(searchIssues()
                 .isOpen()
-                .q(GitHubSearchClauses.label(label))
-                .q(GitHubSearchClauses.updatedBefore(updatedBefore))
+                .q(label(label))
+                .q(updatedBefore(updatedBefore))
                 .sort(GHIssueSearchBuilder.Sort.UPDATED)
                 .order(GHDirection.DESC)
                 .list())
@@ -163,9 +170,9 @@ public class GitHubRepository implements AutoCloseable {
             IssueActionSide lastActionSide, Instant updatedBefore) {
         return toStream(searchIssues()
                 .isOpen()
-                .q(GitHubSearchClauses.anyLabel(initialActionLabels))
-                .q(GitHubSearchClauses.label(filterLabel))
-                .q(GitHubSearchClauses.updatedBefore(updatedBefore))
+                .q(anyLabel(initialActionLabels))
+                .q(label(filterLabel))
+                .q(updatedBefore(updatedBefore))
                 .sort(GHIssueSearchBuilder.Sort.UPDATED)
                 .order(GHDirection.DESC)
                 .list())
@@ -305,9 +312,9 @@ public class GitHubRepository implements AutoCloseable {
 
         private Stream<GHIssue> getDedicatedIssues() throws IOException {
             var builder = searchIssues()
-                    .q(GitHubSearchClauses.author(appLogin()));
+                    .q(author(appLogin()));
             if (ref.assignee() != null) {
-                builder.q(GitHubSearchClauses.assignee(ref.assignee()));
+                builder.q(assignee(ref.assignee()));
             }
             return toStream(builder.list())
                     .filter(ref.expectedSuffixStart() != null
