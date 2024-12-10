@@ -8,23 +8,26 @@ import static org.mockito.Mockito.withSettings;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import io.quarkiverse.githubapp.testing.dsl.GitHubMockContext;
-import io.quarkus.github.lottery.github.Issue;
 import org.kohsuke.github.GHIssue;
+import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHIssueEvent;
 import org.kohsuke.github.GHLabel;
-import org.kohsuke.github.GHPullRequest;
+import org.kohsuke.github.GHPermissionType;
 import org.kohsuke.github.GHPullRequestFileDetail;
+import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.PagedIterator;
 import org.kohsuke.github.PagedSearchIterable;
 import org.mockito.Answers;
 import org.mockito.Mockito;
 import org.mockito.quality.Strictness;
+
+import io.quarkiverse.githubapp.testing.dsl.GitHubMockContext;
+import io.quarkus.github.lottery.github.Issue;
 
 public class MockHelper {
 
@@ -60,28 +63,36 @@ public class MockHelper {
         return new Issue(number, "Title for issue " + number, url(number));
     }
 
-    public static GHIssue mockIssueForLottery(GitHubMockContext context, int number, Date updatedAt)
+    public static GHIssue mockIssueForLottery(GitHubMockContext context, int number)
             throws IOException {
         GHIssue mock = context.issue(10000L + number);
-        when(mock.isPullRequest()).thenReturn(false);
         when(mock.getNumber()).thenReturn(number);
         when(mock.getTitle()).thenReturn("Title for issue " + number);
         when(mock.getHtmlUrl()).thenReturn(url(number));
-        when(mock.getUpdatedAt()).thenReturn(updatedAt);
         return mock;
     }
 
-    public static GHIssue mockIssueForLotteryFilteredOutByRepository(GitHubMockContext context, int number, Date updatedAt)
+    public static GHIssue mockIssueForLottery(GitHubMockContext context, int number, GHUser reporter)
             throws IOException {
         GHIssue mock = context.issue(10000L + number);
-        when(mock.isPullRequest()).thenReturn(false);
-        when(mock.getUpdatedAt()).thenReturn(updatedAt);
+        when(mock.getNumber()).thenReturn(number);
+        when(mock.getTitle()).thenReturn("Title for issue " + number);
+        when(mock.getHtmlUrl()).thenReturn(url(number));
+        when(mock.getUser()).thenReturn(reporter);
         return mock;
     }
 
-    public static GHPullRequest mockPullRequestForLotteryFilteredOutByRepository(GitHubMockContext context, int number) {
-        GHPullRequest mock = context.pullRequest(10000L + number);
-        when(mock.isPullRequest()).thenReturn(true);
+    public static GHIssue mockIssueForLotteryFilteredOutByRepository(GitHubMockContext context, int number)
+            throws IOException {
+        GHIssue mock = context.issue(10000L + number);
+        return mock;
+    }
+
+    public static GHIssue mockIssueForLotteryFilteredOutByRepository(GitHubMockContext context, int number,
+            GHUser reporter)
+            throws IOException {
+        GHIssue mock = context.issue(10000L + number);
+        when(mock.getUser()).thenReturn(reporter);
         return mock;
     }
 
@@ -106,6 +117,38 @@ public class MockHelper {
     public static GHPullRequestFileDetail mockGHPullRequestFileDetail(String filename) {
         GHPullRequestFileDetail mock = mock(GHPullRequestFileDetail.class);
         lenient().when(mock.getFilename()).thenReturn(filename);
+        return mock;
+    }
+
+    public static GHUser mockUserForInspectedComments(GitHubMockContext context, GHRepository repositoryMock,
+            long id, String login)
+            throws IOException {
+        return mockUserForInspectedComments(context, repositoryMock, id, login, null);
+    }
+
+    public static GHUser mockUserForInspectedComments(GitHubMockContext context, GHRepository repositoryMock,
+            long id, String login, GHPermissionType permissionType)
+            throws IOException {
+        GHUser mock = context.ghObject(GHUser.class, id);
+        when(mock.getLogin()).thenReturn(login);
+        if (permissionType != null) {
+            when(repositoryMock.getPermission(mock)).thenReturn(permissionType);
+        }
+        return mock;
+    }
+
+    public static GHIssueComment mockIssueComment(GitHubMockContext context, long id, GHUser author)
+            throws IOException {
+        return mockIssueComment(context, id, author, null);
+    }
+
+    public static GHIssueComment mockIssueComment(GitHubMockContext context, long id, GHUser author, String body)
+            throws IOException {
+        GHIssueComment mock = context.issueComment(id);
+        when(mock.getUser()).thenReturn(author);
+        if (body != null) {
+            when(mock.getBody()).thenReturn(body);
+        }
         return mock;
     }
 

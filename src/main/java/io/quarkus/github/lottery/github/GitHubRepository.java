@@ -21,9 +21,10 @@ import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHIssueCommentQueryBuilder;
 import org.kohsuke.github.GHIssueEvent;
-import org.kohsuke.github.GHIssueQueryBuilder;
+import org.kohsuke.github.GHIssueSearchBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 
 import io.quarkiverse.githubapp.ConfigFile;
@@ -31,6 +32,7 @@ import io.quarkiverse.githubapp.GitHubClientProvider;
 import io.quarkiverse.githubapp.GitHubConfigFileProvider;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.message.MessageFormatter;
+import io.quarkus.github.lottery.util.GitHubConstants;
 import io.quarkus.github.lottery.util.Streams;
 import io.quarkus.logging.Log;
 import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
@@ -92,6 +94,12 @@ public class GitHubRepository implements AutoCloseable {
         return repository;
     }
 
+    private GHIssueSearchBuilder searchIssues() {
+        return client().searchIssues()
+                .q(GitHubSearchClauses.repo(ref))
+                .q(GitHubSearchClauses.isIssue());
+    }
+
     private DynamicGraphQLClient graphQLClient() {
         if (graphQLClient == null) {
             graphQLClient = clientProvider.getInstallationGraphQLClient(ref.installationRef().installationId());
@@ -109,17 +117,15 @@ public class GitHubRepository implements AutoCloseable {
      *
      * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
      * @return A lazily populated stream of matching issues.
-     * @throws IOException In case of I/O failure.
      * @throws java.io.UncheckedIOException In case of I/O failure.
      */
-    public Stream<Issue> issuesLastUpdatedBefore(Instant updatedBefore) throws IOException {
-        return toStream(repository().queryIssues()
-                .state(GHIssueState.OPEN)
-                .sort(GHIssueQueryBuilder.Sort.UPDATED)
-                .direction(GHDirection.DESC)
+    public Stream<Issue> issuesLastUpdatedBefore(Instant updatedBefore) {
+        return toStream(searchIssues()
+                .isOpen()
+                .q(GitHubSearchClauses.updatedBefore(updatedBefore))
+                .sort(GHIssueSearchBuilder.Sort.UPDATED)
+                .order(GHDirection.DESC)
                 .list())
-                .filter(notPullRequest())
-                .filter(updatedBefore(updatedBefore))
                 .map(toIssueRecord());
     }
 
@@ -129,17 +135,16 @@ public class GitHubRepository implements AutoCloseable {
      * @param label A GitHub label; if non-null, all returned issues must have been assigned that label.
      * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
      * @return A lazily populated stream of matching issues.
-     * @throws IOException In case of I/O failure.
      * @throws java.io.UncheckedIOException In case of I/O failure.
      */
-    public Stream<Issue> issuesWithLabelLastUpdatedBefore(String label, Instant updatedBefore) throws IOException {
-        return toStream(repository().queryIssues().label(label)
-                .state(GHIssueState.OPEN)
-                .sort(GHIssueQueryBuilder.Sort.UPDATED)
-                .direction(GHDirection.DESC)
+    public Stream<Issue> issuesWithLabelLastUpdatedBefore(String label, Instant updatedBefore) {
+        return toStream(searchIssues()
+                .isOpen()
+                .q(GitHubSearchClauses.label(label))
+                .q(GitHubSearchClauses.updatedBefore(updatedBefore))
+                .sort(GHIssueSearchBuilder.Sort.UPDATED)
+                .order(GHDirection.DESC)
                 .list())
-                .filter(notPullRequest())
-                .filter(updatedBefore(updatedBefore))
                 .map(toIssueRecord());
     }
 
@@ -153,35 +158,21 @@ public class GitHubRepository implements AutoCloseable {
      *        This label is not relevant to determining the last action.
      * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
      * @return A lazily populated stream of matching issues.
-     * @throws IOException In case of I/O failure.
      * @throws java.io.UncheckedIOException In case of I/O failure.
      */
     public Stream<Issue> issuesLastActedOnByAndLastUpdatedBefore(Set<String> initialActionLabels, String filterLabel,
-            IssueActionSide lastActionSide, Instant updatedBefore) throws IOException {
-        var theRepository = repository();
-        var streams = initialActionLabels.stream()
-                .map(initialActionLabel -> toStream(theRepository.queryIssues()
-                        .label(initialActionLabel)
-                        .label(filterLabel)
-                        .state(GHIssueState.OPEN)
-                        .sort(GHIssueQueryBuilder.Sort.UPDATED)
-                        .direction(GHDirection.DESC)
-                        .list())
-                        .filter(notPullRequest())
-                        .filter(updatedBefore(updatedBefore))
-                        .filter(uncheckedIO((GHIssue ghIssue) -> lastActionSide
-                                .equals(lastActionSide(ghIssue, initialActionLabels)))::apply)
-                        .map(toIssueRecord()))
-                .toList();
-        return Streams.interleave(streams);
-    }
-
-    private Predicate<GHIssue> updatedBefore(Instant updatedBefore) {
-        return uncheckedIO((GHIssue ghIssue) -> ghIssue.getUpdatedAt().toInstant().isBefore(updatedBefore))::apply;
-    }
-
-    private Predicate<GHIssue> notPullRequest() {
-        return (GHIssue ghIssue) -> !ghIssue.isPullRequest();
+            IssueActionSide lastActionSide, Instant updatedBefore) {
+        return toStream(searchIssues()
+                .isOpen()
+                .q(GitHubSearchClauses.anyLabel(initialActionLabels))
+                .q(GitHubSearchClauses.label(filterLabel))
+                .q(GitHubSearchClauses.updatedBefore(updatedBefore))
+                .sort(GHIssueSearchBuilder.Sort.UPDATED)
+                .order(GHDirection.DESC)
+                .list())
+                .filter(uncheckedIO((GHIssue ghIssue) -> lastActionSide
+                        .equals(lastActionSide(ghIssue, initialActionLabels)))::apply)
+                .map(toIssueRecord());
     }
 
     private IssueActionSide lastActionSide(GHIssue ghIssue, Set<String> initialActionLabels) throws IOException {
@@ -194,19 +185,27 @@ public class GitHubRepository implements AutoCloseable {
                 lastEventActionSideInstant = event.getCreatedAt().toInstant();
             }
         }
-        GHIssueCommentQueryBuilder queryCommentsBuilder = ghIssue.queryComments();
-        if (lastEventActionSideInstant != null) {
-            queryCommentsBuilder.since(Date.from(lastEventActionSideInstant));
-        }
 
-        Optional<GHIssueComment> lastComment = toStream(queryCommentsBuilder.list()).reduce(Streams.last());
+        Optional<GHIssueComment> lastComment = getNonBotCommentsSince(ghIssue, lastEventActionSideInstant)
+                .reduce(Streams.last());
         if (lastComment.isEmpty()) {
             // No action since the label was assigned.
             return IssueActionSide.TEAM;
         }
-        return switch (repository().getPermission(lastComment.get().getUser())) {
-            case ADMIN, WRITE -> IssueActionSide.TEAM;
-            case READ, UNKNOWN, NONE -> IssueActionSide.OUTSIDER;
+        return getIssueActionSide(ghIssue, lastComment.get().getUser());
+    }
+
+    private IssueActionSide getIssueActionSide(GHIssue issue, GHUser user) throws IOException {
+        if (issue.getUser().getLogin().equals(user.getLogin())) {
+            // This is the reporter; even if part of the team,
+            // we'll consider he's acting as an outsider here,
+            // because he's unlikely to ask for feedback from himself.
+            return IssueActionSide.OUTSIDER;
+        }
+
+        return switch (repository().getPermission(user)) {
+            case ADMIN, WRITE, UNKNOWN -> IssueActionSide.TEAM; // "Unknown" includes "triage"
+            case READ, NONE -> IssueActionSide.OUTSIDER;
         };
     }
 
@@ -302,12 +301,12 @@ public class GitHubRepository implements AutoCloseable {
         }
 
         private Stream<GHIssue> getDedicatedIssues() throws IOException {
-            var builder = repository().queryIssues().creator(appLogin());
+            var builder = searchIssues()
+                    .q(GitHubSearchClauses.author(appLogin()));
             if (ref.assignee() != null) {
-                builder.assignee(ref.assignee());
+                builder.q(GitHubSearchClauses.assignee(ref.assignee()));
             }
-            builder.state(GHIssueState.ALL);
-            return Streams.toStream(builder.list())
+            return toStream(builder.list())
                     .filter(ref.expectedSuffixStart() != null
                             ? issue -> issue.getTitle().startsWith(ref.topic() + ref.expectedSuffixStart())
                             // Try exact match in this case to avoid confusion if there are two issues and one is
@@ -337,8 +336,23 @@ public class GitHubRepository implements AutoCloseable {
 
     private Stream<GHIssueComment> getAppCommentsSince(GHIssue issue, Instant since) {
         String appLogin = appLogin();
-        return toStream(issue.queryComments().since(Date.from(since)).list())
+        GHIssueCommentQueryBuilder queryCommentsBuilder = issue.queryComments();
+        if (since != null) {
+            queryCommentsBuilder.since(Date.from(since));
+        }
+        return toStream(queryCommentsBuilder.list())
                 .filter(uncheckedIO((GHIssueComment comment) -> appLogin.equals(comment.getUser().getLogin()))::apply);
+    }
+
+    private Stream<GHIssueComment> getNonBotCommentsSince(GHIssue issue, Instant since) {
+        GHIssueCommentQueryBuilder queryCommentsBuilder = issue.queryComments();
+        if (since != null) {
+            queryCommentsBuilder.since(Date.from(since));
+        }
+        return toStream(queryCommentsBuilder.list())
+                // Relying on the login rather than getType(), because that would involve an additional request.
+                .filter(uncheckedIO((GHIssueComment comment) -> !comment.getUser().getLogin()
+                        .endsWith(GitHubConstants.BOT_LOGIN_SUFFIX))::apply);
     }
 
     private void minimizeOutdatedComment(GHIssueComment comment) {
