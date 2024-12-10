@@ -972,7 +972,7 @@ public class GitHubServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void topic_comment_dedicatedIssueExists_open() throws Exception {
+    void topic_update_dedicatedIssueExists_open() throws Exception {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var commentToMinimizeNodeId = "MDM6Qm90NzUwNjg0Mzg=";
 
@@ -1019,7 +1019,7 @@ public class GitHubServiceTest {
                     var repo = gitHubService.repository(repoRef);
 
                     repo.topic(TopicRef.notification("yrodiere", "yrodiere's report for quarkusio/quarkus"))
-                            .comment(" (updated 2017-11-06T06:00:00Z)", "Some content");
+                            .update(" (updated 2017-11-06T06:00:00Z)", "Some content", true);
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
@@ -1045,7 +1045,7 @@ public class GitHubServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void topic_comment_dedicatedIssueExists_noTopicSuffix() throws Exception {
+    void topic_update_dedicatedIssueExists_noTopicSuffix() throws Exception {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var commentToMinimizeNodeId = "MDM6Qm90NzUwNjg0Mzg=";
 
@@ -1091,7 +1091,7 @@ public class GitHubServiceTest {
                     var repo = gitHubService.repository(repoRef);
 
                     repo.topic(TopicRef.history("Lottery history for quarkusio/quarkus"))
-                            .comment("", "Some content");
+                            .update("", "Some content", true);
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
@@ -1115,7 +1115,7 @@ public class GitHubServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void topic_comment_dedicatedIssueExists_withConfusingOther() throws Exception {
+    void topic_update_dedicatedIssueExists_withConfusingOther() throws Exception {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var commentToMinimizeNodeId = "MDM6Qm90NzUwNjg0Mzg=";
 
@@ -1161,7 +1161,7 @@ public class GitHubServiceTest {
                     var repo = gitHubService.repository(repoRef);
 
                     repo.topic(TopicRef.history("Lottery history for quarkusio/quarkus"))
-                            .comment("", "Some content");
+                            .update("", "Some content", true);
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
@@ -1185,7 +1185,7 @@ public class GitHubServiceTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    void topic_comment_dedicatedIssueExists_closed() throws Exception {
+    void topic_update_dedicatedIssueExists_closed() throws Exception {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var commentToMinimizeNodeId = "MDM6Qm90NzUwNjg0Mzg=";
 
@@ -1232,7 +1232,7 @@ public class GitHubServiceTest {
                     var repo = gitHubService.repository(repoRef);
 
                     repo.topic(TopicRef.notification("yrodiere", "yrodiere's report for quarkusio/quarkus"))
-                            .comment(" (updated 2017-11-06T06:00:00Z)", "Some content");
+                            .update(" (updated 2017-11-06T06:00:00Z)", "Some content", true);
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
@@ -1259,7 +1259,7 @@ public class GitHubServiceTest {
     }
 
     @Test
-    void topic_comment_dedicatedIssueDoesNotExist() throws IOException {
+    void topic_update_dedicatedIssueDoesNotExist() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -1288,7 +1288,7 @@ public class GitHubServiceTest {
                     var repo = gitHubService.repository(repoRef);
 
                     repo.topic(TopicRef.notification("yrodiere", "yrodiere's report for quarkusio/quarkus"))
-                            .comment(" (updated 2017-11-06T06:00:00Z)", "Some content");
+                            .update(" (updated 2017-11-06T06:00:00Z)", "Some content", true);
                 })
                 .then().github(mocks -> {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
@@ -1309,7 +1309,7 @@ public class GitHubServiceTest {
     }
 
     @Test
-    void topic_comment_dedicatedIssueDoesNotExist_withConfusingOther() throws IOException {
+    void topic_update_dedicatedIssueDoesNotExist_withConfusingOther() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
         var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -1338,7 +1338,7 @@ public class GitHubServiceTest {
                     var repo = gitHubService.repository(repoRef);
 
                     repo.topic(TopicRef.notification("yrodiere", "yrodiere's report for quarkusio/quarkus"))
-                            .comment(" (updated 2017-11-06T06:00:00Z)", "Some content");
+                            .update(" (updated 2017-11-06T06:00:00Z)", "Some content", true);
                 })
                 .then().github(mocks -> {
                     var repositoryMock = mocks.repository(repoRef.repositoryName());

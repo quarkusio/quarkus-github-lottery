@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery.notification;
 
 import java.io.IOException;
+import java.util.Optional;
 
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
@@ -38,7 +39,10 @@ public class Notifier implements AutoCloseable {
         String topicSuffix = formatter.formatNotificationTopicSuffixText(report);
         String body = formatter.formatNotificationBodyMarkdown(report, notificationRepository.ref());
         notificationRepository.topic(notificationTopic(report.username()))
-                .comment(topicSuffix, body);
+                .update(topicSuffix, body,
+                        // When the report has no content, we update the topic's description,
+                        // but we don't comment, because that would trigger an unnecessary notification.
+                        report.hasContent());
     }
 
     private TopicRef notificationTopic(String username) {
