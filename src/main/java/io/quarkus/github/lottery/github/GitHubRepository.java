@@ -233,7 +233,7 @@ public class GitHubRepository implements AutoCloseable {
          *
          * @throws IOException If a GitHub API call fails.
          * @throws java.io.UncheckedIOException If a GitHub API call fails.
-         * @see #update(String, String, Optional)
+         * @see #update(String, String, boolean)
          */
         public boolean isClosed() throws IOException {
             var existingIssue = getDedicatedIssues().findFirst();
