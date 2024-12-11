@@ -7,6 +7,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -16,13 +17,13 @@ import jakarta.inject.Inject;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.Lottery;
-import io.quarkus.github.lottery.draw.Participant;
-import io.quarkus.github.lottery.history.LotteryHistory;
 import io.quarkus.github.lottery.draw.LotteryReport;
+import io.quarkus.github.lottery.draw.Participant;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.github.GitHubService;
 import io.quarkus.github.lottery.history.HistoryService;
+import io.quarkus.github.lottery.history.LotteryHistory;
 import io.quarkus.github.lottery.notification.NotificationService;
 import io.quarkus.github.lottery.notification.Notifier;
 import io.quarkus.logging.Log;
@@ -89,7 +90,7 @@ public class LotteryService {
 
             lottery.draw(repo, history);
 
-            var sent = notifyParticipants(notifier, participants);
+            var sent = notifyParticipants(lotteryConfig, notifier, participants);
             if (!sent.isEmpty()) {
                 try {
                     historyService.append(drawRef, lotteryConfig, sent);
@@ -130,10 +131,12 @@ public class LotteryService {
         return participants;
     }
 
-    private List<LotteryReport.Serialized> notifyParticipants(Notifier notifier, List<Participant> participants) {
+    private List<LotteryReport.Serialized> notifyParticipants(LotteryConfig lotteryConfig,
+            Notifier notifier, List<Participant> participants) {
         List<LotteryReport.Serialized> sent = new ArrayList<>();
         for (var participant : participants) {
-            var report = participant.report();
+            var report = participant.report(lotteryConfig.buckets().triage().label(),
+                    new LinkedHashSet<>(lotteryConfig.buckets().maintenance().feedback().labels()));
             try {
                 Log.debugf("Sending report: %s", report);
                 notifier.send(report);

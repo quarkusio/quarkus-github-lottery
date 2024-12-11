@@ -24,6 +24,15 @@ public record LotteryConfig(
 
     public static final String FILE_NAME = "quarkus-github-lottery.yml";
 
+    public LotteryConfig(
+            @JsonProperty(required = true) Notifications notifications,
+            @JsonProperty(required = true) Buckets buckets,
+            List<Participant> participants) {
+        this.notifications = notifications;
+        this.buckets = buckets;
+        this.participants = participants == null ? List.of() : participants;
+    }
+
     public record Notifications(
             @JsonProperty(required = true) CreateIssuesConfig createIssues) {
         public record CreateIssuesConfig(
@@ -81,23 +90,27 @@ public record LotteryConfig(
             }
 
             public record Stale(
-                    @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+                    @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification,
+                    @JsonProperty(required = true) List<String> ignoreLabels) {
                 // https://stackoverflow.com/a/71539100/6692043
                 // Also gives us a less verbose constructor for tests
                 @JsonCreator
-                public Stale(@JsonProperty(required = true) Duration delay, @JsonProperty(required = true) Duration timeout) {
-                    this(new Notification(delay, timeout));
+                public Stale(@JsonProperty(required = true) Duration delay, @JsonProperty(required = true) Duration timeout,
+                        @JsonProperty(required = false) List<String> ignoreLabels) {
+                    this(new Notification(delay, timeout), ignoreLabels == null ? List.of() : ignoreLabels);
                 }
             }
         }
 
         public record Stewardship(
-                @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification) {
+                @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification,
+                @JsonProperty(required = false) List<String> ignoreLabels) {
             // https://stackoverflow.com/a/71539100/6692043
             // Also gives us a less verbose constructor for tests
             @JsonCreator
-            public Stewardship(@JsonProperty(required = true) Duration delay, @JsonProperty(required = true) Duration timeout) {
-                this(new Notification(delay, timeout));
+            public Stewardship(@JsonProperty(required = true) Duration delay, @JsonProperty(required = true) Duration timeout,
+                    @JsonProperty(required = false) List<String> ignoreLabels) {
+                this(new Notification(delay, timeout), ignoreLabels == null ? List.of() : ignoreLabels);
             }
         }
 

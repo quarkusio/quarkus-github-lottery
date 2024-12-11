@@ -163,9 +163,11 @@ public class GitHubServiceTest {
                                         stale:
                                           delay: P60D
                                           timeout: P14D
+                                          ignoreLabels: ["triage/on-ice"]
                                       stewardship:
                                         delay: P60D
                                         timeout: P14D
+                                        ignoreLabels: ["triage/on-ice"]
                                     participants:
                                       - username: "yrodiere"
                                         triage:
@@ -233,9 +235,10 @@ public class GitHubServiceTest {
                                                             new LotteryConfig.Buckets.Maintenance.Feedback.Provided(
                                                                     Duration.ofDays(7), Duration.ofDays(3))),
                                                     new LotteryConfig.Buckets.Maintenance.Stale(
-                                                            Duration.ofDays(60), Duration.ofDays(14))),
+                                                            Duration.ofDays(60), Duration.ofDays(14),
+                                                            List.of("triage/on-ice"))),
                                             new LotteryConfig.Buckets.Stewardship(
-                                                    Duration.ofDays(60), Duration.ofDays(14))),
+                                                    Duration.ofDays(60), Duration.ofDays(14), List.of("triage/on-ice"))),
                                     List.of(
                                             new LotteryConfig.Participant("yrodiere",
                                                     Optional.empty(),
@@ -293,6 +296,72 @@ public class GitHubServiceTest {
     }
 
     @Test
+    void fetchLotteryConfig_minimal() throws IOException {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
+
+        given()
+                .github(mocks -> {
+                    var repositoryMock = mocks.repository(repoRef.repositoryName());
+                    mocks.configFile(repositoryMock, "quarkus-github-lottery.yml")
+                            .fromString("""
+                                    notifications:
+                                      createIssues:
+                                        repository: "quarkusio/quarkus-lottery-reports"
+                                    buckets:
+                                      triage:
+                                        label: "triage/needs-triage"
+                                        delay: PT0S
+                                        timeout: P3D
+                                      maintenance:
+                                        feedback:
+                                          labels: ["triage/needs-feedback"]
+                                          needed:
+                                            delay: P21D
+                                            timeout: P3D
+                                          provided:
+                                            delay: P7D
+                                            timeout: P3D
+                                        stale:
+                                          delay: P60D
+                                          timeout: P14D
+                                      stewardship:
+                                        delay: P60D
+                                        timeout: P14D
+                                    participants:
+                                    """);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.fetchLotteryConfig())
+                            .isNotEmpty()
+                            .get().usingRecursiveComparison().isEqualTo(new LotteryConfig(
+                                    new LotteryConfig.Notifications(
+                                            new LotteryConfig.Notifications.CreateIssuesConfig(
+                                                    "quarkusio/quarkus-lottery-reports")),
+                                    new LotteryConfig.Buckets(
+                                            new LotteryConfig.Buckets.Triage(
+                                                    "triage/needs-triage",
+                                                    Duration.ZERO, Duration.ofDays(3)),
+                                            new LotteryConfig.Buckets.Maintenance(
+                                                    new LotteryConfig.Buckets.Maintenance.Feedback(
+                                                            List.of("triage/needs-feedback"),
+                                                            new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
+                                                                    Duration.ofDays(21), Duration.ofDays(3)),
+                                                            new LotteryConfig.Buckets.Maintenance.Feedback.Provided(
+                                                                    Duration.ofDays(7), Duration.ofDays(3))),
+                                                    new LotteryConfig.Buckets.Maintenance.Stale(
+                                                            Duration.ofDays(60), Duration.ofDays(14), List.of())),
+                                            new LotteryConfig.Buckets.Stewardship(
+                                                    Duration.ofDays(60), Duration.ofDays(14), List.of())),
+                                    List.of()));
+                })
+                .then().github(mocks -> {
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
     void issuesLastUpdatedBefore() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
@@ -316,7 +385,7 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.issuesLastUpdatedBefore(cutoff))
+                    assertThat(repo.issuesLastUpdatedBefore(Set.of(), cutoff))
                             .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
                 })
                 .then().github(mocks -> {
@@ -326,6 +395,46 @@ public class GitHubServiceTest {
                     verify(searchIssuesBuilderMock).q("updated:<2017-11-05T06:00");
                     verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.UPDATED);
                     verify(searchIssuesBuilderMock).order(GHDirection.DESC);
+                    verifyNoMoreInteractions(searchIssuesBuilderMock);
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
+    void issuesLastUpdatedBefore_ignoreLabels() throws IOException {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
+
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        Instant cutoff = now.minus(1, ChronoUnit.DAYS);
+
+        var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        given()
+                .github(mocks -> {
+                    var clientMock = mocks.installationClient(installationRef.installationId());
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issue1Mock = mockIssueForLottery(mocks, 1);
+                    var issue2Mock = mockIssueForLottery(mocks, 3);
+                    var issue3Mock = mockIssueForLottery(mocks, 2);
+                    var issue4Mock = mockIssueForLottery(mocks, 4);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.issuesLastUpdatedBefore(Set.of("triage/on-ice"), cutoff))
+                            .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
+                })
+                .then().github(mocks -> {
+                    verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
+                    verify(searchIssuesBuilderMock).q("is:issue");
+                    verify(searchIssuesBuilderMock).isOpen();
+                    verify(searchIssuesBuilderMock).q("updated:<2017-11-05T06:00");
+                    verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.UPDATED);
+                    verify(searchIssuesBuilderMock).order(GHDirection.DESC);
+                    verify(searchIssuesBuilderMock).q("-label:triage/on-ice");
                     verifyNoMoreInteractions(searchIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
@@ -355,7 +464,7 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.issuesWithLabelLastUpdatedBefore("triage/needs-triage", cutoff))
+                    assertThat(repo.issuesWithLabelLastUpdatedBefore("triage/needs-triage", Set.of(), cutoff))
                             .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
                 })
                 .then().github(mocks -> {
@@ -366,6 +475,47 @@ public class GitHubServiceTest {
                     verify(searchIssuesBuilderMock).order(GHDirection.DESC);
                     verify(searchIssuesBuilderMock).q("label:triage/needs-triage");
                     verify(searchIssuesBuilderMock).q("updated:<2017-11-05T06:00");
+                    verifyNoMoreInteractions(searchIssuesBuilderMock);
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
+    void issuesWithLabelLastUpdatedBefore_ignoreLabels() throws IOException {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
+
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        Instant cutoff = now.minus(1, ChronoUnit.DAYS);
+
+        var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        given()
+                .github(mocks -> {
+                    var clientMock = mocks.installationClient(installationRef.installationId());
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issue1Mock = mockIssueForLottery(mocks, 1);
+                    var issue2Mock = mockIssueForLottery(mocks, 3);
+                    var issue3Mock = mockIssueForLottery(mocks, 2);
+                    var issue4Mock = mockIssueForLottery(mocks, 4);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.issuesWithLabelLastUpdatedBefore("triage/needs-triage", Set.of("triage/on-ice"), cutoff))
+                            .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
+                })
+                .then().github(mocks -> {
+                    verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
+                    verify(searchIssuesBuilderMock).q("is:issue");
+                    verify(searchIssuesBuilderMock).isOpen();
+                    verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.UPDATED);
+                    verify(searchIssuesBuilderMock).order(GHDirection.DESC);
+                    verify(searchIssuesBuilderMock).q("label:triage/needs-triage");
+                    verify(searchIssuesBuilderMock).q("updated:<2017-11-05T06:00");
+                    verify(searchIssuesBuilderMock).q("-label:triage/on-ice");
                     verifyNoMoreInteractions(searchIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });

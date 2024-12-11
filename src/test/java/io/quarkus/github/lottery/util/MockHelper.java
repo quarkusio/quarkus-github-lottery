@@ -9,9 +9,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.IntStream;
 
+import io.quarkus.github.lottery.draw.LotteryReport;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHIssueEvent;
@@ -61,6 +63,12 @@ public class MockHelper {
 
     private static Issue stubIssue(int number) {
         return new Issue(number, "Title for issue " + number, url(number));
+    }
+
+    public static LotteryReport.Config stubReportConfig(String... maintenanceLabels) {
+        return new LotteryReport.Config("triage/needs-triage",
+                new LinkedHashSet<>(List.of("triage/needs-reproducer", "triage/needs-feedback")),
+                new LinkedHashSet<>(List.of(maintenanceLabels)));
     }
 
     public static GHIssue mockIssueForLottery(GitHubMockContext context, int number)

@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -17,6 +18,7 @@ public record LotteryReport(
         DrawRef drawRef,
         String username,
         Optional<ZoneId> timezone,
+        Config config,
         Optional<Bucket> triage,
         Optional<Bucket> feedbackNeeded,
         Optional<Bucket> feedbackProvided,
@@ -31,6 +33,12 @@ public record LotteryReport(
 
     public boolean hasContent() {
         return buckets().anyMatch(Bucket::hasContent);
+    }
+
+    public record Config(
+            String triageLabel,
+            Set<String> feedbackLabels,
+            Set<String> maintenanceLabels) {
     }
 
     public record Bucket(

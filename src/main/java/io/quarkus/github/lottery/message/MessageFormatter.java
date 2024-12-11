@@ -1,7 +1,9 @@
 package io.quarkus.github.lottery.message;
 
 import java.time.temporal.Temporal;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
@@ -27,6 +29,9 @@ public class MessageFormatter {
     };
     private static final String PAYLOAD_BEGIN = "<!--:payload:\n";
     private static final String PAYLOAD_END = "\n:payload:-->";
+
+    public record Config(String triageLabel, Set<String> feedbackLabels) {
+    }
 
     @Inject
     ObjectMapper jsonObjectMapper;
@@ -101,6 +106,14 @@ public class MessageFormatter {
 
         static String repositoryName(DrawRef drawRef) {
             return drawRef.repositoryRef().repositoryName();
+        }
+
+        static String asMarkdownLabel(String label) {
+            return "`" + label + "`";
+        }
+
+        static String asMarkdownLabel(Collection<String> labels) {
+            return labels.stream().map(TemplateExtensions::asMarkdownLabel).collect(Collectors.joining("/"));
         }
 
     }
