@@ -59,9 +59,9 @@ public class HistoryServiceTest {
                                         new LotteryConfig.Buckets.Maintenance.Feedback.Provided(
                                                 Duration.ofDays(7), Duration.ofDays(3))),
                                 new LotteryConfig.Buckets.Maintenance.Stale(
-                                        Duration.ofDays(60), Duration.ofDays(14))),
+                                        Duration.ofDays(60), Duration.ofDays(14), List.of("triage/on-ice"))),
                         new LotteryConfig.Buckets.Stewardship(
-                                Duration.ofDays(60), Duration.ofDays(14))),
+                                Duration.ofDays(60), Duration.ofDays(14), List.of("triage/on-ice"))),
                 List.of());
     }
 

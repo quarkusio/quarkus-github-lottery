@@ -9,6 +9,10 @@ public final class GitHubSearchClauses {
     private GitHubSearchClauses() {
     }
 
+    public static String not(String clause) {
+        return "-" + clause;
+    }
+
     public static String repo(GitHubRepositoryRef ref) {
         return "repo:" + ref.repositoryName();
     }

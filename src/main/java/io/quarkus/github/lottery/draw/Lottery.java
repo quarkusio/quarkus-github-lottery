@@ -95,7 +95,7 @@ public final class Lottery {
                 String label = config.triage().label();
                 var cutoff = now.minus(config.triage().notification().delay());
                 var history = lotteryHistory.triage();
-                draws.add(triage.bucket.createDraw(repo.issuesWithLabelLastUpdatedBefore(label, cutoff)
+                draws.add(triage.bucket.createDraw(repo.issuesWithLabelLastUpdatedBefore(label, Set.of(), cutoff)
                         .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                         .iterator(),
                         allWinnings));
@@ -155,9 +155,11 @@ public final class Lottery {
             }
             if (stale.hasParticipation()) {
                 var cutoff = now.minus(config.maintenance().stale().notification().delay());
+                // Remove duplicates, but preserve order
+                var ignoreLabels = new LinkedHashSet<>(config.maintenance().stale().ignoreLabels());
                 var history = lotteryHistory.stale();
                 draws.add(stale.createDraw(
-                        repo.issuesWithLabelLastUpdatedBefore(areaLabel, cutoff)
+                        repo.issuesWithLabelLastUpdatedBefore(areaLabel, ignoreLabels, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                                 .iterator(),
                         allWinnings));
@@ -176,9 +178,10 @@ public final class Lottery {
                 Set<Integer> allWinnings) throws IOException {
             if (stewardship.bucket.hasParticipation()) {
                 var cutoff = now.minus(config.stewardship().notification().delay());
+                var ignoreLabels = new LinkedHashSet<>(config.stewardship().ignoreLabels());
                 var history = lotteryHistory.stewardship();
                 draws.add(bucket.createDraw(
-                        repo.issuesLastUpdatedBefore(cutoff)
+                        repo.issuesLastUpdatedBefore(ignoreLabels, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                                 .iterator(),
                         allWinnings));

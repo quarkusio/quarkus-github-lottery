@@ -187,11 +187,12 @@ participants:
           maxIssues: 2
       stale:
         maxIssues: 5
+        ignoreLabels: ["triage/on-ice"]
 ----
 
 `labels`::
 The labels identifying issues you are interested in, as a maintainer.
-Issues mentioned in notifications will have at least one of those labels.
+Issues mentioned in notifications will have at least one of these labels.
 +
 Array of Strings, mandatory, no default.
 `days`::
@@ -213,6 +214,11 @@ How many issues, at most, you wish to be included in the "Stale" category
 for each notification.
 +
 Integer, mandatory, no default.
+`stale.ignoreLabels`::
+The labels identifying issues that should be ignored for the "Stale" category.
+Issues mentioned in notifications will never have any one of these labels.
++
+Array of Strings, optional, defaults to an empty array.
 
 [[participants-stewardship]]
 === Stewardship
@@ -244,6 +250,7 @@ participants:
     stewardship:
       days: ["MONDAY"]
       maxIssues: 5
+      ignoreLabels: ["triage/on-ice"]
 ----
 
 `days`::
@@ -255,6 +262,11 @@ How many issues, at most, you wish to be included in the "stewardship" category
 for each notification.
 +
 Integer, mandatory, no default.
+`ignoreLabels`::
+The labels identifying issues that should be ignored for the "stewardship" category.
+Issues mentioned in notifications will never have any one of these labels.
++
+Array of Strings, optional, defaults to an empty array.
 
 [[participants-suspending]]
 === Suspending notifications

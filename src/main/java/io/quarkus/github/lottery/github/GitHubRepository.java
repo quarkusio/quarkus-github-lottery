@@ -5,6 +5,7 @@ import static io.quarkus.github.lottery.github.GitHubSearchClauses.assignee;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.author;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.isIssue;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.label;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.not;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.repo;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.updatedBefore;
 import static io.quarkus.github.lottery.util.Streams.toStream;
@@ -121,37 +122,43 @@ public class GitHubRepository implements AutoCloseable {
     /**
      * Lists issues that were last updated before the given instant.
      *
+     * @param ignoreLabels GitHub labels. Issues assigned with any of these labels are ignored (not returned).
      * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
      * @return A lazily populated stream of matching issues.
      * @throws java.io.UncheckedIOException In case of I/O failure.
      */
-    public Stream<Issue> issuesLastUpdatedBefore(Instant updatedBefore) {
-        return toStream(searchIssues()
+    public Stream<Issue> issuesLastUpdatedBefore(Set<String> ignoreLabels, Instant updatedBefore) {
+        var builder = searchIssues()
                 .isOpen()
                 .q(updatedBefore(updatedBefore))
                 .sort(GHIssueSearchBuilder.Sort.UPDATED)
-                .order(GHDirection.DESC)
-                .list())
-                .map(toIssueRecord());
+                .order(GHDirection.DESC);
+        if (!ignoreLabels.isEmpty()) {
+            builder.q(not(anyLabel(ignoreLabels)));
+        }
+        return toStream(builder.list()).map(toIssueRecord());
     }
 
     /**
      * Lists issues with the given label that were last updated before the given instant.
      *
      * @param label A GitHub label; if non-null, all returned issues must have been assigned that label.
+     * @param ignoreLabels GitHub labels. Issues assigned with any of these labels are ignored (not returned).
      * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
      * @return A lazily populated stream of matching issues.
      * @throws java.io.UncheckedIOException In case of I/O failure.
      */
-    public Stream<Issue> issuesWithLabelLastUpdatedBefore(String label, Instant updatedBefore) {
-        return toStream(searchIssues()
+    public Stream<Issue> issuesWithLabelLastUpdatedBefore(String label, Set<String> ignoreLabels, Instant updatedBefore) {
+        var builder = searchIssues()
                 .isOpen()
                 .q(label(label))
                 .q(updatedBefore(updatedBefore))
                 .sort(GHIssueSearchBuilder.Sort.UPDATED)
-                .order(GHDirection.DESC)
-                .list())
-                .map(toIssueRecord());
+                .order(GHDirection.DESC);
+        if (!ignoreLabels.isEmpty()) {
+            builder.q(not(anyLabel(ignoreLabels)));
+        }
+        return toStream(builder.list()).map(toIssueRecord());
     }
 
     /**

@@ -70,9 +70,9 @@ public class LotterySingleRepositoryTest {
                                         new LotteryConfig.Buckets.Maintenance.Feedback.Provided(
                                                 Duration.ofDays(7), Duration.ofDays(3))),
                                 new LotteryConfig.Buckets.Maintenance.Stale(
-                                        Duration.ofDays(60), Duration.ofDays(14))),
+                                        Duration.ofDays(60), Duration.ofDays(14), List.of("triage/on-ice"))),
                         new LotteryConfig.Buckets.Stewardship(
-                                Duration.ofDays(60), Duration.ofDays(14))),
+                                Duration.ofDays(60), Duration.ofDays(14), List.of("triage/on-ice"))),
                 participants);
     }
 
@@ -284,7 +284,7 @@ public class LotterySingleRepositoryTest {
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", Set.of(), now))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
         mockNotifiable("yrodiere", ZoneOffset.UTC);
@@ -325,7 +325,7 @@ public class LotterySingleRepositoryTest {
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", Set.of(), now))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
         mockNotifiable("yrodiere", ZoneOffset.UTC);
@@ -381,7 +381,7 @@ public class LotterySingleRepositoryTest {
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-orm", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(201, 202, 203).stream());
-        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-orm", staleCutoff))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-orm", Set.of("triage/on-ice"), staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(301, 302, 303, 304, 305, 306).stream());
 
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
@@ -392,7 +392,7 @@ public class LotterySingleRepositoryTest {
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(501, 502, 503).stream());
-        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", Set.of("triage/on-ice"), staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(601, 602, 603, 604, 605, 606).stream());
 
         mockNotifiable("yrodiere", ZoneOffset.UTC);
@@ -455,7 +455,7 @@ public class LotterySingleRepositoryTest {
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-orm", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(201, 202, 203).stream());
-        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-orm", staleCutoff))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-orm", Set.of("triage/on-ice"), staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(301, 302, 303, 304, 305, 306).stream());
 
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
@@ -466,7 +466,7 @@ public class LotterySingleRepositoryTest {
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(501, 502, 503).stream());
-        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", Set.of("triage/on-ice"), staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(601, 602, 603, 604, 605, 606).stream());
 
         mockNotifiable("yrodiere", ZoneOffset.UTC);
@@ -522,7 +522,7 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Participation(3))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(repoMock.issuesLastUpdatedBefore(stewardshipCutoff))
+        when(repoMock.issuesLastUpdatedBefore(Set.of("triage/on-ice"), stewardshipCutoff))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
         mockNotifiable("geoand", ZoneOffset.UTC);
@@ -563,7 +563,7 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Participation(3))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(repoMock.issuesLastUpdatedBefore(stewardshipCutoff))
+        when(repoMock.issuesLastUpdatedBefore(Set.of("triage/on-ice"), stewardshipCutoff))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
         mockNotifiable("geoand", ZoneOffset.UTC);
@@ -626,10 +626,10 @@ public class LotterySingleRepositoryTest {
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.OUTSIDER, feedbackProvidedCutoff))
                 .thenAnswer(ignored -> stubIssueList(501, 502, 503).stream());
-        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", staleCutoff))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("area/hibernate-search", Set.of("triage/on-ice"), staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(601, 602, 603, 604, 605, 606).stream());
 
-        when(repoMock.issuesLastUpdatedBefore(stewardshipCutoff))
+        when(repoMock.issuesLastUpdatedBefore(Set.of("triage/on-ice"), stewardshipCutoff))
                 .thenAnswer(ignored -> stubIssueList(401, 501, 601, 701).stream());
 
         mockNotifiable("yrodiere", ZoneOffset.UTC);
@@ -706,7 +706,7 @@ public class LotterySingleRepositoryTest {
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
-        when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", now))
+        when(repoMock.issuesWithLabelLastUpdatedBefore("needs-triage", Set.of(), now))
                 .thenAnswer(ignored -> stubIssueList(1, 3, 2, 4).stream());
 
         mockNotifiable("yrodiere", ZoneOffset.UTC);
