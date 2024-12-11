@@ -77,8 +77,12 @@ public final class Participant {
         stewardship.ifPresent(lottery.stewardship()::participate);
     }
 
-    public LotteryReport report() {
+    public LotteryReport report(String triageLabel, Set<String> feedbackLabels) {
         return new LotteryReport(drawRef, username, timezone,
+                new LotteryReport.Config(
+                        triageLabel,
+                        feedbackLabels,
+                        maintenance.map(m -> m.labels).orElseGet(Set::of)),
                 triage.map(Participation::issues).map(LotteryReport.Bucket::new),
                 maintenance.flatMap(m -> m.feedbackNeeded).map(Participation::issues).map(LotteryReport.Bucket::new),
                 maintenance.flatMap(m -> m.feedbackProvided).map(Participation::issues).map(LotteryReport.Bucket::new),

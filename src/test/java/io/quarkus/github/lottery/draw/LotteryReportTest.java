@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery.draw;
 
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDateTime;
@@ -36,6 +37,7 @@ class LotteryReportTest {
     void buckets() {
         List<LotteryReport.Bucket> buckets = new ArrayList<>();
         var report = new LotteryReport(drawRef, "geoand", Optional.empty(),
+                stubReportConfig(),
                 newBucket(buckets),
                 newBucket(buckets),
                 newBucket(buckets),

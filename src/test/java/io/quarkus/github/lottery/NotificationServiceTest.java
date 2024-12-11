@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery;
 
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -117,6 +118,7 @@ public class NotificationServiceTest {
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
@@ -133,6 +135,7 @@ public class NotificationServiceTest {
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport2 = new LotteryReport(drawRef, "gsmet", Optional.empty(),
+                stubReportConfig("area/hibernate-validator"),
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(7, 8))),
@@ -151,6 +154,7 @@ public class NotificationServiceTest {
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport3 = new LotteryReport(drawRef, "geoand", Optional.empty(),
+                stubReportConfig(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(11, 12))),
                 Optional.empty(),
                 Optional.empty(),
@@ -169,6 +173,7 @@ public class NotificationServiceTest {
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
         var lotteryReport4 = new LotteryReport(drawRef, "jsmith", Optional.empty(),
+                stubReportConfig(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList())),
                 Optional.empty(),
                 Optional.empty(),

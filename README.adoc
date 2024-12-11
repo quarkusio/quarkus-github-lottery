@@ -98,13 +98,10 @@ See below for details about each section.
 [[participants-triage]]
 === Triage
 
-If the `triage` section is present, you will get notified when new issues are created
-and need to be routed to the right person/team.
+If the `triage` section is present, you will get notified about issues that haven't been assigned an area yet.
 
-Addressing these notifications generally involves removing the `triage/needs-triage` label,
-adding the correct `+area/*+` labels, and optionally pinging the relevant maintainers
-(though the https://github.com/quarkusio/quarkus-github-bot#triage-issues[Quarkus GitHub Bot should generally take care of that part]
-once you add `+area/*+` labels).
+Please add an area label, remove the "needs triage" (e.g. `triage/needs-triage`) label,
+and ping the relevant maintainers if necessary.
 
 Of course, some more discussion might be necessary before that, and that's fine:
 issues that don't change will reappear in another notification, a few days later.
@@ -141,30 +138,17 @@ that may be stalled and require intervention from maintainers or reporters.
 Issues in "maintenance" notifications will be split in three categories:
 
 Feedback Needed::
-These issues have the `triage/needs-reproducer` label,
-and it looks like the Quarkus team was the last to comment on the issue,
-quite some time ago.
+Issues with missing reproducer/information.
 +
-Depending on the actual content of the issue, you might want to:
-+
-* send a (gentle!) reminder to the reporter that we need feedback (a reproducer, more information, ...) before we can do anything.
-* or, if it's really been too long, close the issue because we cannot work on it.
+Please ping the reporter, or close the issue if it's taking too long.
 Feedback Provided::
-These issues have the `triage/needs-reproducer` label,
-and it looks like someone who is not from the Quarkus team was the last to comment on the issue,
-quite some time ago.
+Issues with newly provided reproducer/information.
 +
-There might be feedback (a reproducer, more information, ...) there,
-in which case you might want to remove the `triage/needs-reproducer` label
-and have a closer look.
+Please have a closer look, possibly remove the "needs feedback" (e.g. `triage/needs-reproducer`)  label, and plan further work.
 Stale::
-These issues have not been updated for a very long time.
+Issues last updated a long time ago.
 +
-Depending on the actual content of the issue, you might want to:
-+
-* prioritize the issue and work on it soon;
-* or send a reminder to someone you've been waiting on;
-* or close the issue because it's no longer relevant.
+Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...
 
 Of course, in every situation, simply continuing the conversation,
 pinging someone, or even doing nothing at all are perfectly acceptable responses:
@@ -228,12 +212,9 @@ core contributors who spend significant time working on GitHub issues.
 If you don't already know what this section is about,
 you probably don't want to use it.
 
-If the `stewardship` section is present, you will get notified about issues that just became stale,
-across the whole project, without any consideration for the labels assigned to those issues.
+If the `stewardship` section is present, you will get notified about Issues across all areas last updated a long time ago.
 
-Depending on the actual content of the issue, you might want to simply continue the conversation,
-ping someone, close the issue, or even do nothing at all:
-it's all up to you, and issues that don't change will reappear in another notification, a few days later.
+Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...
 
 NOTE: Notifications to stewards are sent independently of notifications to maintainers,
 so that the work of maintainers won't be affected by the work of stewards.

@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery;
 
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportConfig;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
@@ -16,11 +17,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.quarkus.github.lottery.draw.DrawRef;
 import io.quarkus.github.lottery.draw.LotteryReport;
+import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
 import io.quarkus.github.lottery.message.MessageFormatter;
 import io.quarkus.test.junit.QuarkusTest;
@@ -71,6 +72,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationTopicSuffixText() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                stubReportConfig(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
         assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
@@ -80,6 +82,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationTopicSuffixText_exoticTimezone() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
+                stubReportConfig(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
         assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
@@ -89,6 +92,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_triage_empty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                stubReportConfig(),
                 Optional.of(new LotteryReport.Bucket(List.of())),
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
@@ -98,6 +102,7 @@ public class MessageFormatterTest {
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
                                 # Triage
+
                                 No issues in this category this time.
 
                                 ---
@@ -110,6 +115,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_triage_simple() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                stubReportConfig(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
@@ -119,6 +125,9 @@ public class MessageFormatterTest {
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
                                 # Triage
+
+                                <sup>Issues that haven't been assigned an area yet. Please add an area label, remove the `triage/needs-triage` label, optionally ping maintainers.</sup>
+
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
 
@@ -132,6 +141,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_maintenance_empty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(List.of())),
                 Optional.of(new LotteryReport.Bucket(List.of())),
@@ -142,11 +152,18 @@ public class MessageFormatterTest {
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                                # Feedback needed (reproducer, information, ...)
+                                Maintenance areas: `area/hibernate-orm`/`area/hibernate-search`.
+
+                                # Feedback needed
+
                                 No issues in this category this time.
-                                # Feedback provided (reproducer, information, ...)
+
+                                # Feedback provided
+
                                 No issues in this category this time.
+
                                 # Stale
+
                                 No issues in this category this time.
 
                                 ---
@@ -159,6 +176,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_maintenance_someEmpty() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.of(new LotteryReport.Bucket(List.of())),
@@ -169,12 +187,21 @@ public class MessageFormatterTest {
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                                # Feedback needed (reproducer, information, ...)
+                                Maintenance areas: `area/hibernate-orm`/`area/hibernate-search`.
+
+                                # Feedback needed
+
+                                <sup>Issues with missing reproducer/information. Please ping the reporter, or close the issue if it's taking too long.</sup>
+
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                                # Feedback provided (reproducer, information, ...)
+
+                                # Feedback provided
+
                                 No issues in this category this time.
+
                                 # Stale
+
                                 No issues in this category this time.
 
                                 ---
@@ -187,6 +214,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_maintenance_simple() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
                 Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
@@ -197,13 +225,26 @@ public class MessageFormatterTest {
                         """
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
-                                # Feedback needed (reproducer, information, ...)
+                                Maintenance areas: `area/hibernate-orm`/`area/hibernate-search`.
+
+                                # Feedback needed
+
+                                <sup>Issues with missing reproducer/information. Please ping the reporter, or close the issue if it's taking too long.</sup>
+
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                                # Feedback provided (reproducer, information, ...)
+
+                                # Feedback provided
+
+                                <sup>Issues with newly provided reproducer/information. Please have a closer look, possibly remove the `triage/needs-reproducer`/`triage/needs-feedback` label, and plan further work.</sup>
+
                                  - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
                                  - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
+
                                 # Stale
+
+                                <sup>Issues last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+
                                  - [#2](http://github.com/quarkusio/quarkus/issues/2) Title for issue 2
                                  - [#7](http://github.com/quarkusio/quarkus/issues/7) Title for issue 7
 
@@ -217,6 +258,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_stewardship_empty() {
         var lotteryReport = new LotteryReport(drawRef, "geoand", Optional.empty(),
+                stubReportConfig(),
                 Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(List.of())));
@@ -226,6 +268,7 @@ public class MessageFormatterTest {
                                 Hey @geoand, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
                                 # Stewardship
+
                                 No issues in this category this time.
 
                                 ---
@@ -238,6 +281,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_stewardship_simple() {
         var lotteryReport = new LotteryReport(drawRef, "geoand", Optional.empty(),
+                stubReportConfig(),
                 Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))));
@@ -247,6 +291,9 @@ public class MessageFormatterTest {
                                 Hey @geoand, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
                                 # Stewardship
+
+                                <sup>Issues across all areas last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
 
@@ -260,6 +307,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_all() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+                stubReportConfig(),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
                 Optional.of(new LotteryReport.Bucket(stubIssueList(2, 7))),
@@ -271,18 +319,37 @@ public class MessageFormatterTest {
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
                                 # Triage
+
+                                <sup>Issues that haven't been assigned an area yet. Please add an area label, remove the `triage/needs-triage` label, optionally ping maintainers.</sup>
+
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
-                                # Feedback needed (reproducer, information, ...)
+
+                                # Feedback needed
+
+                                <sup>Issues with missing reproducer/information. Please ping the reporter, or close the issue if it's taking too long.</sup>
+
                                  - [#4](http://github.com/quarkusio/quarkus/issues/4) Title for issue 4
                                  - [#5](http://github.com/quarkusio/quarkus/issues/5) Title for issue 5
-                                # Feedback provided (reproducer, information, ...)
+
+                                # Feedback provided
+
+                                <sup>Issues with newly provided reproducer/information. Please have a closer look, possibly remove the `triage/needs-reproducer`/`triage/needs-feedback` label, and plan further work.</sup>
+
                                  - [#2](http://github.com/quarkusio/quarkus/issues/2) Title for issue 2
                                  - [#7](http://github.com/quarkusio/quarkus/issues/7) Title for issue 7
+
                                 # Stale
+
+                                <sup>Issues last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+
                                  - [#8](http://github.com/quarkusio/quarkus/issues/8) Title for issue 8
                                  - [#9](http://github.com/quarkusio/quarkus/issues/9) Title for issue 9
+
                                 # Stewardship
+
+                                <sup>Issues across all areas last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+
                                  - [#10](http://github.com/quarkusio/quarkus/issues/10) Title for issue 10
                                  - [#11](http://github.com/quarkusio/quarkus/issues/11) Title for issue 11
 
@@ -296,6 +363,7 @@ public class MessageFormatterTest {
     @Test
     void formatNotificationBodyMarkdown_exoticTimezone() {
         var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
+                stubReportConfig(),
                 Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
