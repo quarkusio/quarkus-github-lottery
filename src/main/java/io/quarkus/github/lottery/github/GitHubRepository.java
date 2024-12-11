@@ -14,6 +14,7 @@ import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 import java.io.IOException;
 import java.sql.Date;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -31,8 +32,10 @@ import org.kohsuke.github.GHIssueEvent;
 import org.kohsuke.github.GHIssueSearchBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
 import io.quarkiverse.githubapp.ConfigFile;
 import io.quarkiverse.githubapp.GitHubClientProvider;
@@ -54,6 +57,7 @@ public class GitHubRepository implements AutoCloseable {
     private final GitHubConfigFileProvider configFileProvider;
     private final MessageFormatter messageFormatter;
     private final GitHubRepositoryRef ref;
+    private final LoadingCache<String, IssueActionSide> noContextIssueActionSideCache;
 
     private GitHub client;
     private GHRepository repository;
@@ -66,6 +70,10 @@ public class GitHubRepository implements AutoCloseable {
         this.configFileProvider = configFileProvider;
         this.messageFormatter = messageFormatter;
         this.ref = ref;
+        this.noContextIssueActionSideCache = Caffeine.newBuilder()
+                .maximumSize(100)
+                .expireAfterWrite(Duration.ofMinutes(1))
+                .build(this::computeNoContextIssueActionSide);
     }
 
     @Override
@@ -211,18 +219,23 @@ public class GitHubRepository implements AutoCloseable {
             // No action since the label was assigned.
             return IssueActionSide.TEAM;
         }
-        return getIssueActionSide(ghIssue, lastComment.get().getUser());
+        return getIssueActionSide(ghIssue, lastComment.get().getUser().getLogin());
     }
 
-    private IssueActionSide getIssueActionSide(GHIssue issue, GHUser user) throws IOException {
-        if (issue.getUser().getLogin().equals(user.getLogin())) {
+    private IssueActionSide getIssueActionSide(GHIssue issue, String login) throws IOException {
+        if (issue.getUser().getLogin().equals(login)) {
             // This is the reporter; even if part of the team,
             // we'll consider he's acting as an outsider here,
             // because he's unlikely to ask for feedback from himself.
             return IssueActionSide.OUTSIDER;
         }
 
-        return switch (repository().getPermission(user)) {
+        // Caching in case a same user is encountered multiple times in the same run.
+        return noContextIssueActionSideCache.get(login);
+    }
+
+    private IssueActionSide computeNoContextIssueActionSide(String login) throws IOException {
+        return switch (repository().getPermission(login)) {
             case ADMIN, WRITE, UNKNOWN -> IssueActionSide.TEAM; // "Unknown" includes "triage"
             case READ, NONE -> IssueActionSide.OUTSIDER;
         };

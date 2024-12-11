@@ -225,7 +225,7 @@ public class MockHelper {
         GHUser mock = context.ghObject(GHUser.class, id);
         when(mock.getLogin()).thenReturn(login);
         if (permissionType != null) {
-            when(repositoryMock.getPermission(mock)).thenReturn(permissionType);
+            when(repositoryMock.getPermission(login)).thenReturn(permissionType);
         }
         return mock;
     }
