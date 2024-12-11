@@ -24,6 +24,15 @@ public record LotteryConfig(
 
     public static final String FILE_NAME = "quarkus-github-lottery.yml";
 
+    public LotteryConfig(
+            @JsonProperty(required = true) Notifications notifications,
+            @JsonProperty(required = true) Buckets buckets,
+            List<Participant> participants) {
+        this.notifications = notifications;
+        this.buckets = buckets;
+        this.participants = participants == null ? List.of() : participants;
+    }
+
     public record Notifications(
             @JsonProperty(required = true) CreateIssuesConfig createIssues) {
         public record CreateIssuesConfig(

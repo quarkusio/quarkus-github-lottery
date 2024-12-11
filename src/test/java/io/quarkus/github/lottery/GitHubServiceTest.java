@@ -293,6 +293,71 @@ public class GitHubServiceTest {
     }
 
     @Test
+    void fetchLotteryConfig_minimal() throws IOException {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
+
+        given()
+                .github(mocks -> {
+                    var repositoryMock = mocks.repository(repoRef.repositoryName());
+                    mocks.configFile(repositoryMock, "quarkus-github-lottery.yml")
+                            .fromString("""
+                                    notifications:
+                                      createIssues:
+                                        repository: "quarkusio/quarkus-lottery-reports"
+                                    buckets:
+                                      triage:
+                                        label: "triage/needs-triage"
+                                        delay: PT0S
+                                        timeout: P3D
+                                      maintenance:
+                                        feedback:
+                                          labels: ["triage/needs-feedback"]
+                                          needed:
+                                            delay: P21D
+                                            timeout: P3D
+                                          provided:
+                                            delay: P7D
+                                            timeout: P3D
+                                        stale:
+                                          delay: P60D
+                                          timeout: P14D
+                                      stewardship:
+                                        delay: P60D
+                                        timeout: P14D
+                                    """);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.fetchLotteryConfig())
+                            .isNotEmpty()
+                            .get().usingRecursiveComparison().isEqualTo(new LotteryConfig(
+                                    new LotteryConfig.Notifications(
+                                            new LotteryConfig.Notifications.CreateIssuesConfig(
+                                                    "quarkusio/quarkus-lottery-reports")),
+                                    new LotteryConfig.Buckets(
+                                            new LotteryConfig.Buckets.Triage(
+                                                    "triage/needs-triage",
+                                                    Duration.ZERO, Duration.ofDays(3)),
+                                            new LotteryConfig.Buckets.Maintenance(
+                                                    new LotteryConfig.Buckets.Maintenance.Feedback(
+                                                            List.of("triage/needs-feedback"),
+                                                            new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
+                                                                    Duration.ofDays(21), Duration.ofDays(3)),
+                                                            new LotteryConfig.Buckets.Maintenance.Feedback.Provided(
+                                                                    Duration.ofDays(7), Duration.ofDays(3))),
+                                                    new LotteryConfig.Buckets.Maintenance.Stale(
+                                                            Duration.ofDays(60), Duration.ofDays(14))),
+                                            new LotteryConfig.Buckets.Stewardship(
+                                                    Duration.ofDays(60), Duration.ofDays(14))),
+                                    List.of()));
+                })
+                .then().github(mocks -> {
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
     void issuesLastUpdatedBefore() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
