@@ -674,11 +674,14 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
+                    verify(searchIssuesBuilderMock).q("is:issue");
                     verify(searchIssuesBuilderMock).isOpen();
+                    verify(searchIssuesBuilderMock).q("updated:<2017-11-05T06:00");
                     verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.UPDATED);
                     verify(searchIssuesBuilderMock).order(GHDirection.DESC);
                     verify(searchIssuesBuilderMock).q("label:triage/needs-feedback,triage/needs-reproducer");
                     verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
+                    verifyNoMoreInteractions(searchIssuesBuilderMock);
 
                     verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
                     verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
@@ -845,11 +848,14 @@ public class GitHubServiceTest {
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
+                    verify(searchIssuesBuilderMock).q("is:issue");
                     verify(searchIssuesBuilderMock).isOpen();
+                    verify(searchIssuesBuilderMock).q("updated:<2017-11-05T06:00");
                     verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.UPDATED);
                     verify(searchIssuesBuilderMock).order(GHDirection.DESC);
                     verify(searchIssuesBuilderMock).q("label:triage/needs-feedback,triage/needs-reproducer");
                     verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
+                    verifyNoMoreInteractions(searchIssuesBuilderMock);
 
                     verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
                     verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
