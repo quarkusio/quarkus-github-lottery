@@ -124,7 +124,7 @@ public class MessageFormatterTest {
 
                                 # Triage
 
-                                <sup>Issues that haven't been assigned an area yet. Please add an area label, remove the `triage/needs-triage` label, optionally ping maintainers.</sup>
+                                <sup>Issues/PRs that haven't been assigned an area yet. Please add an area label, remove the `triage/needs-triage` label, optionally ping maintainers.</sup>
 
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
@@ -235,7 +235,7 @@ public class MessageFormatterTest {
 
                                 # Stale
 
-                                <sup>Issues last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+                                <sup>Issues or PRs last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue/PR, ...</sup>
 
                                  - [#2](http://github.com/quarkusio/quarkus/issues/2) Title for issue 2
                                  - [#7](http://github.com/quarkusio/quarkus/issues/7) Title for issue 7
@@ -278,7 +278,7 @@ public class MessageFormatterTest {
 
                                 # Stewardship
 
-                                <sup>Issues across all areas last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+                                <sup>Issues or PRs across all areas last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue/PR, ...</sup>
 
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
@@ -306,7 +306,7 @@ public class MessageFormatterTest {
 
                                 # Triage
 
-                                <sup>Issues that haven't been assigned an area yet. Please add an area label, remove the `triage/needs-triage` label, optionally ping maintainers.</sup>
+                                <sup>Issues/PRs that haven't been assigned an area yet. Please add an area label, remove the `triage/needs-triage` label, optionally ping maintainers.</sup>
 
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
@@ -327,14 +327,14 @@ public class MessageFormatterTest {
 
                                 # Stale
 
-                                <sup>Issues last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+                                <sup>Issues or PRs last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue/PR, ...</sup>
 
                                  - [#8](http://github.com/quarkusio/quarkus/issues/8) Title for issue 8
                                  - [#9](http://github.com/quarkusio/quarkus/issues/9) Title for issue 9
 
                                 # Stewardship
 
-                                <sup>Issues across all areas last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+                                <sup>Issues or PRs across all areas last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue/PR, ...</sup>
 
                                  - [#10](http://github.com/quarkusio/quarkus/issues/10) Title for issue 10
                                  - [#11](http://github.com/quarkusio/quarkus/issues/11) Title for issue 11
