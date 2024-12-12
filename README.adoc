@@ -171,7 +171,6 @@ participants:
           maxIssues: 2
       stale:
         maxIssues: 5
-        ignoreLabels: ["triage/on-ice"]
 ----
 
 `labels`::
@@ -198,11 +197,6 @@ How many issues, at most, you wish to be included in the "Stale" category
 for each notification.
 +
 Integer, mandatory, no default.
-`stale.ignoreLabels`::
-The labels identifying issues that should be ignored for the "Stale" category.
-Issues mentioned in notifications will never have any one of these labels.
-+
-Array of Strings, optional, defaults to an empty array.
 
 [[participants-stewardship]]
 === Stewardship
@@ -231,7 +225,6 @@ participants:
     stewardship:
       days: ["MONDAY"]
       maxIssues: 5
-      ignoreLabels: ["triage/on-ice"]
 ----
 
 `days`::
@@ -243,11 +236,6 @@ How many issues, at most, you wish to be included in the "stewardship" category
 for each notification.
 +
 Integer, mandatory, no default.
-`ignoreLabels`::
-The labels identifying issues that should be ignored for the "stewardship" category.
-Issues mentioned in notifications will never have any one of these labels.
-+
-Array of Strings, optional, defaults to an empty array.
 
 [[participants-suspending]]
 === Suspending notifications
@@ -304,7 +292,7 @@ buckets:
     timeout: P3D
   maintenance:
     feedback:
-      label: "triage/needs-reproducer"
+      labels: ["triage/needs-reproducer"]
       needed:
         delay: P21D
         timeout: P3D
@@ -314,9 +302,11 @@ buckets:
     stale:
       delay: P60D
       timeout: P14D
+      ignoreLabels: ["triage/on-ice"]
   stewardship:
     delay: P60D
     timeout: P14D
+    ignoreLabels: ["triage/on-ice"]
 # [...]
 ----
 
@@ -338,10 +328,10 @@ How much time to wait after an issue was last notified about
 before including it again in the lottery in the "triage" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
-`buckets.maintenance.feedback.label`::
-The label identifying GitHub issues for which feedback (a reproducer, more information, ...) was requested.
+`buckets.maintenance.feedback.labels`::
+The labels identifying GitHub issues for which feedback (a reproducer, more information, ...) was requested.
 +
-String, mandatory, no default.
+Array of strings, mandatory, no default.
 `buckets.maintenance.feedback.needed.delay`::
 How much time to wait after the last update on an issue
 before including it in the lottery in the "feedback needed" bucket.
@@ -367,6 +357,11 @@ How much time to wait after the last update on an issue
 before including it in the lottery in the "stale" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.maintenance.stale.ignoreLabels`::
+The labels identifying GitHub issues that should be ignored for the "stale" bucket.
+Issues with one of these labels will never be added to the bucket.
++
+Array of Strings, optional, defaults to an empty array.
 `buckets.maintenance.stale.timeout`::
 How much time to wait after an issue was last notified about
 before including it again in the lottery in the "stale" bucket.
@@ -382,6 +377,11 @@ How much time to wait after an issue was last notified about
 before including it again in the lottery in the "stewardship" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.stewardship.ignoreLabels`::
+The labels identifying GitHub issues that should be ignored for the "stewardship" bucket.
+Issues with one of these labels will never be added to the bucket.
++
+Array of Strings, optional, defaults to an empty array.
 
 [[config-validation]]
 === Validation of the configuration

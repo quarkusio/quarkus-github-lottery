@@ -1,7 +1,11 @@
 package io.quarkus.github.lottery;
 
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
+import static io.quarkus.github.lottery.util.MockHelper.stubReport;
 import static io.quarkus.github.lottery.util.MockHelper.stubReportConfig;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportMaintenance;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportStewardship;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportTriage;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.IOException;
@@ -71,7 +75,7 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationTopicSuffixText() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+        var lotteryReport = stubReport(drawRef, "yrodiere", Optional.empty(),
                 stubReportConfig(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
@@ -81,7 +85,7 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationTopicSuffixText_exoticTimezone() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
+        var lotteryReport = stubReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
                 stubReportConfig(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
@@ -91,11 +95,8 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_triage_empty() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig(),
-                Optional.of(new LotteryReport.Bucket(List.of())),
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty());
+        var lotteryReport = stubReportTriage(drawRef, "yrodiere", Optional.empty(),
+                List.of());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -114,11 +115,8 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_triage_simple() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty());
+        var lotteryReport = stubReportTriage(drawRef, "yrodiere", Optional.empty(),
+                stubIssueList(1, 3));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -140,13 +138,11 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_maintenance_empty() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
-                Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(List.of())),
-                Optional.of(new LotteryReport.Bucket(List.of())),
-                Optional.of(new LotteryReport.Bucket(List.of())),
-                Optional.empty());
+        var lotteryReport = stubReportMaintenance(drawRef, "yrodiere", Optional.empty(),
+                List.of("area/hibernate-orm", "area/hibernate-search"),
+                List.of(),
+                List.of(),
+                List.of());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -175,13 +171,11 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_maintenance_someEmpty() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
-                Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
-                Optional.of(new LotteryReport.Bucket(List.of())),
-                Optional.of(new LotteryReport.Bucket(List.of())),
-                Optional.empty());
+        var lotteryReport = stubReportMaintenance(drawRef, "yrodiere", Optional.empty(),
+                List.of("area/hibernate-orm", "area/hibernate-search"),
+                stubIssueList(1, 3),
+                List.of(),
+                List.of());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -213,13 +207,11 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_maintenance_simple() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
-                Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(2, 7))),
-                Optional.empty());
+        var lotteryReport = stubReportMaintenance(drawRef, "yrodiere", Optional.empty(),
+                List.of("area/hibernate-orm", "area/hibernate-search"),
+                stubIssueList(1, 3),
+                stubIssueList(4, 5),
+                stubIssueList(2, 7));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -257,11 +249,8 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_stewardship_empty() {
-        var lotteryReport = new LotteryReport(drawRef, "geoand", Optional.empty(),
-                stubReportConfig(),
-                Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(List.of())));
+        var lotteryReport = stubReportStewardship(drawRef, "geoand", Optional.empty(),
+                List.of());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -280,11 +269,8 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_stewardship_simple() {
-        var lotteryReport = new LotteryReport(drawRef, "geoand", Optional.empty(),
-                stubReportConfig(),
-                Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))));
+        var lotteryReport = stubReportStewardship(drawRef, "geoand", Optional.empty(),
+                stubIssueList(1, 3));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -306,13 +292,13 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_all() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+        var lotteryReport = stubReport(drawRef, "yrodiere", Optional.empty(),
                 stubReportConfig(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(2, 7))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(8, 9))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(10, 11))));
+                Optional.of(stubIssueList(1, 3)),
+                Optional.of(stubIssueList(4, 5)),
+                Optional.of(stubIssueList(2, 7)),
+                Optional.of(stubIssueList(8, 9)),
+                Optional.of(stubIssueList(10, 11)));
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
                         """
@@ -362,7 +348,7 @@ public class MessageFormatterTest {
 
     @Test
     void formatNotificationBodyMarkdown_exoticTimezone() {
-        var lotteryReport = new LotteryReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
+        var lotteryReport = stubReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
                 stubReportConfig(),
                 Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(),

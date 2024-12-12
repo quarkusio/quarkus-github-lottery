@@ -1,7 +1,10 @@
 package io.quarkus.github.lottery;
 
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
+import static io.quarkus.github.lottery.util.MockHelper.stubReport;
 import static io.quarkus.github.lottery.util.MockHelper.stubReportConfig;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportMaintenance;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportTriage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -10,6 +13,7 @@ import static org.mockito.Mockito.when;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 
 import jakarta.inject.Inject;
@@ -23,7 +27,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
-import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.GitHubInstallationRef;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.GitHubRepositoryRef;
@@ -117,11 +120,8 @@ public class NotificationServiceTest {
         Notifier notifier = notificationService.notifier(drawRef, config);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
-        var lotteryReport1 = new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3))),
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty());
+        var lotteryReport1 = stubReportTriage(drawRef, "yrodiere", Optional.empty(),
+                stubIssueList(1, 3));
         var markdownNotification1 = "Notif 1";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "yrodiere"))
                 .thenReturn("yrodiere's report for quarkusio/quarkus");
@@ -134,13 +134,11 @@ public class NotificationServiceTest {
                 .update(" (updated 2017-11-06T06:00:00Z)", markdownNotification1, true);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
-        var lotteryReport2 = new LotteryReport(drawRef, "gsmet", Optional.empty(),
-                stubReportConfig("area/hibernate-validator"),
-                Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(4, 5))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(7, 8))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(9, 10))),
-                Optional.empty());
+        var lotteryReport2 = stubReportMaintenance(drawRef, "gsmet", Optional.empty(),
+                List.of("area/hibernate-validator"),
+                stubIssueList(4, 5),
+                stubIssueList(7, 8),
+                stubIssueList(9, 10));
         var markdownNotification2 = "Notif 2";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "gsmet"))
                 .thenReturn("gsmet's report for quarkusio/quarkus");
@@ -153,13 +151,13 @@ public class NotificationServiceTest {
                 .update(" (updated 2017-11-06T06:00:00Z)", markdownNotification2, true);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
-        var lotteryReport3 = new LotteryReport(drawRef, "geoand", Optional.empty(),
+        var lotteryReport3 = stubReport(drawRef, "geoand", Optional.empty(),
                 stubReportConfig(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(11, 12))),
+                Optional.of(stubIssueList(11, 12)),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(13, 14))));
+                Optional.of(stubIssueList(13, 14)));
         var markdownNotification3 = "Notif 3";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "geoand"))
                 .thenReturn("geoand's report for quarkusio/quarkus");
@@ -172,13 +170,13 @@ public class NotificationServiceTest {
                 .update(" (updated 2017-11-06T06:00:00Z)", markdownNotification3, true);
         verifyNoMoreInteractions(gitHubServiceMock, notificationRepoMock, messageFormatterMock);
 
-        var lotteryReport4 = new LotteryReport(drawRef, "jsmith", Optional.empty(),
+        var lotteryReport4 = stubReport(drawRef, "jsmith", Optional.empty(),
                 stubReportConfig(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList())),
+                Optional.of(stubIssueList()),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList())));
+                Optional.of(stubIssueList()));
         var markdownNotification4 = "Notif 4";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "jsmith"))
                 .thenReturn("jsmith's report for quarkusio/quarkus");

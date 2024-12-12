@@ -1,7 +1,11 @@
 package io.quarkus.github.lottery;
 
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
+import static io.quarkus.github.lottery.util.MockHelper.stubReport;
 import static io.quarkus.github.lottery.util.MockHelper.stubReportConfig;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportMaintenance;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportStewardship;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportTriage;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -296,11 +300,8 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3, 2))),
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty()));
+        verify(notifierMock).send(stubReportTriage(drawRef, "yrodiere", Optional.empty(),
+                stubIssueList(1, 3, 2)));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
@@ -341,11 +342,8 @@ public class LotterySingleRepositoryTest {
 
         // Since the last notification for issue with number 3 didn't time out yet,
         // it will be skipped and we'll notify about another issue.
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 2, 4))),
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.empty()));
+        verify(notifierMock).send(stubReportTriage(drawRef, "yrodiere", Optional.empty(),
+                stubIssueList(1, 2, 4)));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
@@ -412,13 +410,11 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
-                Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(101, 401, 102, 402))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(201, 501))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(301, 601, 302, 602, 303))),
-                Optional.empty()));
+        verify(notifierMock).send(stubReportMaintenance(drawRef, "yrodiere", Optional.empty(),
+                List.of("area/hibernate-orm", "area/hibernate-search"),
+                stubIssueList(101, 401, 102, 402),
+                stubIssueList(201, 501),
+                stubIssueList(301, 601, 302, 602, 303)));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
@@ -492,13 +488,11 @@ public class LotterySingleRepositoryTest {
 
         // Since the last notification for issues with number 401, 201, 302 didn't time out yet,
         // they will be skipped and we'll notify about the next issues instead.
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
-                stubReportConfig("area/hibernate-orm", "area/hibernate-search"),
-                Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(101, 402, 102, 403))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(202, 501))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(301, 601, 303, 602, 304))),
-                Optional.empty()));
+        verify(notifierMock).send(stubReportMaintenance(drawRef, "yrodiere", Optional.empty(),
+                List.of("area/hibernate-orm", "area/hibernate-search"),
+                stubIssueList(101, 402, 102, 403),
+                stubIssueList(202, 501),
+                stubIssueList(301, 601, 303, 602, 304)));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
@@ -538,11 +532,8 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        verify(notifierMock).send(new LotteryReport(drawRef, "geoand", Optional.empty(),
-                stubReportConfig(),
-                Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 3, 2)))));
+        verify(notifierMock).send(stubReportStewardship(drawRef, "geoand", Optional.empty(),
+                stubIssueList(1, 3, 2)));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "geoand",
@@ -583,11 +574,8 @@ public class LotterySingleRepositoryTest {
 
         // Since the last notification for issue with number 3 didn't time out yet,
         // it will be skipped and we'll notify about another issue.
-        verify(notifierMock).send(new LotteryReport(drawRef, "geoand", Optional.empty(),
-                stubReportConfig(),
-                Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(1, 2, 4)))));
+        verify(notifierMock).send(stubReportStewardship(drawRef, "geoand", Optional.empty(),
+                stubIssueList(1, 2, 4)));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "geoand",
@@ -657,23 +645,23 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        verify(notifierMock).send(new LotteryReport(drawRef, "yrodiere", Optional.empty(),
+        verify(notifierMock).send(stubReport(drawRef, "yrodiere", Optional.empty(),
                 stubReportConfig("area/hibernate-search"),
                 Optional.empty(),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(401, 402, 403, 404))),
-                Optional.of(new LotteryReport.Bucket(stubIssueList(501, 502))),
+                Optional.of(stubIssueList(401, 402, 403, 404)),
+                Optional.of(stubIssueList(501, 502)),
                 // Notifications to stewards don't prevent notifications to maintainers
-                Optional.of(new LotteryReport.Bucket(stubIssueList(601, 602, 603, 604, 605))),
+                Optional.of(stubIssueList(601, 602, 603, 604, 605)),
                 Optional.empty()));
 
-        verify(notifierMock).send(new LotteryReport(drawRef, "gsmet", Optional.empty(),
+        verify(notifierMock).send(stubReport(drawRef, "gsmet", Optional.empty(),
                 stubReportConfig(),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 // Notifications to maintainers don't prevent notifications to stewards
-                Optional.of(new LotteryReport.Bucket(stubIssueList(401, 501, 601, 701)))));
+                Optional.of(stubIssueList(401, 501, 601, 701))));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",

@@ -8,12 +8,13 @@ import static org.mockito.Mockito.withSettings;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.ZoneId;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
-import io.quarkus.github.lottery.draw.LotteryReport;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHIssueEvent;
@@ -29,6 +30,8 @@ import org.mockito.Mockito;
 import org.mockito.quality.Strictness;
 
 import io.quarkiverse.githubapp.testing.dsl.GitHubMockContext;
+import io.quarkus.github.lottery.draw.DrawRef;
+import io.quarkus.github.lottery.draw.LotteryReport;
 import io.quarkus.github.lottery.github.Issue;
 
 public class MockHelper {
@@ -69,6 +72,88 @@ public class MockHelper {
         return new LotteryReport.Config("triage/needs-triage",
                 new LinkedHashSet<>(List.of("triage/needs-reproducer", "triage/needs-feedback")),
                 new LinkedHashSet<>(List.of(maintenanceLabels)));
+    }
+
+    public static LotteryReport stubReportTriage(DrawRef drawRef,
+            String username,
+            Optional<ZoneId> timezone,
+            List<Issue> triage) {
+        return stubReport(drawRef, username, timezone, stubReportConfig(),
+                Optional.of(triage),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty());
+    }
+
+    public static LotteryReport stubReportFeedback(DrawRef drawRef,
+            String username,
+            Optional<ZoneId> timezone,
+            List<String> maintenanceLabels,
+            List<Issue> feedbackNeeded,
+            List<Issue> feedbackProvided) {
+        return stubReport(drawRef, username, timezone, stubReportConfig(maintenanceLabels.toArray(String[]::new)),
+                Optional.empty(),
+                Optional.of(feedbackNeeded),
+                Optional.of(feedbackProvided),
+                Optional.empty(),
+                Optional.empty());
+    }
+
+    public static LotteryReport stubReportStale(DrawRef drawRef,
+            String username,
+            Optional<ZoneId> timezone,
+            List<Issue> stale) {
+        return stubReport(drawRef, username, timezone, stubReportConfig(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(stale),
+                Optional.empty());
+    }
+
+    public static LotteryReport stubReportMaintenance(DrawRef drawRef,
+            String username,
+            Optional<ZoneId> timezone,
+            List<String> maintenanceLabels,
+            List<Issue> feedbackNeeded,
+            List<Issue> feedbackProvided,
+            List<Issue> stale) {
+        return stubReport(drawRef, username, timezone, stubReportConfig(maintenanceLabels.toArray(String[]::new)),
+                Optional.empty(),
+                Optional.of(feedbackNeeded),
+                Optional.of(feedbackProvided),
+                Optional.of(stale),
+                Optional.empty());
+    }
+
+    public static LotteryReport stubReportStewardship(DrawRef drawRef,
+            String username,
+            Optional<ZoneId> timezone,
+            List<Issue> stewardship) {
+        return stubReport(drawRef, username, timezone, stubReportConfig(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(stewardship));
+    }
+
+    public static LotteryReport stubReport(DrawRef drawRef,
+            String username,
+            Optional<ZoneId> timezone,
+            LotteryReport.Config config,
+            Optional<List<Issue>> triage,
+            Optional<List<Issue>> feedbackNeeded,
+            Optional<List<Issue>> feedbackProvided,
+            Optional<List<Issue>> stale,
+            Optional<List<Issue>> stewardship) {
+        return new LotteryReport(drawRef, username, timezone, config,
+                triage.map(LotteryReport.Bucket::new),
+                feedbackNeeded.map(LotteryReport.Bucket::new),
+                feedbackProvided.map(LotteryReport.Bucket::new),
+                stale.map(LotteryReport.Bucket::new),
+                stewardship.map(LotteryReport.Bucket::new));
     }
 
     public static GHIssue mockIssueForLottery(GitHubMockContext context, int number)
