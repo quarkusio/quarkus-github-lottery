@@ -95,7 +95,7 @@ public final class Lottery {
                 String label = config.triage().label();
                 var cutoff = now.minus(config.triage().notification().delay());
                 var history = lotteryHistory.triage();
-                draws.add(triage.bucket.createDraw(repo.issuesWithLabelLastUpdatedBefore(label, Set.of(), cutoff)
+                draws.add(triage.bucket.createDraw(repo.issuesOrPullRequestsWithLabelLastUpdatedBefore(label, Set.of(), cutoff)
                         .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                         .iterator(),
                         allWinnings));
@@ -159,7 +159,7 @@ public final class Lottery {
                 var ignoreLabels = new LinkedHashSet<>(config.maintenance().stale().ignoreLabels());
                 var history = lotteryHistory.stale();
                 draws.add(stale.createDraw(
-                        repo.issuesWithLabelLastUpdatedBefore(areaLabel, ignoreLabels, cutoff)
+                        repo.issuesOrPullRequestsWithLabelLastUpdatedBefore(areaLabel, ignoreLabels, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                                 .iterator(),
                         allWinnings));
@@ -181,7 +181,7 @@ public final class Lottery {
                 var ignoreLabels = new LinkedHashSet<>(config.stewardship().ignoreLabels());
                 var history = lotteryHistory.stewardship();
                 draws.add(bucket.createDraw(
-                        repo.issuesLastUpdatedBefore(ignoreLabels, cutoff)
+                        repo.issuesOrPullRequestsLastUpdatedBefore(ignoreLabels, cutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                                 .iterator(),
                         allWinnings));

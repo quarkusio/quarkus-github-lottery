@@ -362,7 +362,7 @@ public class GitHubServiceTest {
     }
 
     @Test
-    void issuesLastUpdatedBefore() throws IOException {
+    void issuesOrPullRequestsLastUpdatedBefore() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
@@ -385,12 +385,11 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.issuesLastUpdatedBefore(Set.of(), cutoff))
+                    assertThat(repo.issuesOrPullRequestsLastUpdatedBefore(Set.of(), cutoff))
                             .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
-                    verify(searchIssuesBuilderMock).q("is:issue");
                     verify(searchIssuesBuilderMock).isOpen();
                     verify(searchIssuesBuilderMock).q("updated:<2017-11-05T06:00");
                     verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.UPDATED);
@@ -401,7 +400,7 @@ public class GitHubServiceTest {
     }
 
     @Test
-    void issuesLastUpdatedBefore_ignoreLabels() throws IOException {
+    void issuesOrPullRequestsLastUpdatedBefore_ignoreLabels() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
@@ -424,12 +423,11 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.issuesLastUpdatedBefore(Set.of("triage/on-ice"), cutoff))
+                    assertThat(repo.issuesOrPullRequestsLastUpdatedBefore(Set.of("triage/on-ice"), cutoff))
                             .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
-                    verify(searchIssuesBuilderMock).q("is:issue");
                     verify(searchIssuesBuilderMock).isOpen();
                     verify(searchIssuesBuilderMock).q("updated:<2017-11-05T06:00");
                     verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.UPDATED);
@@ -441,7 +439,7 @@ public class GitHubServiceTest {
     }
 
     @Test
-    void issuesWithLabelLastUpdatedBefore() throws IOException {
+    void issuesOrPullRequestsWithLabelLastUpdatedBefore() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
@@ -464,12 +462,11 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.issuesWithLabelLastUpdatedBefore("triage/needs-triage", Set.of(), cutoff))
+                    assertThat(repo.issuesOrPullRequestsWithLabelLastUpdatedBefore("triage/needs-triage", Set.of(), cutoff))
                             .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
-                    verify(searchIssuesBuilderMock).q("is:issue");
                     verify(searchIssuesBuilderMock).isOpen();
                     verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.UPDATED);
                     verify(searchIssuesBuilderMock).order(GHDirection.DESC);
@@ -481,7 +478,7 @@ public class GitHubServiceTest {
     }
 
     @Test
-    void issuesWithLabelLastUpdatedBefore_ignoreLabels() throws IOException {
+    void issuesOrPullRequestsWithLabelLastUpdatedBefore_ignoreLabels() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
@@ -504,12 +501,12 @@ public class GitHubServiceTest {
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
 
-                    assertThat(repo.issuesWithLabelLastUpdatedBefore("triage/needs-triage", Set.of("triage/on-ice"), cutoff))
+                    assertThat(repo.issuesOrPullRequestsWithLabelLastUpdatedBefore("triage/needs-triage",
+                            Set.of("triage/on-ice"), cutoff))
                             .containsExactlyElementsOf(stubIssueList(1, 3, 2, 4));
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
-                    verify(searchIssuesBuilderMock).q("is:issue");
                     verify(searchIssuesBuilderMock).isOpen();
                     verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.UPDATED);
                     verify(searchIssuesBuilderMock).order(GHDirection.DESC);

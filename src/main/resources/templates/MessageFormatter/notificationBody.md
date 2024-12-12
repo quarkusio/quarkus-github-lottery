@@ -8,7 +8,7 @@ Maintenance areas: {report.config.maintenanceLabels.asMarkdownLabel}.
 # Triage
 {#include MessageFormatter/notificationBodyBucketContent bucket=report.triage.get()}
 
-<sup>Issues that haven't been assigned an area yet. Please add an area label, remove the {report.config.triageLabel.asMarkdownLabel} label, optionally ping maintainers.</sup>
+<sup>Issues/PRs that haven't been assigned an area yet. Please add an area label, remove the {report.config.triageLabel.asMarkdownLabel} label, optionally ping maintainers.</sup>
 
 {/include}
 
@@ -35,7 +35,7 @@ Maintenance areas: {report.config.maintenanceLabels.asMarkdownLabel}.
 # Stale
 {#include MessageFormatter/notificationBodyBucketContent bucket=report.stale.get()}
 
-<sup>Issues last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+<sup>Issues or PRs last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue/PR, ...</sup>
 
 {/include}
 
@@ -44,7 +44,7 @@ Maintenance areas: {report.config.maintenanceLabels.asMarkdownLabel}.
 # Stewardship
 {#include MessageFormatter/notificationBodyBucketContent bucket=report.stewardship.get()}
 
-<sup>Issues across all areas last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue, ...</sup>
+<sup>Issues or PRs across all areas last updated a long time ago. Please have a closer look, re-prioritize, ping someone, label as "on ice", close the issue/PR, ...</sup>
 
 {/include}
 

@@ -101,10 +101,15 @@ public class GitHubRepository implements AutoCloseable {
         return repository;
     }
 
-    private GHIssueSearchBuilder searchIssues() {
+    private GHIssueSearchBuilder searchIssuesOnly() {
         return client().searchIssues()
                 .q(repo(ref))
                 .q(isIssue());
+    }
+
+    private GHIssueSearchBuilder searchIssuesOrPullRequests() {
+        return client().searchIssues()
+                .q(repo(ref));
     }
 
     private DynamicGraphQLClient graphQLClient() {
@@ -120,15 +125,15 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     /**
-     * Lists issues that were last updated before the given instant.
+     * Lists issues or pull requests that were last updated before the given instant.
      *
      * @param ignoreLabels GitHub labels. Issues assigned with any of these labels are ignored (not returned).
      * @param updatedBefore An instant; all returned issues must have been last updated before that instant.
      * @return A lazily populated stream of matching issues.
      * @throws java.io.UncheckedIOException In case of I/O failure.
      */
-    public Stream<Issue> issuesLastUpdatedBefore(Set<String> ignoreLabels, Instant updatedBefore) {
-        var builder = searchIssues()
+    public Stream<Issue> issuesOrPullRequestsLastUpdatedBefore(Set<String> ignoreLabels, Instant updatedBefore) {
+        var builder = searchIssuesOrPullRequests()
                 .isOpen()
                 .q(updatedBefore(updatedBefore))
                 .sort(GHIssueSearchBuilder.Sort.UPDATED)
@@ -140,7 +145,7 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     /**
-     * Lists issues with the given label that were last updated before the given instant.
+     * Lists issues or pull requests with the given label that were last updated before the given instant.
      *
      * @param label A GitHub label; if non-null, all returned issues must have been assigned that label.
      * @param ignoreLabels GitHub labels. Issues assigned with any of these labels are ignored (not returned).
@@ -148,8 +153,9 @@ public class GitHubRepository implements AutoCloseable {
      * @return A lazily populated stream of matching issues.
      * @throws java.io.UncheckedIOException In case of I/O failure.
      */
-    public Stream<Issue> issuesWithLabelLastUpdatedBefore(String label, Set<String> ignoreLabels, Instant updatedBefore) {
-        var builder = searchIssues()
+    public Stream<Issue> issuesOrPullRequestsWithLabelLastUpdatedBefore(String label, Set<String> ignoreLabels,
+            Instant updatedBefore) {
+        var builder = searchIssuesOrPullRequests()
                 .isOpen()
                 .q(label(label))
                 .q(updatedBefore(updatedBefore))
@@ -175,7 +181,7 @@ public class GitHubRepository implements AutoCloseable {
      */
     public Stream<Issue> issuesLastActedOnByAndLastUpdatedBefore(Set<String> initialActionLabels, String filterLabel,
             IssueActionSide lastActionSide, Instant updatedBefore) {
-        return toStream(searchIssues()
+        return toStream(searchIssuesOnly()
                 .isOpen()
                 .q(anyLabel(initialActionLabels))
                 .q(label(filterLabel))
@@ -318,7 +324,7 @@ public class GitHubRepository implements AutoCloseable {
         }
 
         private Stream<GHIssue> getDedicatedIssues() throws IOException {
-            var builder = searchIssues()
+            var builder = searchIssuesOnly()
                     .q(author(appLogin()));
             if (ref.assignee() != null) {
                 builder.q(assignee(ref.assignee()));
