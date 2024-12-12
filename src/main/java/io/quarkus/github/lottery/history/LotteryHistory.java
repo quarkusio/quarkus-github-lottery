@@ -33,6 +33,7 @@ public class LotteryHistory {
     private final Instant since;
 
     private final Bucket triage;
+    private final Bucket created;
     private final Bucket feedbackNeeded;
     private final Bucket feedbackProvided;
     private final Bucket stale;
@@ -48,6 +49,7 @@ public class LotteryHistory {
         // a new notification will be sent for the same ticket.
         // For that mechanism, we need to retrieve all past notifications that did not time out.
         Instant triageNotificationTimeoutCutoff = now.minus(config.triage().notification().timeout());
+        Instant createdNotificationTimeoutCutoff = now.minus(config.maintenance().created().notification().timeout());
         Instant feedbackNeededNotificationTimeoutCutoff = now
                 .minus(config.maintenance().feedback().needed().notification().timeout());
         Instant feedbackProvidedNotificationTimeoutCutoff = now
@@ -59,6 +61,7 @@ public class LotteryHistory {
                 staleNotificationTimeoutCutoff,
                 stewardshipNotificationTimeoutCutoff);
         this.triage = new Bucket(triageNotificationTimeoutCutoff);
+        this.created = new Bucket(createdNotificationTimeoutCutoff);
         this.feedbackNeeded = new Bucket(feedbackNeededNotificationTimeoutCutoff);
         this.feedbackProvided = new Bucket(feedbackProvidedNotificationTimeoutCutoff);
         this.stale = new Bucket(staleNotificationTimeoutCutoff);
@@ -88,6 +91,10 @@ public class LotteryHistory {
 
     public Bucket triage() {
         return triage;
+    }
+
+    public Bucket created() {
+        return created;
     }
 
     public Bucket feedbackNeeded() {

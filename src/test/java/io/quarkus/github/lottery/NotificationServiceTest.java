@@ -136,6 +136,7 @@ public class NotificationServiceTest {
 
         var lotteryReport2 = stubReportMaintenance(drawRef, "gsmet", Optional.empty(),
                 List.of("area/hibernate-validator"),
+                stubIssueList(11, 12),
                 stubIssueList(4, 5),
                 stubIssueList(7, 8),
                 stubIssueList(9, 10));
@@ -157,6 +158,7 @@ public class NotificationServiceTest {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 Optional.of(stubIssueList(13, 14)));
         var markdownNotification3 = "Notif 3";
         when(messageFormatterMock.formatNotificationTopicText(drawRef, "geoand"))
@@ -173,6 +175,7 @@ public class NotificationServiceTest {
         var lotteryReport4 = stubReport(drawRef, "jsmith", Optional.empty(),
                 stubReportConfig(),
                 Optional.of(stubIssueList()),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),

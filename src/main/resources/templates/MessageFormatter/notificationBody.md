@@ -13,6 +13,15 @@ Maintenance areas: {report.config.maintenanceLabels.asMarkdownLabel}.
 {/include}
 
 {/if}
+{#if report.created.present}
+# Created
+{#include MessageFormatter/notificationBodyBucketContent bucket=report.created.get()}
+
+<sup>Issues or PRs that just got created in your area. Please review, ask for reproducer/information, or plan future work.</sup>
+
+{/include}
+
+{/if}
 {#if report.feedbackNeeded.present}
 # Feedback needed
 {#include MessageFormatter/notificationBodyBucketContent bucket=report.feedbackNeeded.get()}

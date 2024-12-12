@@ -77,6 +77,7 @@ public class MessageFormatterTest {
     void formatNotificationTopicSuffixText() {
         var lotteryReport = stubReport(drawRef, "yrodiere", Optional.empty(),
                 stubReportConfig(),
+                Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
         assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
@@ -87,6 +88,7 @@ public class MessageFormatterTest {
     void formatNotificationTopicSuffixText_exoticTimezone() {
         var lotteryReport = stubReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
                 stubReportConfig(),
+                Optional.empty(),
                 Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
         assertThat(messageFormatter.formatNotificationTopicSuffixText(lotteryReport))
@@ -142,6 +144,7 @@ public class MessageFormatterTest {
                 List.of("area/hibernate-orm", "area/hibernate-search"),
                 List.of(),
                 List.of(),
+                List.of(),
                 List.of());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .isEqualTo(
@@ -149,6 +152,10 @@ public class MessageFormatterTest {
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
                                 Maintenance areas: `area/hibernate-orm`/`area/hibernate-search`.
+
+                                # Created
+
+                                No issues in this category this time.
 
                                 # Feedback needed
 
@@ -173,6 +180,7 @@ public class MessageFormatterTest {
     void formatNotificationBodyMarkdown_maintenance_someEmpty() {
         var lotteryReport = stubReportMaintenance(drawRef, "yrodiere", Optional.empty(),
                 List.of("area/hibernate-orm", "area/hibernate-search"),
+                List.of(),
                 stubIssueList(1, 3),
                 List.of(),
                 List.of());
@@ -182,6 +190,10 @@ public class MessageFormatterTest {
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
                                 Maintenance areas: `area/hibernate-orm`/`area/hibernate-search`.
+
+                                # Created
+
+                                No issues in this category this time.
 
                                 # Feedback needed
 
@@ -209,6 +221,7 @@ public class MessageFormatterTest {
     void formatNotificationBodyMarkdown_maintenance_simple() {
         var lotteryReport = stubReportMaintenance(drawRef, "yrodiere", Optional.empty(),
                 List.of("area/hibernate-orm", "area/hibernate-search"),
+                stubIssueList(8, 9),
                 stubIssueList(1, 3),
                 stubIssueList(4, 5),
                 stubIssueList(2, 7));
@@ -218,6 +231,13 @@ public class MessageFormatterTest {
                                 Hey @yrodiere, here's your report for quarkusio/quarkus on 2017-11-06T06:00:00Z.
 
                                 Maintenance areas: `area/hibernate-orm`/`area/hibernate-search`.
+
+                                # Created
+
+                                <sup>Issues or PRs that just got created in your area. Please review, ask for reproducer/information, or plan future work.</sup>
+
+                                 - [#8](http://github.com/quarkusio/quarkus/issues/8) Title for issue 8
+                                 - [#9](http://github.com/quarkusio/quarkus/issues/9) Title for issue 9
 
                                 # Feedback needed
 
@@ -295,6 +315,7 @@ public class MessageFormatterTest {
         var lotteryReport = stubReport(drawRef, "yrodiere", Optional.empty(),
                 stubReportConfig(),
                 Optional.of(stubIssueList(1, 3)),
+                Optional.of(stubIssueList(12, 13)),
                 Optional.of(stubIssueList(4, 5)),
                 Optional.of(stubIssueList(2, 7)),
                 Optional.of(stubIssueList(8, 9)),
@@ -310,6 +331,13 @@ public class MessageFormatterTest {
 
                                  - [#1](http://github.com/quarkusio/quarkus/issues/1) Title for issue 1
                                  - [#3](http://github.com/quarkusio/quarkus/issues/3) Title for issue 3
+
+                                # Created
+
+                                <sup>Issues or PRs that just got created in your area. Please review, ask for reproducer/information, or plan future work.</sup>
+
+                                 - [#12](http://github.com/quarkusio/quarkus/issues/12) Title for issue 12
+                                 - [#13](http://github.com/quarkusio/quarkus/issues/13) Title for issue 13
 
                                 # Feedback needed
 
@@ -351,7 +379,7 @@ public class MessageFormatterTest {
         var lotteryReport = stubReport(drawRef, "yrodiere", Optional.of(ZoneId.of("America/Los_Angeles")),
                 stubReportConfig(),
                 Optional.empty(),
-                Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 Optional.empty());
         assertThat(messageFormatter.formatNotificationBodyMarkdown(lotteryReport, notificationRepoRef))
                 .startsWith("""
@@ -370,31 +398,33 @@ public class MessageFormatterTest {
         var lotteryReports = List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 3))),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "gsmet",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(2, 4))),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "rick",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of())),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "jane",
                         Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(13, 14))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(7, 8))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(9))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(10, 11, 12))),
                         Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "jsmith",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(25, 26))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(45, 46))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(27, 28))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(29))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(30, 31, 32))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(41, 42)))),
                 new LotteryReport.Serialized(drawRef.instant(), "geoand",
                         Optional.empty(),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(51, 52)))));
         String formatted = messageFormatter.formatHistoryBodyMarkdown(drawRef, lotteryReports);
         assertThat(formatted)
@@ -416,6 +446,9 @@ public class MessageFormatterTest {
                         No issues in this category this time.
 
                         # jane
+                        ## Created
+                         - quarkusio/quarkus#13
+                         - quarkusio/quarkus#14
                         ## Feedback needed
                          - quarkusio/quarkus#7
                          - quarkusio/quarkus#8
@@ -430,6 +463,9 @@ public class MessageFormatterTest {
                         ## Triage
                          - quarkusio/quarkus#25
                          - quarkusio/quarkus#26
+                        ## Created
+                         - quarkusio/quarkus#45
+                         - quarkusio/quarkus#46
                         ## Feedback needed
                          - quarkusio/quarkus#27
                          - quarkusio/quarkus#28
@@ -461,17 +497,18 @@ public class MessageFormatterTest {
         var lotteryReports = List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 3))),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "gsmet",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(2, 4))),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "rick",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of())),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "jane",
+                        Optional.empty(),
                         Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(7, 8))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(9))),
@@ -479,13 +516,14 @@ public class MessageFormatterTest {
                         Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "jsmith",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(25, 26))),
+                        Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(27, 28))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(29))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(30, 31, 32))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(41, 42)))),
                 new LotteryReport.Serialized(drawRef.instant(), "geoand",
                         Optional.empty(),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(51, 52)))));
         String formatted = """
                 Foo
@@ -495,6 +533,55 @@ public class MessageFormatterTest {
 
                 <!--:payload:
                 [{"instant":"2017-11-06T06:00:00Z","username":"yrodiere","triage":{"issueNumbers":[1,3]},"reproducerNeeded":null,"reproducerProvided":null,"stale":null,"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"gsmet","triage":{"issueNumbers":[2,4]},"reproducerNeeded":null,"reproducerProvided":null,"stale":null,"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"rick","triage":{"issueNumbers":[]},"reproducerNeeded":null,"reproducerProvided":null,"stale":null,"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"jane","triage":null,"reproducerNeeded":{"issueNumbers":[7,8]},"reproducerProvided":{"issueNumbers":[9]},"stale":{"issueNumbers":[10,11,12]},"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"jsmith","triage":{"issueNumbers":[25,26]},"reproducerNeeded":{"issueNumbers":[27,28]},"reproducerProvided":{"issueNumbers":[29]},"stale":{"issueNumbers":[30,31,32]},"stewardship":{"issueNumbers":[41,42]}},{"instant":"2017-11-06T06:00:00Z","username":"geoand","triage":null,"reproducerNeeded":null,"reproducerProvided":null,"stale":null,"stewardship":{"issueNumbers":[51,52]}}]
+                :payload:-->
+                """;
+
+        assertThat(messageFormatter.extractPayloadFromHistoryBodyMarkdown(formatted))
+                .usingRecursiveFieldByFieldElementComparator()
+                .isEqualTo(lotteryReports);
+    }
+
+    @Test
+    void extractPayloadFromHistoryBodyMarkdown_oldFormatWithoutCreated() throws IOException {
+        var lotteryReports = List.of(
+                new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 3))),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty()),
+                new LotteryReport.Serialized(drawRef.instant(), "gsmet",
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(2, 4))),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty()),
+                new LotteryReport.Serialized(drawRef.instant(), "rick",
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of())),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty()),
+                new LotteryReport.Serialized(drawRef.instant(), "jane",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(7, 8))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(9))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(10, 11, 12))),
+                        Optional.empty()),
+                new LotteryReport.Serialized(drawRef.instant(), "jsmith",
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(25, 26))),
+                        Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(27, 28))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(29))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(30, 31, 32))),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(41, 42)))),
+                new LotteryReport.Serialized(drawRef.instant(), "geoand",
+                        Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(51, 52)))));
+        String formatted = """
+                Foo
+
+                bar
+                <span>foobar</span>
+
+                <!--:payload:
+                [{"instant":"2017-11-06T06:00:00Z","username":"yrodiere","triage":{"issueNumbers":[1,3]},"feedbackNeeded":null,"feedbackProvided":null,"stale":null,"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"gsmet","triage":{"issueNumbers":[2,4]},"feedbackNeeded":null,"feedbackProvided":null,"stale":null,"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"rick","triage":{"issueNumbers":[]},"feedbackNeeded":null,"feedbackProvided":null,"stale":null,"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"jane","triage":null,"feedbackNeeded":{"issueNumbers":[7,8]},"feedbackProvided":{"issueNumbers":[9]},"stale":{"issueNumbers":[10,11,12]},"stewardship":null},{"instant":"2017-11-06T06:00:00Z","username":"jsmith","triage":{"issueNumbers":[25,26]},"feedbackNeeded":{"issueNumbers":[27,28]},"feedbackProvided":{"issueNumbers":[29]},"stale":{"issueNumbers":[30,31,32]},"stewardship":{"issueNumbers":[41,42]}},{"instant":"2017-11-06T06:00:00Z","username":"geoand","triage":null,"feedbackNeeded":null,"feedbackProvided":null,"stale":null,"stewardship":{"issueNumbers":[51,52]}}]
                 :payload:-->
                 """;
 

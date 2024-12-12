@@ -152,6 +152,11 @@ public class GitHubServiceTest {
                                         delay: PT0S
                                         timeout: P3D
                                       maintenance:
+                                        created:
+                                          delay: PT0S
+                                          timeout: P1D
+                                          expiry: P14D
+                                          ignoreLabels: ["triage/on-ice"]
                                         feedback:
                                           labels: ["triage/needs-feedback", "triage/needs-reproducer"]
                                           needed:
@@ -176,6 +181,8 @@ public class GitHubServiceTest {
                                         maintenance:
                                           labels: ["area/hibernate-orm", "area/hibernate-search"]
                                           days: ["MONDAY"]
+                                          created:
+                                            maxIssues: 5
                                           feedback:
                                             needed:
                                               maxIssues: 4
@@ -228,6 +235,9 @@ public class GitHubServiceTest {
                                                     "triage/needs-triage",
                                                     Duration.ZERO, Duration.ofDays(3)),
                                             new LotteryConfig.Buckets.Maintenance(
+                                                    new LotteryConfig.Buckets.Maintenance.Created(
+                                                            Duration.ZERO, Duration.ofDays(1), Duration.ofDays(14),
+                                                            List.of("triage/on-ice")),
                                                     new LotteryConfig.Buckets.Maintenance.Feedback(
                                                             List.of("triage/needs-feedback", "triage/needs-reproducer"),
                                                             new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
@@ -248,6 +258,7 @@ public class GitHubServiceTest {
                                                     Optional.of(new LotteryConfig.Participant.Maintenance(
                                                             List.of("area/hibernate-orm", "area/hibernate-search"),
                                                             Set.of(DayOfWeek.MONDAY),
+                                                            Optional.of(new LotteryConfig.Participant.Participation(5)),
                                                             Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                                                     new LotteryConfig.Participant.Participation(4),
                                                                     new LotteryConfig.Participant.Participation(2))),
@@ -266,6 +277,7 @@ public class GitHubServiceTest {
                                                     Optional.of(new LotteryConfig.Participant.Maintenance(
                                                             List.of("area/someobscurelibrary"),
                                                             Set.of(DayOfWeek.MONDAY),
+                                                            Optional.empty(),
                                                             Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                                                     new LotteryConfig.Participant.Participation(1),
                                                                     new LotteryConfig.Participant.Participation(1))),
@@ -284,6 +296,7 @@ public class GitHubServiceTest {
                                                     Optional.of(new LotteryConfig.Participant.Maintenance(
                                                             List.of("area/someotherobscurelibrary"),
                                                             Set.of(DayOfWeek.MONDAY),
+                                                            Optional.empty(),
                                                             Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                                                     new LotteryConfig.Participant.Participation(1),
                                                                     new LotteryConfig.Participant.Participation(1))),
@@ -313,6 +326,10 @@ public class GitHubServiceTest {
                                         delay: PT0S
                                         timeout: P3D
                                       maintenance:
+                                        created:
+                                          delay: PT0S
+                                          timeout: P1D
+                                          expiry: P14D
                                         feedback:
                                           labels: ["triage/needs-feedback"]
                                           needed:
@@ -344,6 +361,9 @@ public class GitHubServiceTest {
                                                     "triage/needs-triage",
                                                     Duration.ZERO, Duration.ofDays(3)),
                                             new LotteryConfig.Buckets.Maintenance(
+                                                    new LotteryConfig.Buckets.Maintenance.Created(
+                                                            Duration.ofDays(0), Duration.ofDays(1), Duration.ofDays(14),
+                                                            List.of()),
                                                     new LotteryConfig.Buckets.Maintenance.Feedback(
                                                             List.of("triage/needs-feedback"),
                                                             new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
@@ -861,6 +881,118 @@ public class GitHubServiceTest {
                     verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
                     verify(issue7QueryCommentsBuilderMock).since(issue7ActionLabelEvent);
                     verify(issue8QueryCommentsBuilderMock).since(issue8ActionLabelEvent);
+
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
+    void issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween() throws IOException {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
+
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        Instant minCutoff = now.minus(14, ChronoUnit.DAYS);
+        Instant maxCutoff = now.minus(0, ChronoUnit.DAYS);
+
+        var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue1QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue2QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue3QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue4QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue5QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue7QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue8QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        given()
+                .github(mocks -> {
+                    var clientMock = mocks.installationClient(installationRef.installationId());
+                    var repositoryMock = mocks.repository(repoRef.repositoryName());
+
+                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, "someadmin",
+                            GHPermissionType.ADMIN);
+                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, "somewriter",
+                            GHPermissionType.WRITE);
+                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, "somereader", GHPermissionType.READ);
+                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, "somestranger",
+                            GHPermissionType.NONE);
+                    var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, "somebot[bot]");
+                    var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, "somereporter");
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    // Pull requests should always be filtered out
+                    var issue1Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 1, randomReporterUser);
+                    var issue2Mock = mockIssueForLottery(mocks, 2, randomReporterUser);
+                    var issue3Mock = mockIssueForLottery(mocks, 3, randomReporterUser);
+                    var issue4Mock = mockIssueForLottery(mocks, 4);
+                    var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, randomReporterUser);
+                    var issue7Mock = mockIssueForLottery(mocks, 7, randomReporterUser);
+                    var issue8Mock = mockIssueForLottery(mocks, 8, writeUser);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock,
+                            issue7Mock, issue8Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
+
+                    var issue1CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 101, noneUser),
+                            mockIssueComment(mocks, 102, readUser),
+                            mockIssueComment(mocks, 103, adminUser));
+                    when(issue1Mock.queryComments()).thenReturn(issue1QueryCommentsBuilderMock);
+                    when(issue1QueryCommentsBuilderMock.list()).thenReturn(issue1CommentsMocks);
+
+                    var issue2CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 202, readUser));
+                    when(issue2Mock.queryComments()).thenReturn(issue2QueryCommentsBuilderMock);
+                    when(issue2QueryCommentsBuilderMock.list()).thenReturn(issue2CommentsMocks);
+
+                    var issue3CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 302, noneUser));
+                    when(issue3Mock.queryComments()).thenReturn(issue3QueryCommentsBuilderMock);
+                    when(issue3QueryCommentsBuilderMock.list()).thenReturn(issue3CommentsMocks);
+
+                    PagedSearchIterable<GHIssueComment> issue4CommentsMocks = mockPagedIterable();
+                    when(issue4Mock.queryComments()).thenReturn(issue4QueryCommentsBuilderMock);
+                    when(issue4QueryCommentsBuilderMock.list()).thenReturn(issue4CommentsMocks);
+
+                    var issue5CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 501, noneUser),
+                            mockIssueComment(mocks, 502, writeUser));
+                    when(issue5Mock.queryComments()).thenReturn(issue5QueryCommentsBuilderMock);
+                    when(issue5QueryCommentsBuilderMock.list()).thenReturn(issue5CommentsMocks);
+
+                    // This is like issue 2, but a bot commented after the user -- which should be ignored.
+                    var issue7CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 701, readUser),
+                            mockIssueComment(mocks, 702, botUser));
+                    when(issue7Mock.queryComments()).thenReturn(issue7QueryCommentsBuilderMock);
+                    when(issue7QueryCommentsBuilderMock.list()).thenReturn(issue7CommentsMocks);
+
+                    // This is like issue 2, but the reporter is a team member -- so should be considered as an outsider.
+                    var issue8CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 801, noneUser),
+                            mockIssueComment(mocks, 802, writeUser));
+                    when(issue8Mock.queryComments()).thenReturn(issue8QueryCommentsBuilderMock);
+                    when(issue8QueryCommentsBuilderMock.list()).thenReturn(issue8CommentsMocks);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween(
+                            "area/hibernate-search",
+                            new LinkedHashSet<>(List.of("triage/needs-feedback", "triage/needs-reproducer", "triage/on-ice")),
+                            Set.of("yrodiere"),
+                            minCutoff, maxCutoff))
+                            .containsExactlyElementsOf(stubIssueList(2, 3, 4, 7, 8));
+                })
+                .then().github(mocks -> {
+                    verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
+                    verify(searchIssuesBuilderMock).isOpen();
+                    verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.CREATED);
+                    verify(searchIssuesBuilderMock).order(GHDirection.ASC);
+                    verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
+                    verify(searchIssuesBuilderMock).q("created:2017-10-23T06:00..2017-11-06T06:00");
+                    verify(searchIssuesBuilderMock).q("-label:triage/needs-feedback,triage/needs-reproducer,triage/on-ice");
+                    verify(searchIssuesBuilderMock).q("-commenter:yrodiere");
+                    verifyNoMoreInteractions(searchIssuesBuilderMock);
 
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });

@@ -7,12 +7,17 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
@@ -32,6 +37,7 @@ import io.quarkus.scheduler.Scheduled;
 @ApplicationScoped
 public class LotteryService {
 
+    private static final Logger log = LoggerFactory.getLogger(LotteryService.class);
     @Inject
     GitHubService gitHubService;
 
@@ -81,7 +87,19 @@ public class LotteryService {
         var now = Instant.now(clock);
         var drawRef = new DrawRef(repo.ref(), now);
 
-        Lottery lottery = new Lottery(now, lotteryConfig.buckets());
+        // Note: this map only gives partial information -- some maintainers may not be registered for the lottery.
+        // That's why the information is only used for optimization (to skip issues that we know for sure aren't relevant).
+        var maintainerUsernamesByAreaLabel = new HashMap<String, Set<String>>();
+        for (LotteryConfig.Participant participant : lotteryConfig.participants()) {
+            participant.maintenance().ifPresent(m -> {
+                for (String label : m.labels()) {
+                    maintainerUsernamesByAreaLabel.computeIfAbsent(label, key -> new LinkedHashSet<>())
+                            .add(participant.username());
+                }
+            });
+        }
+
+        Lottery lottery = new Lottery(now, lotteryConfig.buckets(), maintainerUsernamesByAreaLabel);
 
         try (var notifier = notificationService.notifier(drawRef, lotteryConfig.notifications())) {
             var history = historyService.fetch(drawRef, lotteryConfig);

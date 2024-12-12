@@ -135,8 +135,12 @@ If the `maintenance` section is present, you will get notified about issues/PRs
 related to a specific area (e.g. `area/hibernate-orm`)
 that may be stalled and require intervention from maintainers or reporters.
 
-Issues/PRs in "maintenance" notifications will be split in three categories:
+Issues/PRs in "maintenance" notifications will be split in several categories:
 
+Created::
+Issues or PRs that just got created in your area.
++
+Please review, ask for reproducer/information, or plan future work.
 Feedback Needed::
 Issues with missing reproducer/information.
 +
@@ -164,6 +168,8 @@ participants:
     maintenance:
       labels: ["area/hibernate-orm", "area/hibernate-search", "area/elasticsearch"]
       days: ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"]
+      created:
+        maxIssues: 5
       feedback:
         needed:
           maxIssues: 4
@@ -182,21 +188,26 @@ Array of Strings, mandatory, no default.
 On which days you wish to get notified about maintenance.
 +
 Array of ``WeekDay``s, mandatory, no default.
+`created.maxIssues`::
+How many issues/PRs, at most, you wish to be included in the "Created" category
+for each notification.
++
+Integer, mandatory if the `created` section is present, no default.
 `feedback.needed.maxIssues`::
 How many issues/PRs, at most, you wish to be included in the "Feedback needed" category
 for each notification.
 +
-Integer, mandatory, no default.
+Integer, mandatory if the `feedback` section is present, no default.
 `feedback.provided.maxIssues`::
 How many issues/PRs, at most, you wish to be included in the "Feedback provided" category
 for each notification.
 +
-Integer, mandatory, no default.
+Integer, mandatory if the `feedback` section is present, no default.
 `stale.maxIssues`::
 How many issues/PRs, at most, you wish to be included in the "Stale" category
 for each notification.
 +
-Integer, mandatory, no default.
+Integer, mandatory if the `stale` section is present, no default.
 
 [[participants-stewardship]]
 === Stewardship
@@ -291,6 +302,11 @@ buckets:
     delay: PT0S
     timeout: P3D
   maintenance:
+    created:
+      delay: PT0S
+      timeout: P1D
+      expiry: P14D
+      ignoreLabels: ["triage/on-ice"]
     feedback:
       labels: ["triage/needs-reproducer"]
       needed:
@@ -328,6 +344,28 @@ How much time to wait after an issue/PR was last notified about
 before including it again in the lottery in the "triage" bucket.
 +
 String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
++
+`buckets.maintenance.created.delay`::
+How much time to wait after the creation of an issue/PR
+before including it in the lottery in the "created" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.maintenance.created.timeout`::
+How much time to wait after an issue/PR was last notified about
+before including it again in the lottery in the "created" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
++
+`buckets.maintenance.created.expiry`::
+How much time to wait after the creation of an issue/PR
+before excluding it from the lottery in the "created" bucket.
++
+String in https://en.wikipedia.org/wiki/ISO_8601#Durations[ISO-8601 duration format], mandatory, no default.
+`buckets.maintenance.created.ignoreLabels`::
+The labels identifying GitHub issues/PRs that should be ignored for the "created" bucket.
+Issues/PRs with one of these labels will never be added to the bucket.
++
+Array of Strings, optional, defaults to an empty array.
 `buckets.maintenance.feedback.labels`::
 The labels identifying GitHub issues for which feedback (a reproducer, more information, ...) was requested.
 +
