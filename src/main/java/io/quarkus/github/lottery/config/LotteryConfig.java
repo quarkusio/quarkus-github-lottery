@@ -58,8 +58,24 @@ public record LotteryConfig(
         }
 
         public record Maintenance(
+                @JsonProperty(required = true) Created created,
                 @JsonProperty(required = true) Feedback feedback,
                 @JsonProperty(required = true) Stale stale) {
+
+            public record Created(
+                    @JsonUnwrapped @JsonProperty(access = JsonProperty.Access.READ_ONLY) Notification notification,
+                    @JsonProperty(required = true) Duration expiry,
+                    @JsonProperty(required = true) List<String> ignoreLabels) {
+                // https://stackoverflow.com/a/71539100/6692043
+                // Also gives us a less verbose constructor for tests
+                @JsonCreator
+                public Created(@JsonProperty(required = true) Duration delay,
+                        @JsonProperty(required = true) Duration timeout,
+                        @JsonProperty(required = true) Duration expiry,
+                        @JsonProperty(required = false) List<String> ignoreLabels) {
+                    this(new Notification(delay, timeout), expiry, ignoreLabels == null ? List.of() : ignoreLabels);
+                }
+            }
 
             public record Feedback(
                     @JsonProperty(required = true) List<String> labels,
@@ -141,6 +157,7 @@ public record LotteryConfig(
                 // TODO default to all labels configured for this user in .github/quarkus-bot.yml
                 @JsonProperty(required = true) List<String> labels,
                 @JsonProperty(required = true) @JsonDeserialize(as = TreeSet.class) Set<DayOfWeek> days,
+                @JsonProperty Optional<Participation> created,
                 Optional<Feedback> feedback,
                 @JsonProperty Optional<Participation> stale) {
             public record Feedback(

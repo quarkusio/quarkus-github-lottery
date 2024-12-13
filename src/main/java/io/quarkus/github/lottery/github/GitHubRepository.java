@@ -3,17 +3,20 @@ package io.quarkus.github.lottery.github;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.anyLabel;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.assignee;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.author;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.commenter;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.created;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.isIssue;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.label;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.not;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.repo;
-import static io.quarkus.github.lottery.github.GitHubSearchClauses.updatedBefore;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.updated;
 import static io.quarkus.github.lottery.util.Streams.toStream;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
 import java.sql.Date;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -21,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.kohsuke.github.GHDirection;
@@ -31,8 +35,10 @@ import org.kohsuke.github.GHIssueEvent;
 import org.kohsuke.github.GHIssueSearchBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
-import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 
 import io.quarkiverse.githubapp.ConfigFile;
 import io.quarkiverse.githubapp.GitHubClientProvider;
@@ -54,6 +60,7 @@ public class GitHubRepository implements AutoCloseable {
     private final GitHubConfigFileProvider configFileProvider;
     private final MessageFormatter messageFormatter;
     private final GitHubRepositoryRef ref;
+    private final LoadingCache<String, IssueActionSide> noContextIssueActionSideCache;
 
     private GitHub client;
     private GHRepository repository;
@@ -66,6 +73,10 @@ public class GitHubRepository implements AutoCloseable {
         this.configFileProvider = configFileProvider;
         this.messageFormatter = messageFormatter;
         this.ref = ref;
+        this.noContextIssueActionSideCache = Caffeine.newBuilder()
+                .maximumSize(100)
+                .expireAfterWrite(Duration.ofMinutes(1))
+                .build(this::computeNoContextIssueActionSide);
     }
 
     @Override
@@ -135,7 +146,7 @@ public class GitHubRepository implements AutoCloseable {
     public Stream<Issue> issuesOrPullRequestsLastUpdatedBefore(Set<String> ignoreLabels, Instant updatedBefore) {
         var builder = searchIssuesOrPullRequests()
                 .isOpen()
-                .q(updatedBefore(updatedBefore))
+                .q(updated(null, updatedBefore))
                 .sort(GHIssueSearchBuilder.Sort.UPDATED)
                 .order(GHDirection.DESC);
         if (!ignoreLabels.isEmpty()) {
@@ -158,7 +169,7 @@ public class GitHubRepository implements AutoCloseable {
         var builder = searchIssuesOrPullRequests()
                 .isOpen()
                 .q(label(label))
-                .q(updatedBefore(updatedBefore))
+                .q(updated(null, updatedBefore))
                 .sort(GHIssueSearchBuilder.Sort.UPDATED)
                 .order(GHDirection.DESC);
         if (!ignoreLabels.isEmpty()) {
@@ -185,12 +196,48 @@ public class GitHubRepository implements AutoCloseable {
                 .isOpen()
                 .q(anyLabel(initialActionLabels))
                 .q(label(filterLabel))
-                .q(updatedBefore(updatedBefore))
+                .q(updated(null, updatedBefore))
                 .sort(GHIssueSearchBuilder.Sort.UPDATED)
                 .order(GHDirection.DESC)
                 .list())
                 .filter(uncheckedIO((GHIssue ghIssue) -> lastActionSide
                         .equals(lastActionSide(ghIssue, initialActionLabels)))::apply)
+                .map(toIssueRecord());
+    }
+
+    /**
+     * Lists issues or pull requests with the given labels that were never acted on (commented)
+     * by the team and were last updated before the given instant.
+     *
+     * @param filterLabel A secondary GitHub label; all returned issues must have been assigned that label.
+     *        This label is not relevant to determining the last action.
+     * @param ignoreLabels GitHub labels. Issues assigned with any of these labels are ignored (not returned).
+     * @param ignoreCommentedBy GitHub usernames. Issues commented on by any of these users are ignored (not returned).
+     * @param createdAfter An instant; all returned issues must have been created after that instant.
+     * @param createdBefore An instant; all returned issues must have been created before that instant.
+     * @return A lazily populated stream of matching issues.
+     * @throws java.io.UncheckedIOException In case of I/O failure.
+     */
+    public Stream<Issue> issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween(String filterLabel,
+            Set<String> ignoreLabels, Set<String> ignoreCommentedBy,
+            Instant createdAfter, Instant createdBefore) {
+        var builder = searchIssuesOrPullRequests()
+                .isOpen()
+                .q(label(filterLabel))
+                .q(not(anyLabel(ignoreLabels)))
+                .q(created(createdAfter, createdBefore))
+                .sort(GHIssueSearchBuilder.Sort.CREATED)
+                .order(GHDirection.ASC);
+        for (String username : ignoreCommentedBy) {
+            builder.q(not(commenter(username)));
+        }
+        return toStream(builder.list())
+                // Note: "ignoreCommentedBy" cannot be assumed to be the full list of maintainers,
+                // so we use "ignoreCommentedBy" for optimization
+                // (to skip issues that we know for sure aren't relevant),
+                // but we still need to have a closer look at issues afterward
+                // (to skip issues commented on by team members which are not in "ignoreCommentedBy").
+                .filter(this::hasNoTeamAction)
                 .map(toIssueRecord());
     }
 
@@ -211,18 +258,29 @@ public class GitHubRepository implements AutoCloseable {
             // No action since the label was assigned.
             return IssueActionSide.TEAM;
         }
-        return getIssueActionSide(ghIssue, lastComment.get().getUser());
+        return getIssueActionSide(ghIssue, lastComment.get().getUser().getLogin());
     }
 
-    private IssueActionSide getIssueActionSide(GHIssue issue, GHUser user) throws IOException {
-        if (issue.getUser().getLogin().equals(user.getLogin())) {
+    private boolean hasNoTeamAction(GHIssue ghIssue) {
+        return getNonBotCommentsSince(ghIssue, null)
+                .map(uncheckedIO((GHIssueComment c) -> getIssueActionSide(ghIssue, c.getUser().getLogin())))
+                .noneMatch(Predicate.isEqual(IssueActionSide.TEAM));
+    }
+
+    private IssueActionSide getIssueActionSide(GHIssue issue, String login) throws IOException {
+        if (issue.getUser().getLogin().equals(login)) {
             // This is the reporter; even if part of the team,
             // we'll consider he's acting as an outsider here,
             // because he's unlikely to ask for feedback from himself.
             return IssueActionSide.OUTSIDER;
         }
 
-        return switch (repository().getPermission(user)) {
+        // Caching in case a same user is encountered multiple times in the same run.
+        return noContextIssueActionSideCache.get(login);
+    }
+
+    private IssueActionSide computeNoContextIssueActionSide(String login) throws IOException {
+        return switch (repository().getPermission(login)) {
             case ADMIN, WRITE, UNKNOWN -> IssueActionSide.TEAM; // "Unknown" includes "triage"
             case READ, NONE -> IssueActionSide.OUTSIDER;
         };

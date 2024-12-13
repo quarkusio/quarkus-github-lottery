@@ -84,6 +84,10 @@ public class PullRequestConfigCheckTest {
                                         delay: PT0S
                                         timeout: P3D
                                       maintenance:
+                                        created:
+                                          delay: PT0S
+                                          timeout: P1D
+                                          expiry: P14D
                                         feedback:
                                           labels: ["triage/needs-reproducer", "triage/needs-feedback"]
                                           needed:
@@ -157,6 +161,10 @@ public class PullRequestConfigCheckTest {
                                         delay: PT0S
                                         timeout: P3D
                                       maintenance:
+                                        created:
+                                          delay: PT0S
+                                          timeout: P1D
+                                          expiry: P14D
                                         feedback:
                                           labels: ["triage/needs-reproducer", "triage/needs-feedback"]
                                           needed:

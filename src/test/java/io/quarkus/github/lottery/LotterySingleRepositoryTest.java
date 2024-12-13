@@ -68,6 +68,8 @@ public class LotterySingleRepositoryTest {
                                 "triage/needs-triage",
                                 Duration.ZERO, Duration.ofDays(3)),
                         new LotteryConfig.Buckets.Maintenance(
+                                new LotteryConfig.Buckets.Maintenance.Created(
+                                        Duration.ZERO, Duration.ofDays(1), Duration.ofDays(14), List.of("triage/on-ice")),
                                 new LotteryConfig.Buckets.Maintenance.Feedback(
                                         List.of("triage/needs-reproducer", "triage/needs-feedback"),
                                         new LotteryConfig.Buckets.Maintenance.Feedback.Needed(
@@ -92,6 +94,8 @@ public class LotterySingleRepositoryTest {
     GitHubInstallationRef installationRef;
     GitHubRepositoryRef repoRef;
     Instant now;
+    Instant createdMinCutoff;
+    Instant createdMaxCutoff;
     Instant feedbackNeededCutoff;
     Instant feedbackProvidedCutoff;
     Instant staleCutoff;
@@ -118,6 +122,8 @@ public class LotterySingleRepositoryTest {
 
         // Note tests below assume this is at least 1AM
         now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        createdMinCutoff = now.minus(14, ChronoUnit.DAYS);
+        createdMaxCutoff = now.minus(0, ChronoUnit.DAYS);
         feedbackNeededCutoff = now.minus(21, ChronoUnit.DAYS);
         feedbackProvidedCutoff = now.minus(7, ChronoUnit.DAYS);
         staleCutoff = now.minus(60, ChronoUnit.DAYS);
@@ -160,6 +166,7 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.TUESDAY),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)),
                                 Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2))),
@@ -190,6 +197,7 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)),
                                 Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2))),
@@ -222,6 +230,7 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)),
                                 Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2))),
@@ -255,6 +264,7 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)),
                                 Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2))),
@@ -306,7 +316,7 @@ public class LotterySingleRepositoryTest {
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 3, 2))),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty())));
 
         verify(notifierMock).close();
@@ -348,7 +358,7 @@ public class LotterySingleRepositoryTest {
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2, 4))),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.empty())));
 
         verify(notifierMock).close();
@@ -367,6 +377,7 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)),
                                 Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2))),
@@ -374,6 +385,11 @@ public class LotterySingleRepositoryTest {
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
+        when(repoMock.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween("area/hibernate-orm",
+                Set.of("triage/needs-reproducer", "triage/needs-feedback", "triage/on-ice"),
+                Set.of("yrodiere"),
+                createdMinCutoff, createdMaxCutoff))
+                .thenAnswer(ignored -> stubIssueList(701, 702, 703, 704, 705, 706).stream());
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-orm", IssueActionSide.TEAM, feedbackNeededCutoff))
@@ -386,6 +402,11 @@ public class LotterySingleRepositoryTest {
                 staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(301, 302, 303, 304, 305, 306).stream());
 
+        when(repoMock.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween("area/hibernate-search",
+                Set.of("triage/needs-reproducer", "triage/needs-feedback", "triage/on-ice"),
+                Set.of("yrodiere"),
+                createdMinCutoff, createdMaxCutoff))
+                .thenAnswer(ignored -> stubIssueList(801, 802, 803, 804, 805, 806).stream());
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.TEAM, feedbackNeededCutoff))
@@ -400,6 +421,9 @@ public class LotterySingleRepositoryTest {
 
         mockNotifiable("yrodiere", ZoneOffset.UTC);
 
+        var historyCreatedMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.created()).thenReturn(historyCreatedMock);
+        when(historyCreatedMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
         var historyFeedbackNeededMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.feedbackNeeded()).thenReturn(historyFeedbackNeededMock);
         when(historyFeedbackNeededMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -414,6 +438,7 @@ public class LotterySingleRepositoryTest {
 
         verify(notifierMock).send(stubReportMaintenance(drawRef, "yrodiere", Optional.empty(),
                 List.of("area/hibernate-orm", "area/hibernate-search"),
+                stubIssueList(701, 801, 702, 802, 703),
                 stubIssueList(101, 401, 102, 402),
                 stubIssueList(201, 501),
                 stubIssueList(301, 601, 302, 602, 303)));
@@ -421,6 +446,7 @@ public class LotterySingleRepositoryTest {
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(701, 801, 702, 802, 703))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(101, 401, 102, 402))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(201, 501))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(301, 601, 302, 602, 303))),
@@ -442,6 +468,7 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-orm", "area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)),
                                 Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2))),
@@ -449,6 +476,11 @@ public class LotterySingleRepositoryTest {
                         Optional.empty())));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
+        when(repoMock.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween("area/hibernate-orm",
+                Set.of("triage/needs-reproducer", "triage/needs-feedback", "triage/on-ice"),
+                Set.of("yrodiere"),
+                createdMinCutoff, createdMaxCutoff))
+                .thenAnswer(ignored -> stubIssueList(701, 702, 703, 704, 705, 706).stream());
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-orm", IssueActionSide.TEAM, feedbackNeededCutoff))
@@ -461,6 +493,11 @@ public class LotterySingleRepositoryTest {
                 staleCutoff))
                 .thenAnswer(ignored -> stubIssueList(301, 302, 303, 304, 305, 306).stream());
 
+        when(repoMock.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween("area/hibernate-search",
+                Set.of("triage/needs-reproducer", "triage/needs-feedback", "triage/on-ice"),
+                Set.of("yrodiere"),
+                createdMinCutoff, createdMaxCutoff))
+                .thenAnswer(ignored -> stubIssueList(801, 802, 803, 804, 805, 806).stream());
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.TEAM, feedbackNeededCutoff))
@@ -475,6 +512,10 @@ public class LotterySingleRepositoryTest {
 
         mockNotifiable("yrodiere", ZoneOffset.UTC);
 
+        var historyCreatedMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.created()).thenReturn(historyCreatedMock);
+        when(historyCreatedMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
+        when(historyCreatedMock.lastNotificationTimedOutForIssueNumber(702)).thenReturn(false);
         var historyFeedbackNeededMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.feedbackNeeded()).thenReturn(historyFeedbackNeededMock);
         when(historyFeedbackNeededMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -490,10 +531,11 @@ public class LotterySingleRepositoryTest {
 
         lotteryService.draw();
 
-        // Since the last notification for issues with number 401, 201, 302 didn't time out yet,
+        // Since the last notification for issues with number 401, 201, 302, 702 didn't time out yet,
         // they will be skipped and we'll notify about the next issues instead.
         verify(notifierMock).send(stubReportMaintenance(drawRef, "yrodiere", Optional.empty(),
                 List.of("area/hibernate-orm", "area/hibernate-search"),
+                stubIssueList(701, 801, 703, 802, 704),
                 stubIssueList(101, 402, 102, 403),
                 stubIssueList(202, 501),
                 stubIssueList(301, 601, 303, 602, 304)));
@@ -501,6 +543,7 @@ public class LotterySingleRepositoryTest {
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(701, 801, 703, 802, 704))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(101, 402, 102, 403))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(202, 501))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(301, 601, 303, 602, 304))),
@@ -542,7 +585,7 @@ public class LotterySingleRepositoryTest {
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "geoand",
                         Optional.empty(),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 3, 2))))));
 
         verify(notifierMock).close();
@@ -584,7 +627,7 @@ public class LotterySingleRepositoryTest {
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "geoand",
                         Optional.empty(),
-                        Optional.empty(), Optional.empty(), Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(1, 2, 4))))));
 
         verify(notifierMock).close();
@@ -603,6 +646,7 @@ public class LotterySingleRepositoryTest {
                         Optional.of(new LotteryConfig.Participant.Maintenance(
                                 List.of("area/hibernate-search"),
                                 Set.of(DayOfWeek.MONDAY),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)),
                                 Optional.of(new LotteryConfig.Participant.Maintenance.Feedback(
                                         new LotteryConfig.Participant.Participation(4),
                                         new LotteryConfig.Participant.Participation(2))),
@@ -617,6 +661,11 @@ public class LotterySingleRepositoryTest {
                                 new LotteryConfig.Participant.Participation(10))))));
         when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
 
+        when(repoMock.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween("area/hibernate-search",
+                Set.of("triage/needs-reproducer", "triage/needs-feedback", "triage/on-ice"),
+                Set.of("yrodiere"),
+                createdMinCutoff, createdMaxCutoff))
+                .thenAnswer(ignored -> stubIssueList(801, 802, 803, 804, 805, 806).stream());
         when(repoMock.issuesLastActedOnByAndLastUpdatedBefore(
                 Set.of("triage/needs-reproducer", "triage/needs-feedback"),
                 "area/hibernate-search", IssueActionSide.TEAM, feedbackNeededCutoff))
@@ -635,6 +684,9 @@ public class LotterySingleRepositoryTest {
         mockNotifiable("yrodiere", ZoneOffset.UTC);
         mockNotifiable("gsmet", ZoneOffset.UTC);
 
+        var historyCreatedMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.created()).thenReturn(historyCreatedMock);
+        when(historyCreatedMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
         var historyFeedbackNeededMock = mock(LotteryHistory.Bucket.class);
         when(historyMock.feedbackNeeded()).thenReturn(historyFeedbackNeededMock);
         when(historyFeedbackNeededMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
@@ -653,6 +705,7 @@ public class LotterySingleRepositoryTest {
         verify(notifierMock).send(stubReport(drawRef, "yrodiere", Optional.empty(),
                 stubReportConfig("area/hibernate-search"),
                 Optional.empty(),
+                Optional.of(stubIssueList(801, 802, 803, 804, 805)),
                 Optional.of(stubIssueList(401, 402, 403, 404)),
                 Optional.of(stubIssueList(501, 502)),
                 // Notifications to stewards don't prevent notifications to maintainers
@@ -662,24 +715,21 @@ public class LotterySingleRepositoryTest {
         verify(notifierMock).send(stubReport(drawRef, "gsmet", Optional.empty(),
                 stubReportConfig(),
                 Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
-                Optional.empty(),
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                 // Notifications to maintainers don't prevent notifications to stewards
                 Optional.of(stubIssueList(401, 501, 601, 701))));
 
         verify(historyServiceMock).append(drawRef, config, List.of(
                 new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
                         Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(801, 802, 803, 804, 805))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(401, 402, 403, 404))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(501, 502))),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(601, 602, 603, 604, 605))),
                         Optional.empty()),
                 new LotteryReport.Serialized(drawRef.instant(), "gsmet",
                         Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty(),
-                        Optional.empty(),
+                        Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
                         Optional.of(new LotteryReport.Bucket.Serialized(List.of(401, 501, 601, 701))))));
 
         verify(notifierMock).close();

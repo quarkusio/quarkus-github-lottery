@@ -27,14 +27,16 @@ public final class Lottery {
 
     private final Instant now;
     private final LotteryConfig.Buckets config;
+    private final Map<String, Set<String>> maintainerUsernamesByAreaLabel;
     private final Random random;
     private final Triage triage;
     private final Map<String, Maintenance> maintenanceByLabel;
     private final Stewardship stewardship;
 
-    public Lottery(Instant now, LotteryConfig.Buckets config) {
+    public Lottery(Instant now, LotteryConfig.Buckets config, Map<String, Set<String>> maintainerUsernamesByAreaLabel) {
         this.now = now;
         this.config = config;
+        this.maintainerUsernamesByAreaLabel = maintainerUsernamesByAreaLabel;
         this.random = new Random();
         this.triage = new Triage();
         this.maintenanceByLabel = new LinkedHashMap<>();
@@ -46,7 +48,11 @@ public final class Lottery {
     }
 
     Maintenance maintenance(String areaLabel) {
-        return maintenanceByLabel.computeIfAbsent(areaLabel, Maintenance::new);
+        return maintenanceByLabel.computeIfAbsent(areaLabel, this::createMaintenance);
+    }
+
+    private Maintenance createMaintenance(String areaLabel) {
+        return new Maintenance(areaLabel, maintainerUsernamesByAreaLabel.getOrDefault(areaLabel, Set.of()));
     }
 
     Bucket stewardship() {
@@ -105,16 +111,28 @@ public final class Lottery {
 
     final class Maintenance {
         private final String areaLabel;
+        private final Set<String> maintainerUsernames;
+        private final Bucket created;
         private final Bucket feedbackNeeded;
         private final Bucket feedbackProvided;
         private final Bucket stale;
 
-        Maintenance(String areaLabel) {
+        Maintenance(String areaLabel, Set<String> maintainerUsernames) {
             this.areaLabel = areaLabel;
+            this.maintainerUsernames = maintainerUsernames;
             String namePrefix = "maintenance - '" + areaLabel + "' - ";
+            created = new Bucket(namePrefix + "created");
             feedbackNeeded = new Bucket(namePrefix + "feedbackNeeded");
             feedbackProvided = new Bucket(namePrefix + "feedbackProvided");
             stale = new Bucket(namePrefix + "stale");
+        }
+
+        public void addMaintainer(String username) {
+            maintainerUsernames.add(username);
+        }
+
+        Bucket created() {
+            return created;
         }
 
         Bucket feedbackNeeded() {
@@ -131,6 +149,24 @@ public final class Lottery {
 
         void createDraws(GitHubRepository repo, LotteryHistory lotteryHistory, List<Draw> draws,
                 Set<Integer> allWinnings) throws IOException {
+            if (created.hasParticipation()) {
+                var maxCutoff = now.minus(config.maintenance().created().notification().delay());
+                var minCutoff = now.minus(config.maintenance().created().expiry());
+                // Remove duplicates, but preserve order
+                var ignoreLabels = new LinkedHashSet<String>();
+                // Ignore issues with feedback request labels,
+                // since they evidently got some attention from the team already.
+                ignoreLabels.addAll(config.maintenance().feedback().labels());
+                ignoreLabels.addAll(config.maintenance().created().ignoreLabels());
+                var history = lotteryHistory.created();
+                draws.add(created.createDraw(
+                        repo.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween(areaLabel, ignoreLabels,
+                                maintainerUsernames, minCutoff,
+                                maxCutoff)
+                                .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
+                                .iterator(),
+                        allWinnings));
+            }
             // Remove duplicates, but preserve order
             Set<String> needFeedbackLabels = new LinkedHashSet<>(config.maintenance().feedback().labels());
             if (feedbackNeeded.hasParticipation()) {

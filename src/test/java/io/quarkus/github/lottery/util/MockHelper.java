@@ -83,6 +83,21 @@ public class MockHelper {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
+                Optional.empty());
+    }
+
+    public static LotteryReport stubReportCreated(DrawRef drawRef,
+            String username,
+            Optional<ZoneId> timezone,
+            List<String> maintenanceLabels,
+            List<Issue> created) {
+        return stubReport(drawRef, username, timezone, stubReportConfig(maintenanceLabels.toArray(String[]::new)),
+                Optional.empty(),
+                Optional.of(created),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 Optional.empty());
     }
 
@@ -93,6 +108,7 @@ public class MockHelper {
             List<Issue> feedbackNeeded,
             List<Issue> feedbackProvided) {
         return stubReport(drawRef, username, timezone, stubReportConfig(maintenanceLabels.toArray(String[]::new)),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.of(feedbackNeeded),
                 Optional.of(feedbackProvided),
@@ -108,6 +124,7 @@ public class MockHelper {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 Optional.of(stale),
                 Optional.empty());
     }
@@ -116,11 +133,13 @@ public class MockHelper {
             String username,
             Optional<ZoneId> timezone,
             List<String> maintenanceLabels,
+            List<Issue> created,
             List<Issue> feedbackNeeded,
             List<Issue> feedbackProvided,
             List<Issue> stale) {
         return stubReport(drawRef, username, timezone, stubReportConfig(maintenanceLabels.toArray(String[]::new)),
                 Optional.empty(),
+                Optional.of(created),
                 Optional.of(feedbackNeeded),
                 Optional.of(feedbackProvided),
                 Optional.of(stale),
@@ -136,6 +155,7 @@ public class MockHelper {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 Optional.of(stewardship));
     }
 
@@ -144,12 +164,14 @@ public class MockHelper {
             Optional<ZoneId> timezone,
             LotteryReport.Config config,
             Optional<List<Issue>> triage,
+            Optional<List<Issue>> created,
             Optional<List<Issue>> feedbackNeeded,
             Optional<List<Issue>> feedbackProvided,
             Optional<List<Issue>> stale,
             Optional<List<Issue>> stewardship) {
         return new LotteryReport(drawRef, username, timezone, config,
                 triage.map(LotteryReport.Bucket::new),
+                created.map(LotteryReport.Bucket::new),
                 feedbackNeeded.map(LotteryReport.Bucket::new),
                 feedbackProvided.map(LotteryReport.Bucket::new),
                 stale.map(LotteryReport.Bucket::new),
@@ -225,7 +247,7 @@ public class MockHelper {
         GHUser mock = context.ghObject(GHUser.class, id);
         when(mock.getLogin()).thenReturn(login);
         if (permissionType != null) {
-            when(repositoryMock.getPermission(mock)).thenReturn(permissionType);
+            when(repositoryMock.getPermission(login)).thenReturn(permissionType);
         }
         return mock;
     }

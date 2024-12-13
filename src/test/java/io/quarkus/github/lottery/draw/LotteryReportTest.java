@@ -42,6 +42,7 @@ class LotteryReportTest {
                 newBucket(buckets),
                 newBucket(buckets),
                 newBucket(buckets),
+                newBucket(buckets),
                 newBucket(buckets));
         assertThat(report.buckets()).containsExactlyInAnyOrderElementsOf(buckets);
     }

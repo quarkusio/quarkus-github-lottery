@@ -20,13 +20,14 @@ public record LotteryReport(
         Optional<ZoneId> timezone,
         Config config,
         Optional<Bucket> triage,
+        Optional<Bucket> created,
         Optional<Bucket> feedbackNeeded,
         Optional<Bucket> feedbackProvided,
         Optional<Bucket> stale,
         Optional<Bucket> stewardship) {
 
     Stream<Bucket> buckets() {
-        return Stream.of(triage, feedbackNeeded, feedbackProvided, stale, stewardship)
+        return Stream.of(triage, created, feedbackNeeded, feedbackProvided, stale, stewardship)
                 .filter(Optional::isPresent)
                 .map(Optional::get);
     }
@@ -59,6 +60,7 @@ public record LotteryReport(
 
     public Serialized serialized() {
         return new Serialized(drawRef.instant(), username, triage.map(Bucket::serialized),
+                created.map(Bucket::serialized),
                 feedbackNeeded.map(Bucket::serialized),
                 feedbackProvided.map(Bucket::serialized),
                 stale.map(Bucket::serialized),
@@ -69,6 +71,7 @@ public record LotteryReport(
             Instant instant,
             String username,
             Optional<Bucket.Serialized> triage,
+            Optional<Bucket.Serialized> created,
             @JsonAlias("reproducerNeeded") Optional<Bucket.Serialized> feedbackNeeded,
             @JsonAlias("reproducerProvided") Optional<Bucket.Serialized> feedbackProvided,
             Optional<Bucket.Serialized> stale,

@@ -84,6 +84,7 @@ public final class Participant {
                         feedbackLabels,
                         maintenance.map(m -> m.labels).orElseGet(Set::of)),
                 triage.map(Participation::issues).map(LotteryReport.Bucket::new),
+                maintenance.flatMap(m -> m.created).map(Participation::issues).map(LotteryReport.Bucket::new),
                 maintenance.flatMap(m -> m.feedbackNeeded).map(Participation::issues).map(LotteryReport.Bucket::new),
                 maintenance.flatMap(m -> m.feedbackProvided).map(Participation::issues).map(LotteryReport.Bucket::new),
                 maintenance.flatMap(m -> m.stale).map(Participation::issues).map(LotteryReport.Bucket::new),
@@ -92,6 +93,8 @@ public final class Participant {
 
     private static final class Maintenance {
         public static Optional<Maintenance> create(String username, LotteryConfig.Participant.Maintenance config) {
+            var created = config.created()
+                    .flatMap(p -> Participation.create(username, p));
             var feedbackNeeded = config.feedback().map(LotteryConfig.Participant.Maintenance.Feedback::needed)
                     .flatMap(p -> Participation.create(username, p));
             var feedbackProvided = config.feedback().map(LotteryConfig.Participant.Maintenance.Feedback::provided)
@@ -99,24 +102,30 @@ public final class Participant {
             var stale = config.stale()
                     .flatMap(p -> Participation.create(username, p));
 
-            if (feedbackNeeded.isEmpty() && feedbackProvided.isEmpty() && stale.isEmpty()) {
+            if (created.isEmpty() && feedbackNeeded.isEmpty() && feedbackProvided.isEmpty() && stale.isEmpty()) {
                 return Optional.empty();
             }
 
-            return Optional.of(new Maintenance(config.labels(), feedbackNeeded, feedbackProvided, stale));
+            return Optional.of(new Maintenance(username, config.labels(), created, feedbackNeeded, feedbackProvided, stale));
         }
 
+        private final String username;
         private final Set<String> labels;
 
+        private final Optional<Participation> created;
         private final Optional<Participation> feedbackNeeded;
         private final Optional<Participation> feedbackProvided;
         private final Optional<Participation> stale;
 
-        private Maintenance(List<String> labels, Optional<Participation> feedbackNeeded,
+        private Maintenance(String username, List<String> labels,
+                Optional<Participation> created,
+                Optional<Participation> feedbackNeeded,
                 Optional<Participation> feedbackProvided,
                 Optional<Participation> stale) {
+            this.username = username;
             // Remove duplicates, but preserve order
             this.labels = new LinkedHashSet<>(labels);
+            this.created = created;
             this.feedbackNeeded = feedbackNeeded;
             this.feedbackProvided = feedbackProvided;
             this.stale = stale;
@@ -125,6 +134,7 @@ public final class Participant {
         public void participate(Lottery lottery) {
             for (String label : labels) {
                 Lottery.Maintenance maintenance = lottery.maintenance(label);
+                created.ifPresent(maintenance.created()::participate);
                 feedbackNeeded.ifPresent(maintenance.feedbackNeeded()::participate);
                 feedbackProvided.ifPresent(maintenance.feedbackProvided()::participate);
                 stale.ifPresent(maintenance.stale()::participate);
