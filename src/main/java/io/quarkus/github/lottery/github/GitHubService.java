@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
+
+import io.quarkus.github.lottery.config.DeploymentConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -18,6 +20,8 @@ import org.kohsuke.github.GitHub;
 @ApplicationScoped
 public class GitHubService {
 
+    @Inject
+    DeploymentConfig deploymentConfig;
     @Inject
     Clock clock;
     @Inject
@@ -44,6 +48,6 @@ public class GitHubService {
     }
 
     public GitHubRepository repository(GitHubRepositoryRef ref) {
-        return new GitHubRepository(clock, clientProvider, configFileProvider, messageFormatter, ref);
+        return new GitHubRepository(deploymentConfig, clock, clientProvider, configFileProvider, messageFormatter, ref);
     }
 }

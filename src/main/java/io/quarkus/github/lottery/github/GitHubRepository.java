@@ -27,6 +27,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import io.quarkus.github.lottery.config.DeploymentConfig;
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
@@ -55,6 +56,7 @@ import io.smallrye.graphql.client.dynamic.api.DynamicGraphQLClient;
  */
 public class GitHubRepository implements AutoCloseable {
 
+    private final DeploymentConfig deploymentConfig;
     private final Clock clock;
     private final GitHubClientProvider clientProvider;
     private final GitHubConfigFileProvider configFileProvider;
@@ -66,8 +68,10 @@ public class GitHubRepository implements AutoCloseable {
     private GHRepository repository;
     private DynamicGraphQLClient graphQLClient;
 
-    public GitHubRepository(Clock clock, GitHubClientProvider clientProvider, GitHubConfigFileProvider configFileProvider,
+    public GitHubRepository(DeploymentConfig deploymentConfig, Clock clock,
+            GitHubClientProvider clientProvider, GitHubConfigFileProvider configFileProvider,
             MessageFormatter messageFormatter, GitHubRepositoryRef ref) {
+        this.deploymentConfig = deploymentConfig;
         this.clock = clock;
         this.clientProvider = clientProvider;
         this.configFileProvider = configFileProvider;
@@ -337,6 +341,12 @@ public class GitHubRepository implements AutoCloseable {
          */
         public void update(String topicSuffix, String markdownBody, boolean comment)
                 throws IOException {
+            if (deploymentConfig.dryRun()) {
+                Log.infof("[DRY RUN] Topic update:\n\tTopic:%s\n\tSuffix:%s\n\tBody:%s\n\tComment:%s",
+                        ref, topicSuffix, markdownBody, comment);
+                return;
+            }
+
             var dedicatedIssue = getDedicatedIssues().findFirst();
             if (ref.expectedSuffixStart() != null && !topicSuffix.startsWith(ref.expectedSuffixStart())
                     || ref.expectedSuffixStart() == null && !topicSuffix.isEmpty()) {
