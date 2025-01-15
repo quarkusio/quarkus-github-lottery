@@ -1,15 +1,19 @@
 package io.quarkus.github.lottery.util;
 
+import java.io.InterruptedIOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BinaryOperator;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.kohsuke.github.GHException;
 import org.kohsuke.github.PagedIterable;
+import org.kohsuke.github.PagedIterator;
 
 public final class Streams {
 
@@ -63,10 +67,17 @@ public final class Streams {
     }
 
     public static <T> Stream<T> toStream(PagedIterable<T> iterable) {
-        return StreamSupport.stream(iterable.spliterator(), false);
+        return StreamSupport.stream(spliterator(iterable), false);
+    }
+
+    private static <T> Spliterator<T> spliterator(PagedIterable<T> iterable) {
+        var pagedIterator = iterable.iterator();
+        var workaroundIterator = new RetryingIterator<>(pagedIterator);
+        return Spliterators.spliteratorUnknownSize(workaroundIterator, 0);
     }
 
     public static <T> BinaryOperator<T> last() {
         return (first, second) -> second;
     }
+
 }
