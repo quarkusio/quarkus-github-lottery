@@ -21,3 +21,14 @@ updates:
       # Releases too often, it's annoying
       - dependency-name: "org.assertj:*"
         update-types: ["version-update:semver-patch"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: monthly
+    groups:
+      workflow-actions:
+        patterns:
+          - "*"
+    allow:
+      - dependency-name: "actions/*"
+      - dependency-name: "redhat-actions/*"
