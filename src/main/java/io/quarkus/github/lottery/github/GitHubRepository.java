@@ -10,7 +10,6 @@ import static io.quarkus.github.lottery.github.GitHubSearchClauses.label;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.not;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.repo;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.updated;
-import static io.quarkus.github.lottery.util.Streams.toStream;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
@@ -36,6 +35,7 @@ import org.kohsuke.github.GHIssueSearchBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.PagedIterable;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -469,6 +469,10 @@ public class GitHubRepository implements AutoCloseable {
         } catch (Exception e) {
             throw new RuntimeException("Could not minimize comment " + comment.getNodeId(), e);
         }
+    }
+
+    private <T> Stream<T> toStream(PagedIterable<T> iterable) {
+        return Streams.toStream(iterable.withPageSize(deploymentConfig.chunkSize()));
     }
 
 }
