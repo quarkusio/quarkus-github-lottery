@@ -580,25 +580,10 @@ public class GitHubServiceTest {
                     var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, "somebot[bot]");
                     var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, "somereporter");
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock)
-                            .thenReturn(searchIssuesBuilderMock);
-                    var issue1Mock = mockIssueForLottery(mocks, 1, randomReporterUser);
-                    var issue2Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 2, randomReporterUser);
-                    var issue3Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 3, randomReporterUser);
-                    var issue4Mock = mockIssueForLottery(mocks, 4);
-                    var issue5Mock = mockIssueForLottery(mocks, 5, randomReporterUser);
-                    // issue6 used to be one after the cutoff, filtered out on the client side,
-                    // but that's handled server-side now.
-                    // Keeping this gap in numbering to avoid an even worse diff.
-                    var issue7Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 7, randomReporterUser);
-                    var issue8Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 8, writeUser);
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock,
-                            issue7Mock, issue8Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
-
                     var needsReproducerLabelMock = mockLabel("triage/needs-reproducer");
                     var areaHibernateSearchLabelMock = mockLabel("area/hibernate-search");
 
+                    var issue1Mock = mockIssueForLottery(mocks, 1, randomReporterUser);
                     var issue1Event1Mock = mockIssueEvent("created");
                     var issue1Event2Mock = mockIssueEvent("labeled");
                     when(issue1Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
@@ -614,6 +599,7 @@ public class GitHubServiceTest {
                     when(issue1Mock.queryComments()).thenReturn(issue1QueryCommentsBuilderMock);
                     when(issue1QueryCommentsBuilderMock.list()).thenReturn(issue1CommentsMocks);
 
+                    var issue2Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 2, randomReporterUser);
                     var issue2Event1Mock = mockIssueEvent("created");
                     var issue2Event2Mock = mockIssueEvent("labeled");
                     when(issue2Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
@@ -629,6 +615,7 @@ public class GitHubServiceTest {
                     when(issue2Mock.queryComments()).thenReturn(issue2QueryCommentsBuilderMock);
                     when(issue2QueryCommentsBuilderMock.list()).thenReturn(issue2CommentsMocks);
 
+                    var issue3Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 3, randomReporterUser);
                     PagedSearchIterable<GHIssueEvent> issue3EventsMocks = mockPagedIterable();
                     when(issue3Mock.listEvents()).thenReturn(issue3EventsMocks);
                     var issue3CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 301, adminUser),
@@ -636,12 +623,14 @@ public class GitHubServiceTest {
                     when(issue3Mock.queryComments()).thenReturn(issue3QueryCommentsBuilderMock);
                     when(issue3QueryCommentsBuilderMock.list()).thenReturn(issue3CommentsMocks);
 
+                    var issue4Mock = mockIssueForLottery(mocks, 4);
                     PagedSearchIterable<GHIssueEvent> issue4EventsMocks = mockPagedIterable();
                     when(issue4Mock.listEvents()).thenReturn(issue4EventsMocks);
                     PagedSearchIterable<GHIssueComment> issue4CommentsMocks = mockPagedIterable();
                     when(issue4Mock.queryComments()).thenReturn(issue4QueryCommentsBuilderMock);
                     when(issue4QueryCommentsBuilderMock.list()).thenReturn(issue4CommentsMocks);
 
+                    var issue5Mock = mockIssueForLottery(mocks, 5, randomReporterUser);
                     var issue5Event1Mock = mockIssueEvent("created");
                     var issue5Event2Mock = mockIssueEvent("locked");
                     var issue5EventsMocks = mockPagedIterable(issue5Event1Mock, issue5Event2Mock);
@@ -651,7 +640,12 @@ public class GitHubServiceTest {
                     when(issue5Mock.queryComments()).thenReturn(issue5QueryCommentsBuilderMock);
                     when(issue5QueryCommentsBuilderMock.list()).thenReturn(issue5CommentsMocks);
 
+                    // issue6 used to be one after the cutoff, filtered out on the client side,
+                    // but that's handled server-side now.
+                    // Keeping this gap in numbering to avoid an even worse diff.
+
                     // This is like issue 2, but a bot commented after the user -- which should be ignored.
+                    var issue7Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 7, randomReporterUser);
                     var issue7Event1Mock = mockIssueEvent("created");
                     var issue7Event2Mock = mockIssueEvent("labeled");
                     when(issue7Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
@@ -669,6 +663,7 @@ public class GitHubServiceTest {
                     when(issue7QueryCommentsBuilderMock.list()).thenReturn(issue7CommentsMocks);
 
                     // This is like issue 2, but the reporter is a team member -- so should be considered as an outsider.
+                    var issue8Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 8, writeUser);
                     var issue8Event1Mock = mockIssueEvent("created");
                     var issue8Event2Mock = mockIssueEvent("labeled");
                     when(issue8Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
@@ -683,6 +678,12 @@ public class GitHubServiceTest {
                             mockIssueComment(mocks, 802, writeUser));
                     when(issue8Mock.queryComments()).thenReturn(issue8QueryCommentsBuilderMock);
                     when(issue8QueryCommentsBuilderMock.list()).thenReturn(issue8CommentsMocks);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock)
+                            .thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock,
+                            issue7Mock, issue8Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -754,25 +755,11 @@ public class GitHubServiceTest {
                     var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, "somebot[bot]");
                     var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, "somereporter");
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
-                    // Pull requests should always be filtered out
-                    var issue1Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 1, randomReporterUser);
-                    var issue2Mock = mockIssueForLottery(mocks, 2, randomReporterUser);
-                    var issue3Mock = mockIssueForLottery(mocks, 3, randomReporterUser);
-                    var issue4Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 4);
-                    var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, randomReporterUser);
-                    // issue6 used to be one after the cutoff, filtered out on the client side,
-                    // but that's handled server-side now.
-                    // Keeping this gap in numbering to avoid an even worse diff.
-                    var issue7Mock = mockIssueForLottery(mocks, 7, randomReporterUser);
-                    var issue8Mock = mockIssueForLottery(mocks, 8, writeUser);
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock,
-                            issue7Mock, issue8Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
-
                     var needsReproducerLabelMock = mockLabel("triage/needs-reproducer");
                     var areaHibernateSearchLabelMock = mockLabel("area/hibernate-search");
 
+                    // Pull requests should always be filtered out
+                    var issue1Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 1, randomReporterUser);
                     var issue1Event1Mock = mockIssueEvent("created");
                     var issue1Event2Mock = mockIssueEvent("labeled");
                     when(issue1Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
@@ -788,6 +775,7 @@ public class GitHubServiceTest {
                     when(issue1Mock.queryComments()).thenReturn(issue1QueryCommentsBuilderMock);
                     when(issue1QueryCommentsBuilderMock.list()).thenReturn(issue1CommentsMocks);
 
+                    var issue2Mock = mockIssueForLottery(mocks, 2, randomReporterUser);
                     var issue2Event1Mock = mockIssueEvent("created");
                     var issue2Event2Mock = mockIssueEvent("labeled");
                     when(issue2Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
@@ -803,6 +791,7 @@ public class GitHubServiceTest {
                     when(issue2Mock.queryComments()).thenReturn(issue2QueryCommentsBuilderMock);
                     when(issue2QueryCommentsBuilderMock.list()).thenReturn(issue2CommentsMocks);
 
+                    var issue3Mock = mockIssueForLottery(mocks, 3, randomReporterUser);
                     PagedSearchIterable<GHIssueEvent> issue3EventsMocks = mockPagedIterable();
                     when(issue3Mock.listEvents()).thenReturn(issue3EventsMocks);
                     var issue3CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 301, adminUser),
@@ -810,12 +799,14 @@ public class GitHubServiceTest {
                     when(issue3Mock.queryComments()).thenReturn(issue3QueryCommentsBuilderMock);
                     when(issue3QueryCommentsBuilderMock.list()).thenReturn(issue3CommentsMocks);
 
+                    var issue4Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 4);
                     PagedSearchIterable<GHIssueEvent> issue4EventsMocks = mockPagedIterable();
                     when(issue4Mock.listEvents()).thenReturn(issue4EventsMocks);
                     PagedSearchIterable<GHIssueComment> issue4CommentsMocks = mockPagedIterable();
                     when(issue4Mock.queryComments()).thenReturn(issue4QueryCommentsBuilderMock);
                     when(issue4QueryCommentsBuilderMock.list()).thenReturn(issue4CommentsMocks);
 
+                    var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, randomReporterUser);
                     var issue5Event1Mock = mockIssueEvent("created");
                     var issue5Event2Mock = mockIssueEvent("locked");
                     var issue5EventsMocks = mockPagedIterable(issue5Event1Mock, issue5Event2Mock);
@@ -825,7 +816,12 @@ public class GitHubServiceTest {
                     when(issue5Mock.queryComments()).thenReturn(issue5QueryCommentsBuilderMock);
                     when(issue5QueryCommentsBuilderMock.list()).thenReturn(issue5CommentsMocks);
 
+                    // issue6 used to be one after the cutoff, filtered out on the client side,
+                    // but that's handled server-side now.
+                    // Keeping this gap in numbering to avoid an even worse diff.
+
                     // This is like issue 2, but a bot commented after the user -- which should be ignored.
+                    var issue7Mock = mockIssueForLottery(mocks, 7, randomReporterUser);
                     var issue7Event1Mock = mockIssueEvent("created");
                     var issue7Event2Mock = mockIssueEvent("labeled");
                     when(issue7Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
@@ -843,6 +839,7 @@ public class GitHubServiceTest {
                     when(issue7QueryCommentsBuilderMock.list()).thenReturn(issue7CommentsMocks);
 
                     // This is like issue 2, but the reporter is a team member -- so should be considered as an outsider.
+                    var issue8Mock = mockIssueForLottery(mocks, 8, writeUser);
                     var issue8Event1Mock = mockIssueEvent("created");
                     var issue8Event2Mock = mockIssueEvent("labeled");
                     when(issue8Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
@@ -857,6 +854,11 @@ public class GitHubServiceTest {
                             mockIssueComment(mocks, 802, writeUser));
                     when(issue8Mock.queryComments()).thenReturn(issue8QueryCommentsBuilderMock);
                     when(issue8QueryCommentsBuilderMock.list()).thenReturn(issue8CommentsMocks);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock,
+                            issue7Mock, issue8Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -896,20 +898,6 @@ public class GitHubServiceTest {
 
         var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
-        var issue1QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
-                withSettings().defaultAnswer(Answers.RETURNS_SELF));
-        var issue2QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
-                withSettings().defaultAnswer(Answers.RETURNS_SELF));
-        var issue3QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
-                withSettings().defaultAnswer(Answers.RETURNS_SELF));
-        var issue4QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
-                withSettings().defaultAnswer(Answers.RETURNS_SELF));
-        var issue5QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
-                withSettings().defaultAnswer(Answers.RETURNS_SELF));
-        var issue7QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
-                withSettings().defaultAnswer(Answers.RETURNS_SELF));
-        var issue8QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
-                withSettings().defaultAnswer(Answers.RETURNS_SELF));
         given()
                 .github(mocks -> {
                     var clientMock = mocks.installationClient(installationRef.installationId());
@@ -925,52 +913,66 @@ public class GitHubServiceTest {
                     var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, "somebot[bot]");
                     var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, "somereporter");
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
                     var issue1Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 1, randomReporterUser);
-                    var issue2Mock = mockIssueForLottery(mocks, 2, randomReporterUser);
-                    var issue3Mock = mockIssueForLottery(mocks, 3, randomReporterUser);
-                    var issue4Mock = mockIssueForLottery(mocks, 4);
-                    var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, randomReporterUser);
-                    var issue7Mock = mockIssueForLottery(mocks, 7, randomReporterUser);
-                    var issue8Mock = mockIssueForLottery(mocks, 8, writeUser);
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock,
-                            issue7Mock, issue8Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
-
                     var issue1CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 101, noneUser),
                             mockIssueComment(mocks, 102, readUser),
                             mockIssueComment(mocks, 103, adminUser));
+                    var issue1QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue1Mock.queryComments()).thenReturn(issue1QueryCommentsBuilderMock);
                     when(issue1QueryCommentsBuilderMock.list()).thenReturn(issue1CommentsMocks);
 
+                    var issue2Mock = mockIssueForLottery(mocks, 2, randomReporterUser);
                     var issue2CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 202, readUser));
+                    var issue2QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue2Mock.queryComments()).thenReturn(issue2QueryCommentsBuilderMock);
                     when(issue2QueryCommentsBuilderMock.list()).thenReturn(issue2CommentsMocks);
 
+                    var issue3Mock = mockIssueForLottery(mocks, 3, randomReporterUser);
                     var issue3CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 302, noneUser));
+                    var issue3QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue3Mock.queryComments()).thenReturn(issue3QueryCommentsBuilderMock);
                     when(issue3QueryCommentsBuilderMock.list()).thenReturn(issue3CommentsMocks);
 
+                    var issue4Mock = mockIssueForLottery(mocks, 4);
                     PagedSearchIterable<GHIssueComment> issue4CommentsMocks = mockPagedIterable();
+                    var issue4QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue4Mock.queryComments()).thenReturn(issue4QueryCommentsBuilderMock);
                     when(issue4QueryCommentsBuilderMock.list()).thenReturn(issue4CommentsMocks);
 
+                    var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, randomReporterUser);
                     var issue5CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 501, noneUser),
                             mockIssueComment(mocks, 502, writeUser));
+                    var issue5QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue5Mock.queryComments()).thenReturn(issue5QueryCommentsBuilderMock);
                     when(issue5QueryCommentsBuilderMock.list()).thenReturn(issue5CommentsMocks);
 
                     // This is like issue 2, but a bot commented after the user -- which should be ignored.
+                    var issue7Mock = mockIssueForLottery(mocks, 7, randomReporterUser);
                     var issue7CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 701, readUser),
                             mockIssueComment(mocks, 702, botUser));
+                    var issue7QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue7Mock.queryComments()).thenReturn(issue7QueryCommentsBuilderMock);
                     when(issue7QueryCommentsBuilderMock.list()).thenReturn(issue7CommentsMocks);
 
                     // This is like issue 5, but the reporter is a team member -- so his comments should be considered as outsider comments.
+                    var issue8Mock = mockIssueForLottery(mocks, 8, writeUser);
                     var issue8CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 801, noneUser),
                             mockIssueComment(mocks, 802, writeUser));
+                    var issue8QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue8Mock.queryComments()).thenReturn(issue8QueryCommentsBuilderMock);
                     when(issue8QueryCommentsBuilderMock.list()).thenReturn(issue8CommentsMocks);
+
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock,
+                            issue7Mock, issue8Mock);
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -1126,15 +1128,16 @@ public class GitHubServiceTest {
                 .github(mocks -> {
                     var clientMock = mocks.installationClient(installationRef.installationId());
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
                     var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
-                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
+                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
                     PagedSearchIterable<GHIssueComment> issue2CommentMocks = mockPagedIterable();
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -1168,23 +1171,24 @@ public class GitHubServiceTest {
                 .github(mocks -> {
                     var clientMock = mocks.installationClient(installationRef.installationId());
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
-                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
-                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
-
                     var mySelfMock = mocks.ghObject(GHUser.class, 1L);
                     when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
+
+                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
                     var issue2CommentMocks = mockPagedIterable(
                             mockIssueComment(mocks, 201, mySelfMock, "issue2Comment1Mock#body"),
                             mockIssueComment(mocks, 202, mySelfMock, "issue2Comment2Mock#body"),
                             mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -1218,23 +1222,24 @@ public class GitHubServiceTest {
                 .github(mocks -> {
                     var clientMock = mocks.installationClient(installationRef.installationId());
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
-                    var issue1Mock = mockIssueForNotification(mocks, 1, "Lottery history for quarkusio/quarkusio.github.io");
-                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
-
                     var mySelfMock = mocks.ghObject(GHUser.class, 1L);
                     when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "Lottery history for quarkusio/quarkusio.github.io");
+
+                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
                     var issue2Comment1Mock = mockIssueComment(mocks, 202, mySelfMock, "issue2Comment1Mock#body");
                     var issue2Comment2Mock = mockIssueComment(mocks, 203, mySelfMock, "issue2Comment2Mock#body");
                     var issue2Comment3Mock = mockIssueComment(mocks, 204, someoneElseMock);
                     var issue2CommentMocks = mockPagedIterable(issue2Comment1Mock, issue2Comment2Mock, issue2Comment3Mock);
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
                 .when(() -> {
                     var repo = gitHubService.repository(repoRef);
@@ -1273,20 +1278,16 @@ public class GitHubServiceTest {
                 .github(mocks -> {
                     var clientMock = mocks.installationClient(installationRef.installationId());
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
-                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
-                    var issue2Mock = mockIssueForNotification(mocks, 2,
-                            "yrodiere's report for quarkusio/quarkus (updated 2017-11-05T06:00:00Z)");
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
-
-                    when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
-
                     var mySelfMock = mocks.ghObject(GHUser.class, 1L);
                     when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
+
+                    var issue2Mock = mockIssueForNotification(mocks, 2,
+                            "yrodiere's report for quarkusio/quarkus (updated 2017-11-05T06:00:00Z)");
+                    when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
                     var commentToMinimizeMock = mockIssueComment(mocks, 202, mySelfMock);
                     when(commentToMinimizeMock.getNodeId()).thenReturn(commentToMinimizeNodeId);
@@ -1294,6 +1295,10 @@ public class GitHubServiceTest {
                             commentToMinimizeMock,
                             mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
                     when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("yrodiere's report for quarkusio/quarkus",
                             "Some content"))
@@ -1346,19 +1351,15 @@ public class GitHubServiceTest {
                 .github(mocks -> {
                     var clientMock = mocks.installationClient(installationRef.installationId());
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
-                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
-                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
-
-                    when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
-
                     var mySelfMock = mocks.ghObject(GHUser.class, 1L);
                     when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
+
+                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
+                    when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
                     var commentToMinimizeMock = mockIssueComment(mocks, 202, mySelfMock);
                     when(commentToMinimizeMock.getNodeId()).thenReturn(commentToMinimizeNodeId);
@@ -1366,6 +1367,10 @@ public class GitHubServiceTest {
                             mockIssueComment(mocks, 202, mySelfMock),
                             mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
                     when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("Lottery history for quarkusio/quarkus",
                             "Some content"))
@@ -1416,19 +1421,15 @@ public class GitHubServiceTest {
                 .github(mocks -> {
                     var clientMock = mocks.installationClient(installationRef.installationId());
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
-                    var issue1Mock = mockIssueForNotification(mocks, 1, "Lottery history for quarkusio/quarkusio.github.io");
-                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
-
-                    when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
-
                     var mySelfMock = mocks.ghObject(GHUser.class, 1L);
                     when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "Lottery history for quarkusio/quarkusio.github.io");
+
+                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
+                    when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
                     var commentToMinimizeMock = mockIssueComment(mocks, 202, mySelfMock);
                     when(commentToMinimizeMock.getNodeId()).thenReturn(commentToMinimizeNodeId);
@@ -1436,6 +1437,10 @@ public class GitHubServiceTest {
                             mockIssueComment(mocks, 202, mySelfMock),
                             mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
                     when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("Lottery history for quarkusio/quarkus",
                             "Some content"))
@@ -1486,20 +1491,16 @@ public class GitHubServiceTest {
                 .github(mocks -> {
                     var clientMock = mocks.installationClient(installationRef.installationId());
 
-                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
-                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
-                    var issue2Mock = mockIssueForNotification(mocks, 2,
-                            "yrodiere's report for quarkusio/quarkus (updated 2017-11-05T06:00:00Z)");
-                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
-                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
-
-                    when(issue2Mock.getState()).thenReturn(GHIssueState.CLOSED);
-
                     var mySelfMock = mocks.ghObject(GHUser.class, 1L);
                     when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
                     var someoneElseMock = mocks.ghObject(GHUser.class, 2L);
                     when(someoneElseMock.getLogin()).thenReturn("yrodiere");
 
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
+
+                    var issue2Mock = mockIssueForNotification(mocks, 2,
+                            "yrodiere's report for quarkusio/quarkus (updated 2017-11-05T06:00:00Z)");
+                    when(issue2Mock.getState()).thenReturn(GHIssueState.CLOSED);
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
                     var commentToMinimizeMock = mockIssueComment(mocks, 202, mySelfMock);
                     when(commentToMinimizeMock.getNodeId()).thenReturn(commentToMinimizeNodeId);
@@ -1507,6 +1508,10 @@ public class GitHubServiceTest {
                             mockIssueComment(mocks, 202, mySelfMock),
                             mockIssueComment(mocks, 203, someoneElseMock));
                     when(queryCommentsBuilderMock.list()).thenReturn(issue2CommentMocks);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
 
                     when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("yrodiere's report for quarkusio/quarkus",
                             "Some content"))
