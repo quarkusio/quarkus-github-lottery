@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import io.quarkus.github.lottery.config.DeploymentConfig;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -37,7 +38,9 @@ import io.quarkus.scheduler.Scheduled;
 @ApplicationScoped
 public class LotteryService {
 
-    private static final Logger log = LoggerFactory.getLogger(LotteryService.class);
+    @Inject
+    DeploymentConfig deploymentConfig;
+
     @Inject
     GitHubService gitHubService;
 
@@ -99,7 +102,7 @@ public class LotteryService {
             });
         }
 
-        Lottery lottery = new Lottery(now, lotteryConfig.buckets(), maintainerUsernamesByAreaLabel);
+        Lottery lottery = new Lottery(now, deploymentConfig, lotteryConfig.buckets(), maintainerUsernamesByAreaLabel);
 
         try (var notifier = notificationService.notifier(drawRef, lotteryConfig.notifications())) {
             var history = historyService.fetch(drawRef, lotteryConfig);
