@@ -926,7 +926,6 @@ public class GitHubServiceTest {
                     var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, "somereporter");
 
                     when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
-                    // Pull requests should always be filtered out
                     var issue1Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 1, randomReporterUser);
                     var issue2Mock = mockIssueForLottery(mocks, 2, randomReporterUser);
                     var issue3Mock = mockIssueForLottery(mocks, 3, randomReporterUser);
@@ -967,7 +966,7 @@ public class GitHubServiceTest {
                     when(issue7Mock.queryComments()).thenReturn(issue7QueryCommentsBuilderMock);
                     when(issue7QueryCommentsBuilderMock.list()).thenReturn(issue7CommentsMocks);
 
-                    // This is like issue 2, but the reporter is a team member -- so should be considered as an outsider.
+                    // This is like issue 5, but the reporter is a team member -- so his comments should be considered as outsider comments.
                     var issue8CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 801, noneUser),
                             mockIssueComment(mocks, 802, writeUser));
                     when(issue8Mock.queryComments()).thenReturn(issue8QueryCommentsBuilderMock);
