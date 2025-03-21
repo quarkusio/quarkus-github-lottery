@@ -64,8 +64,12 @@ public class MockHelper {
         return IntStream.of(numbers).mapToObj(MockHelper::stubIssue).toList();
     }
 
-    private static Issue stubIssue(int number) {
-        return new Issue(number, "Title for issue " + number, url(number));
+    public static Issue stubIssue(int number) {
+        return stubIssue(number, "unsetAuthor#" + number);
+    }
+
+    public static Issue stubIssue(int number, String author) {
+        return new Issue(number, "Title for issue " + number, author, url(number));
     }
 
     public static LotteryReport.Config stubReportConfig(String... maintenanceLabels) {
@@ -180,20 +184,18 @@ public class MockHelper {
 
     public static GHIssue mockIssueForLottery(GitHubMockContext context, int number)
             throws IOException {
-        GHIssue mock = context.issue(10000L + number);
-        when(mock.getNumber()).thenReturn(number);
-        when(mock.getTitle()).thenReturn("Title for issue " + number);
-        when(mock.getHtmlUrl()).thenReturn(url(number));
-        return mock;
+        var authorMock = context.ghObject(GHUser.class, 90000L + number);
+        when(authorMock.getLogin()).thenReturn("unsetAuthor#" + number);
+        return mockIssueForLottery(context, number, authorMock);
     }
 
-    public static GHIssue mockIssueForLottery(GitHubMockContext context, int number, GHUser reporter)
+    public static GHIssue mockIssueForLottery(GitHubMockContext context, int number, GHUser author)
             throws IOException {
         GHIssue mock = context.issue(10000L + number);
         when(mock.getNumber()).thenReturn(number);
         when(mock.getTitle()).thenReturn("Title for issue " + number);
         when(mock.getHtmlUrl()).thenReturn(url(number));
-        when(mock.getUser()).thenReturn(reporter);
+        when(mock.getUser()).thenReturn(author);
         return mock;
     }
 

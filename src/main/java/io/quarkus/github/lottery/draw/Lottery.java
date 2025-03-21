@@ -12,12 +12,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.BiPredicate;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.Issue;
 import io.quarkus.github.lottery.github.IssueActionSide;
 import io.quarkus.github.lottery.history.LotteryHistory;
+import io.quarkus.github.lottery.util.BufferingIterator;
 import io.quarkus.logging.Log;
 
 /**
@@ -165,7 +167,10 @@ public final class Lottery {
                                 maxCutoff)
                                 .filter(issue -> history.lastNotificationTimedOutForIssueNumber(issue.number()))
                                 .iterator(),
-                        allWinnings));
+                        allWinnings,
+                        // Don't notify maintainers about issues/PRs they created themselves:
+                        // they already know about them, and needs *someone else* to have a look.
+                        ((participation, issue) -> !participation.username().equals(issue.author()))));
             }
             // Remove duplicates, but preserve order
             Set<String> needFeedbackLabels = new LinkedHashSet<>(config.maintenance().feedback().labels());
@@ -247,24 +252,33 @@ public final class Lottery {
         }
 
         Draw createDraw(Iterator<Issue> issueIterator, Set<Integer> allWinnings) {
+            return createDraw(issueIterator, allWinnings, (ignored1, ignored2) -> true);
+        }
+
+        Draw createDraw(Iterator<Issue> issueIterator, Set<Integer> allWinnings,
+                BiPredicate<Participation, Issue> compatibilityFilter) {
             // Shuffle participations so that prizes are not always assigned in the same order.
             List<Participation> shuffledParticipations = new ArrayList<>(participations);
             Collections.shuffle(shuffledParticipations, random);
-            return new Draw(name, shuffledParticipations, issueIterator, allWinnings);
+            return new Draw(name, shuffledParticipations, issueIterator, allWinnings, compatibilityFilter);
         }
     }
 
     private static class Draw {
         private final String name;
         private final List<Participation> shuffledParticipations;
-        private final Iterator<Issue> issueIterator;
+        private final BufferingIterator<Issue> issueIterator;
         private final Set<Integer> allWinnings;
+        private final BiPredicate<Participation, Issue> compatibilityFilter;
 
-        Draw(String name, List<Participation> shuffledParticipations, Iterator<Issue> issueIterator, Set<Integer> allWinnings) {
+        Draw(String name, List<Participation> shuffledParticipations, Iterator<Issue> issueIterator,
+                Set<Integer> allWinnings,
+                BiPredicate<Participation, Issue> compatibilityFilter) {
             this.name = name;
             this.shuffledParticipations = shuffledParticipations;
-            this.issueIterator = issueIterator;
+            this.issueIterator = new BufferingIterator<>(issueIterator);
             this.allWinnings = allWinnings;
+            this.compatibilityFilter = compatibilityFilter;
         }
 
         @Override
@@ -282,24 +296,52 @@ public final class Lottery {
             // We proceed in rounds, each round yielding
             // at most one prize to each participation (if there are enough prizes),
             // so that prizes are spread evenly across participations.
-            for (Participation participation : shuffledParticipations) {
+            for (var participationIterator = shuffledParticipations.iterator(); participationIterator.hasNext();) {
+                Participation participation = participationIterator.next();
+                // Re-consider previously skipped issues
+                issueIterator.backToStart();
                 if (!issueIterator.hasNext()) {
                     break;
                 }
-                Issue issue = issueIterator.next();
-                int issueNumber = issue.number();
-                if (!allWinnings.add(issueNumber)) {
-                    // This issue was already won, either in this draw or in a parallel one.
-                    // Skip it, to avoid notifying twice about the same issue.
+
+                Issue issue = null;
+                while (issueIterator.hasNext() && issue == null) {
+                    Issue issueCandidate = issueIterator.next();
+                    if (!compatibilityFilter.test(participation, issueCandidate)) {
+                        // Can't use this issue for this participation.
+                        // Skip it, but keep the issue for another participation.
+                        Log.tracef("Draw %s skipping issue %s for %s due to incompatibility", name, issueCandidate.number(),
+                                participation);
+                        continue;
+                    }
+                    if (!allWinnings.add(issueCandidate.number())) {
+                        // This issue was already won, either in this draw or in a parallel one.
+                        // Skip it, to avoid notifying twice about the same issue,
+                        // and remove it, because it can't be used even for another participation.
+                        issueIterator.remove();
+                        continue;
+                    }
+
+                    // We found an issue!
+                    issue = issueCandidate;
+                    issueIterator.remove();
+                }
+
+                if (issue == null) {
+                    // Cannot find any issue for this participation anymore
+                    participationIterator.remove();
                     continue;
                 }
+
                 participation.issues.add(issue);
-                Log.tracef("Draw %s assigned issue %s to %s", name, issueNumber, participation);
+                Log.tracef("Draw %s assigned issue %s to %s", name, issue.number(), participation);
             }
             Log.tracef("End of round for draw %s", name);
 
             removeMaxedOutParticipations();
 
+            // Re-consider previously skipped issues
+            issueIterator.backToStart();
             if (!shuffledParticipations.isEmpty() && issueIterator.hasNext()) {
                 Log.tracef("Draw %s may run again", name);
                 return State.RUNNING;

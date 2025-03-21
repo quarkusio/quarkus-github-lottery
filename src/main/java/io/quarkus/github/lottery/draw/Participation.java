@@ -33,6 +33,10 @@ final class Participation {
         return "Participation[username=" + username + ", maxIssues=" + maxIssues + "]";
     }
 
+    String username() {
+        return username;
+    }
+
     List<Issue> issues() {
         return issues;
     }

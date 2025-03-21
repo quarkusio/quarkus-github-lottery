@@ -9,6 +9,7 @@ import static io.quarkus.github.lottery.util.MockHelper.mockIssueForNotification
 import static io.quarkus.github.lottery.util.MockHelper.mockLabel;
 import static io.quarkus.github.lottery.util.MockHelper.mockPagedIterable;
 import static io.quarkus.github.lottery.util.MockHelper.mockUserForInspectedComments;
+import static io.quarkus.github.lottery.util.MockHelper.stubIssue;
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -79,6 +80,13 @@ import io.quarkus.test.junit.QuarkusTest;
 public class GitHubServiceTest {
 
     private final GitHubInstallationRef installationRef = new GitHubInstallationRef("quarkus-github-lottery", 1234L);
+
+    private final String adminUserName = "someadmin";
+    private final String readUserName = "somereader";
+    private final String randomReporterUserName = "somereporter";
+    private final String strangerUserName = "somestranger";
+    private final String botUserName = "somebot[bot]";
+    private final String writeUserName = "somewriter";
 
     @Inject
     GitHubService gitHubService;
@@ -570,15 +578,15 @@ public class GitHubServiceTest {
                     var clientMock = mocks.installationClient(installationRef.installationId());
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
-                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, "someadmin",
+                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, adminUserName,
                             GHPermissionType.ADMIN);
-                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, "somewriter",
+                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, writeUserName,
                             GHPermissionType.WRITE);
-                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, "somereader", GHPermissionType.READ);
-                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, "somestranger",
+                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, readUserName, GHPermissionType.READ);
+                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, strangerUserName,
                             GHPermissionType.NONE);
-                    var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, "somebot[bot]");
-                    var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, "somereporter");
+                    var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, botUserName);
+                    var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, randomReporterUserName);
 
                     var needsReproducerLabelMock = mockLabel("triage/needs-reproducer");
                     var areaHibernateSearchLabelMock = mockLabel("area/hibernate-search");
@@ -691,7 +699,10 @@ public class GitHubServiceTest {
                     assertThat(repo.issuesLastActedOnByAndLastUpdatedBefore(
                             new LinkedHashSet<>(List.of("triage/needs-feedback", "triage/needs-reproducer")),
                             "area/hibernate-search", IssueActionSide.TEAM, cutoff))
-                            .containsExactlyElementsOf(stubIssueList(1, 4, 5));
+                            .containsExactlyElementsOf(List.of(
+                                    stubIssue(1, randomReporterUserName),
+                                    stubIssue(4),
+                                    stubIssue(5, randomReporterUserName)));
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
@@ -745,15 +756,15 @@ public class GitHubServiceTest {
                     var clientMock = mocks.installationClient(installationRef.installationId());
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
-                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, "someadmin",
+                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, adminUserName,
                             GHPermissionType.ADMIN);
-                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, "somewriter",
+                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, writeUserName,
                             GHPermissionType.WRITE);
-                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, "somereader", GHPermissionType.READ);
-                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, "somestranger",
+                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, readUserName, GHPermissionType.READ);
+                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, strangerUserName,
                             GHPermissionType.NONE);
-                    var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, "somebot[bot]");
-                    var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, "somereporter");
+                    var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, botUserName);
+                    var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, randomReporterUserName);
 
                     var needsReproducerLabelMock = mockLabel("triage/needs-reproducer");
                     var areaHibernateSearchLabelMock = mockLabel("area/hibernate-search");
@@ -866,7 +877,11 @@ public class GitHubServiceTest {
                     assertThat(repo.issuesLastActedOnByAndLastUpdatedBefore(
                             new LinkedHashSet<>(List.of("triage/needs-feedback", "triage/needs-reproducer")),
                             "area/hibernate-search", IssueActionSide.OUTSIDER, cutoff))
-                            .containsExactlyElementsOf(stubIssueList(2, 3, 7, 8));
+                            .containsExactlyElementsOf(List.of(
+                                    stubIssue(2, randomReporterUserName),
+                                    stubIssue(3, randomReporterUserName),
+                                    stubIssue(7, randomReporterUserName),
+                                    stubIssue(8, writeUserName)));
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
@@ -892,28 +907,34 @@ public class GitHubServiceTest {
     void issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween() throws IOException {
         var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
 
+        String maintainerUserName = "yrodiere";
+
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         Instant minCutoff = now.minus(14, ChronoUnit.DAYS);
         Instant maxCutoff = now.minus(0, ChronoUnit.DAYS);
 
         var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var issue10QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
         given()
                 .github(mocks -> {
                     var clientMock = mocks.installationClient(installationRef.installationId());
                     var repositoryMock = mocks.repository(repoRef.repositoryName());
 
-                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, "someadmin",
+                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, adminUserName,
                             GHPermissionType.ADMIN);
-                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, "somewriter",
+                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, writeUserName,
                             GHPermissionType.WRITE);
-                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, "somereader", GHPermissionType.READ);
-                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, "somestranger",
+                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, readUserName, GHPermissionType.READ);
+                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, strangerUserName,
                             GHPermissionType.NONE);
-                    var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, "somebot[bot]");
-                    var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, "somereporter");
+                    var botUser = mockUserForInspectedComments(mocks, repositoryMock, 5L, botUserName);
+                    var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L, randomReporterUserName);
+                    var maintainerUser = mockUserForInspectedComments(mocks, repositoryMock, 7L, maintainerUserName);
 
                     var issue1Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 1, randomReporterUser);
+                    when(issue1Mock.isPullRequest()).thenReturn(false);
                     var issue1CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 101, noneUser),
                             mockIssueComment(mocks, 102, readUser),
                             mockIssueComment(mocks, 103, adminUser));
@@ -923,6 +944,7 @@ public class GitHubServiceTest {
                     when(issue1QueryCommentsBuilderMock.list()).thenReturn(issue1CommentsMocks);
 
                     var issue2Mock = mockIssueForLottery(mocks, 2, randomReporterUser);
+                    when(issue2Mock.isPullRequest()).thenReturn(false);
                     var issue2CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 202, readUser));
                     var issue2QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
                             withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -930,13 +952,15 @@ public class GitHubServiceTest {
                     when(issue2QueryCommentsBuilderMock.list()).thenReturn(issue2CommentsMocks);
 
                     var issue3Mock = mockIssueForLottery(mocks, 3, randomReporterUser);
+                    when(issue3Mock.isPullRequest()).thenReturn(false);
                     var issue3CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 302, noneUser));
                     var issue3QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
                             withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue3Mock.queryComments()).thenReturn(issue3QueryCommentsBuilderMock);
                     when(issue3QueryCommentsBuilderMock.list()).thenReturn(issue3CommentsMocks);
 
-                    var issue4Mock = mockIssueForLottery(mocks, 4);
+                    var issue4Mock = mockIssueForLottery(mocks, 4, noneUser);
+                    when(issue4Mock.isPullRequest()).thenReturn(false);
                     PagedSearchIterable<GHIssueComment> issue4CommentsMocks = mockPagedIterable();
                     var issue4QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
                             withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -944,6 +968,7 @@ public class GitHubServiceTest {
                     when(issue4QueryCommentsBuilderMock.list()).thenReturn(issue4CommentsMocks);
 
                     var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, randomReporterUser);
+                    when(issue5Mock.isPullRequest()).thenReturn(false);
                     var issue5CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 501, noneUser),
                             mockIssueComment(mocks, 502, writeUser));
                     var issue5QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
@@ -953,6 +978,7 @@ public class GitHubServiceTest {
 
                     // This is like issue 2, but a bot commented after the user -- which should be ignored.
                     var issue7Mock = mockIssueForLottery(mocks, 7, randomReporterUser);
+                    when(issue7Mock.isPullRequest()).thenReturn(false);
                     var issue7CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 701, readUser),
                             mockIssueComment(mocks, 702, botUser));
                     var issue7QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
@@ -962,6 +988,7 @@ public class GitHubServiceTest {
 
                     // This is like issue 5, but the reporter is a team member -- so his comments should be considered as outsider comments.
                     var issue8Mock = mockIssueForLottery(mocks, 8, writeUser);
+                    when(issue8Mock.isPullRequest()).thenReturn(false);
                     var issue8CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 801, noneUser),
                             mockIssueComment(mocks, 802, writeUser));
                     var issue8QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
@@ -969,8 +996,19 @@ public class GitHubServiceTest {
                     when(issue8Mock.queryComments()).thenReturn(issue8QueryCommentsBuilderMock);
                     when(issue8QueryCommentsBuilderMock.list()).thenReturn(issue8CommentsMocks);
 
+                    // This is like issue 2, but the reporter is a maintainer, and the issue is not a PR -- so the issue should be ignored.
+                    var issue9Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 9, maintainerUser);
+                    when(issue9Mock.isPullRequest()).thenReturn(false);
+
+                    // This is like issue 2, but the reporter is a maintainer, and the issue is a PR -- so the issue should be returned.
+                    var issue10Mock = mockIssueForLottery(mocks, 10, maintainerUser);
+                    when(issue10Mock.isPullRequest()).thenReturn(true);
+                    var issue10CommentsMocks = mockPagedIterable(mockIssueComment(mocks, 1001, noneUser));
+                    when(issue10Mock.queryComments()).thenReturn(issue10QueryCommentsBuilderMock);
+                    when(issue10QueryCommentsBuilderMock.list()).thenReturn(issue10CommentsMocks);
+
                     var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock, issue5Mock,
-                            issue7Mock, issue8Mock);
+                            issue7Mock, issue8Mock, issue9Mock, issue10Mock);
                     when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
                     when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
                 })
@@ -980,9 +1018,15 @@ public class GitHubServiceTest {
                     assertThat(repo.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween(
                             "area/hibernate-search",
                             new LinkedHashSet<>(List.of("triage/needs-feedback", "triage/needs-reproducer", "triage/on-ice")),
-                            Set.of("yrodiere"),
+                            Set.of(maintainerUserName),
                             minCutoff, maxCutoff))
-                            .containsExactlyElementsOf(stubIssueList(2, 3, 4, 7, 8));
+                            .containsExactlyElementsOf(List.of(
+                                    stubIssue(2, randomReporterUserName),
+                                    stubIssue(3, randomReporterUserName),
+                                    stubIssue(4, strangerUserName),
+                                    stubIssue(7, randomReporterUserName),
+                                    stubIssue(8, writeUserName),
+                                    stubIssue(10, maintainerUserName)));
                 })
                 .then().github(mocks -> {
                     verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
