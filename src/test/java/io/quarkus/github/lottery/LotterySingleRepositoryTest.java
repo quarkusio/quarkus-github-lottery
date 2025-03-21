@@ -1,8 +1,10 @@
 package io.quarkus.github.lottery;
 
+import static io.quarkus.github.lottery.util.MockHelper.stubIssue;
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
 import static io.quarkus.github.lottery.util.MockHelper.stubReport;
 import static io.quarkus.github.lottery.util.MockHelper.stubReportConfig;
+import static io.quarkus.github.lottery.util.MockHelper.stubReportCreated;
 import static io.quarkus.github.lottery.util.MockHelper.stubReportMaintenance;
 import static io.quarkus.github.lottery.util.MockHelper.stubReportStewardship;
 import static io.quarkus.github.lottery.util.MockHelper.stubReportTriage;
@@ -553,7 +555,62 @@ public class LotterySingleRepositoryTest {
         verify(repoMock).close();
 
         verifyNoMoreInteractions(mainMocks);
-        verifyNoMoreInteractions(historyFeedbackNeededMock, historyFeedbackProvidedMock, historyStaleMock);
+        verifyNoMoreInteractions(historyCreatedMock, historyFeedbackNeededMock, historyFeedbackProvidedMock, historyStaleMock);
+    }
+
+    @Test
+    void maintenance_created_filterOutSubmittedByMaintainer() throws IOException {
+        var config = defaultConfig(List.of(
+                new LotteryConfig.Participant("yrodiere",
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.of(new LotteryConfig.Participant.Maintenance(
+                                List.of("area/hibernate-orm"),
+                                Set.of(DayOfWeek.MONDAY),
+                                Optional.of(new LotteryConfig.Participant.Participation(5)),
+                                Optional.empty(),
+                                Optional.empty())),
+                        Optional.empty())));
+        when(repoMock.fetchLotteryConfig()).thenReturn(Optional.of(config));
+
+        when(repoMock.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween("area/hibernate-orm",
+                Set.of("triage/needs-reproducer", "triage/needs-feedback", "triage/on-ice"),
+                Set.of("yrodiere"),
+                createdMinCutoff, createdMaxCutoff))
+                .thenAnswer(ignored -> List.of(
+                        stubIssue(701, "yrodiere"),
+                        stubIssue(702),
+                        stubIssue(703, "yrodiere"),
+                        stubIssue(704),
+                        stubIssue(705),
+                        stubIssue(706)).stream());
+
+        mockNotifiable("yrodiere", ZoneOffset.UTC);
+
+        var historyCreatedMock = mock(LotteryHistory.Bucket.class);
+        when(historyMock.created()).thenReturn(historyCreatedMock);
+        when(historyCreatedMock.lastNotificationTimedOutForIssueNumber(anyInt())).thenReturn(true);
+
+        lotteryService.draw();
+
+        verify(notifierMock).send(stubReportCreated(drawRef, "yrodiere", Optional.empty(),
+                List.of("area/hibernate-orm"),
+                stubIssueList(702, 704, 705, 706)));
+
+        verify(historyServiceMock).append(drawRef, config, List.of(
+                new LotteryReport.Serialized(drawRef.instant(), "yrodiere",
+                        Optional.empty(),
+                        Optional.of(new LotteryReport.Bucket.Serialized(List.of(702, 704, 705, 706))),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty())));
+
+        verify(notifierMock).close();
+        verify(repoMock).close();
+
+        verifyNoMoreInteractions(mainMocks);
+        verifyNoMoreInteractions(historyCreatedMock);
     }
 
     @Test

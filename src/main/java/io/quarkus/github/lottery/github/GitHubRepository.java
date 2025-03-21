@@ -27,7 +27,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import io.quarkus.github.lottery.config.DeploymentConfig;
 import org.kohsuke.github.GHDirection;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
@@ -44,6 +43,7 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.quarkiverse.githubapp.ConfigFile;
 import io.quarkiverse.githubapp.GitHubClientProvider;
 import io.quarkiverse.githubapp.GitHubConfigFileProvider;
+import io.quarkus.github.lottery.config.DeploymentConfig;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.message.MessageFormatter;
 import io.quarkus.github.lottery.util.GitHubConstants;
@@ -217,7 +217,7 @@ public class GitHubRepository implements AutoCloseable {
      *        This label is not relevant to determining the last action.
      * @param ignoreLabels GitHub labels. Issues assigned with any of these labels are ignored (not returned).
      * @param ignoreUsers GitHub usernames. Issues are ignored (not returned) if commented on by any of these users,
-     * or of they are not a PR and were submitted by any of these users.
+     *        or of they are not a PR and were submitted by any of these users.
      * @param createdAfter An instant; all returned issues must have been created after that instant.
      * @param createdBefore An instant; all returned issues must have been created before that instant.
      * @return A lazily populated stream of matching issues.
@@ -295,7 +295,8 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     private Function<GHIssue, Issue> toIssueRecord() {
-        return ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getHtmlUrl());
+        return uncheckedIO(ghIssue -> new Issue(ghIssue.getNumber(), ghIssue.getTitle(), ghIssue.getUser().getLogin(),
+                ghIssue.getHtmlUrl()));
     }
 
     /**
