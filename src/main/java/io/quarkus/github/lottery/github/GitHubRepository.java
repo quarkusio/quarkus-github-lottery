@@ -10,7 +10,6 @@ import static io.quarkus.github.lottery.github.GitHubSearchClauses.label;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.not;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.repo;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.updated;
-import static io.quarkus.github.lottery.util.Streams.toStream;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
@@ -36,6 +35,7 @@ import org.kohsuke.github.GHIssueSearchBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
+import org.kohsuke.github.PagedIterable;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -156,7 +156,7 @@ public class GitHubRepository implements AutoCloseable {
         if (!ignoreLabels.isEmpty()) {
             builder.q(not(anyLabel(ignoreLabels)));
         }
-        return toStream(builder.list()).map(toIssueRecord());
+        return toStreamWithPageSize(builder.list()).map(toIssueRecord());
     }
 
     /**
@@ -179,7 +179,7 @@ public class GitHubRepository implements AutoCloseable {
         if (!ignoreLabels.isEmpty()) {
             builder.q(not(anyLabel(ignoreLabels)));
         }
-        return toStream(builder.list()).map(toIssueRecord());
+        return toStreamWithPageSize(builder.list()).map(toIssueRecord());
     }
 
     /**
@@ -196,7 +196,7 @@ public class GitHubRepository implements AutoCloseable {
      */
     public Stream<Issue> issuesLastActedOnByAndLastUpdatedBefore(Set<String> initialActionLabels, String filterLabel,
             IssueActionSide lastActionSide, Instant updatedBefore) {
-        return toStream(searchIssuesOnly()
+        return toStreamWithPageSize(searchIssuesOnly()
                 .isOpen()
                 .q(anyLabel(initialActionLabels))
                 .q(label(filterLabel))
@@ -236,7 +236,7 @@ public class GitHubRepository implements AutoCloseable {
         for (String username : ignoreUsers) {
             builder.q(not(commenter(username)));
         }
-        return toStream(builder.list())
+        return toStreamWithPageSize(builder.list())
                 // We don't want to consider (non-PR) issues created by people in ignoreCommentedBy,
                 // because we assume the author of such issues will initiate discussion themselves.
                 .filter(uncheckedIO((GHIssue i) -> i.isPullRequest() || !ignoreUsers.contains(i.getUser().getLogin()))::apply)
@@ -402,7 +402,7 @@ public class GitHubRepository implements AutoCloseable {
             if (ref.assignee() != null) {
                 builder.q(assignee(ref.assignee()));
             }
-            return toStream(builder.list())
+            return toStreamWithoutPageSize(builder.list())
                     .filter(ref.expectedSuffixStart() != null
                             ? issue -> issue.getTitle().startsWith(ref.topic() + ref.expectedSuffixStart())
                             // Try exact match in this case to avoid confusion if there are two issues and one is
@@ -436,7 +436,7 @@ public class GitHubRepository implements AutoCloseable {
         if (since != null) {
             queryCommentsBuilder.since(Date.from(since));
         }
-        return toStream(queryCommentsBuilder.list())
+        return toStreamWithoutPageSize(queryCommentsBuilder.list())
                 .filter(uncheckedIO((GHIssueComment comment) -> appLogin.equals(comment.getUser().getLogin()))::apply);
     }
 
@@ -445,7 +445,7 @@ public class GitHubRepository implements AutoCloseable {
         if (since != null) {
             queryCommentsBuilder.since(Date.from(since));
         }
-        return toStream(queryCommentsBuilder.list())
+        return toStreamWithoutPageSize(queryCommentsBuilder.list())
                 // Relying on the login rather than getType(), because that would involve an additional request.
                 .filter(uncheckedIO((GHIssueComment comment) -> !comment.getUser().getLogin()
                         .endsWith(GitHubConstants.BOT_LOGIN_SUFFIX))::apply);
@@ -469,6 +469,15 @@ public class GitHubRepository implements AutoCloseable {
         } catch (Exception e) {
             throw new RuntimeException("Could not minimize comment " + comment.getNodeId(), e);
         }
+    }
+
+    private Stream<GHIssue> toStreamWithPageSize(PagedIterable<GHIssue> iterable) {
+        return Streams.toStream(iterable.withPageSize(deploymentConfig.pageSize()));
+    }
+
+    private <T> Stream<T> toStreamWithoutPageSize(PagedIterable<T> iterable) {
+        // Don't apply page size here, that would be counter-productive as we generally don't need to fetch many items.
+        return Streams.toStream(iterable);
     }
 
 }

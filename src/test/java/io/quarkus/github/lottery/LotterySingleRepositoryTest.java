@@ -54,11 +54,14 @@ import io.quarkus.github.lottery.history.HistoryService;
 import io.quarkus.github.lottery.history.LotteryHistory;
 import io.quarkus.github.lottery.notification.NotificationService;
 import io.quarkus.github.lottery.notification.Notifier;
+import io.quarkus.github.lottery.util.NoIssueOrderRandomizationProfile;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.junit.TestProfile;
 
 @QuarkusTest
 @ExtendWith(MockitoExtension.class)
+@TestProfile(NoIssueOrderRandomizationProfile.class) // It's challenging to write assertions that resist randomization of issue order.
 public class LotterySingleRepositoryTest {
 
     private static LotteryConfig defaultConfig(List<LotteryConfig.Participant> participants) {
@@ -843,5 +846,4 @@ public class LotterySingleRepositoryTest {
             assertThat(report.triage().get().issues()).hasSize(2);
         }
     }
-
 }
