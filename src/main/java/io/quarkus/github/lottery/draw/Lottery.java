@@ -14,6 +14,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.function.BiPredicate;
 
+import io.quarkus.github.lottery.config.DeploymentConfig;
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.github.GitHubRepository;
 import io.quarkus.github.lottery.github.Issue;
@@ -28,6 +29,7 @@ import io.quarkus.logging.Log;
 public final class Lottery {
 
     private final Instant now;
+    private final DeploymentConfig deploymentConfig;
     private final LotteryConfig.Buckets config;
     private final Map<String, Set<String>> maintainerUsernamesByAreaLabel;
     private final Random random;
@@ -35,8 +37,10 @@ public final class Lottery {
     private final Map<String, Maintenance> maintenanceByLabel;
     private final Stewardship stewardship;
 
-    public Lottery(Instant now, LotteryConfig.Buckets config, Map<String, Set<String>> maintainerUsernamesByAreaLabel) {
+    public Lottery(Instant now, DeploymentConfig deploymentConfig, LotteryConfig.Buckets config,
+            Map<String, Set<String>> maintainerUsernamesByAreaLabel) {
         this.now = now;
+        this.deploymentConfig = deploymentConfig;
         this.config = config;
         this.maintainerUsernamesByAreaLabel = maintainerUsernamesByAreaLabel;
         this.random = new Random();
@@ -232,6 +236,7 @@ public final class Lottery {
 
     final class Bucket {
         private final String name;
+
         private final List<Participation> participations = new ArrayList<>();
 
         Bucket(String name) {
@@ -258,9 +263,18 @@ public final class Lottery {
         Draw createDraw(Iterator<Issue> issueIterator, Set<Integer> allWinnings,
                 BiPredicate<Participation, Issue> compatibilityFilter) {
             // Shuffle participations so that prizes are not always assigned in the same order.
+            // In particular if there's only one prize, we don't want to always assign it to the same participation.
             List<Participation> shuffledParticipations = new ArrayList<>(participations);
             Collections.shuffle(shuffledParticipations, random);
-            return new Draw(name, shuffledParticipations, issueIterator, allWinnings, compatibilityFilter);
+            int maxIssuesNeeded = participations.stream().mapToInt(p -> p.maxIssues).sum();
+            int chunkSize = Math.min(deploymentConfig.maxChunkSize(),
+                    Math.max(deploymentConfig.minChunkSize(), maxIssuesNeeded));
+            var bufferingIssueIterator = chunkSize == 1
+                    // Don't bother shuffling issues if there's only one per chunk
+                    ? new BufferingIterator<>(issueIterator, 1, ignored -> {
+                    })
+                    : new BufferingIterator<>(issueIterator, chunkSize, issues -> Collections.shuffle(issues, random));
+            return new Draw(name, shuffledParticipations, bufferingIssueIterator, allWinnings, compatibilityFilter);
         }
     }
 
@@ -271,12 +285,11 @@ public final class Lottery {
         private final Set<Integer> allWinnings;
         private final BiPredicate<Participation, Issue> compatibilityFilter;
 
-        Draw(String name, List<Participation> shuffledParticipations, Iterator<Issue> issueIterator,
-                Set<Integer> allWinnings,
-                BiPredicate<Participation, Issue> compatibilityFilter) {
+        Draw(String name, List<Participation> shuffledParticipations, BufferingIterator<Issue> issueIterator,
+                Set<Integer> allWinnings, BiPredicate<Participation, Issue> compatibilityFilter) {
             this.name = name;
             this.shuffledParticipations = shuffledParticipations;
-            this.issueIterator = new BufferingIterator<>(issueIterator);
+            this.issueIterator = issueIterator;
             this.allWinnings = allWinnings;
             this.compatibilityFilter = compatibilityFilter;
         }
