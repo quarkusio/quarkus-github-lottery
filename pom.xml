@@ -34,7 +34,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus</quarkus.platform.group-id>
-    <quarkus.version>3.24.1</quarkus.version>
+    <quarkus.version>3.24.2</quarkus.version>
     <assertj.version>3.27.1</assertj.version>
     <quarkus-github-app.version>2.8.5</quarkus-github-app.version>
     <skipITs>true</skipITs>
