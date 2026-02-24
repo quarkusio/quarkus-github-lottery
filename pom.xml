@@ -38,7 +38,7 @@
     <assertj.version>3.27.1</assertj.version>
     <quarkus-github-app.version>2.13.0</quarkus-github-app.version>
     <skipITs>true</skipITs>
-    <surefire-plugin.version>3.5.4</surefire-plugin.version>
+    <surefire-plugin.version>3.5.5</surefire-plugin.version>
     <version.formatter.plugin>2.29.0</version.formatter.plugin>
   </properties>
   <dependencyManagement>
