@@ -10,6 +10,7 @@ import static io.quarkus.github.lottery.github.GitHubSearchClauses.label;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.not;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.repo;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.updated;
+import static io.quarkus.github.lottery.util.GitHubApiRetry.executeWithRetry;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
@@ -309,6 +310,12 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     public class Topic {
+        // Delay between comment deletions to avoid secondary rate limits
+        // Can be overridden via system property (e.g., for tests)
+        private static final long COMMENT_DELETE_DELAY_MILLIS = Long.getLong(
+                "github.lottery.github-api.comment-delete-delay-millis",
+                1000);
+
         private final TopicRef ref;
 
         private Topic(TopicRef ref) {
@@ -430,13 +437,30 @@ public class GitHubRepository implements AutoCloseable {
                 // Only fetch comments when we actually need to delete them
                 var comments = toStreamWithoutPageSize(issue.queryComments().list()).toList();
                 for (int i = 0; i < commentsToDelete; i++) {
+                    var comment = comments.get(i);
                     try {
-                        comments.get(i).delete();
+                        executeWithRetry(() -> {
+                            try {
+                                comment.delete();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
                     } catch (Exception e) {
-                        Log.errorf(e, "Failed to delete comment %s from issue %s#%s",
-                                comments.get(i).getId(),
+                        Log.errorf(e, "Failed to delete comment %s from issue %s#%s after retries",
+                                comment.getId(),
                                 GitHubRepository.this.ref.repositoryName(),
                                 issue.getNumber());
+                    }
+
+                    // Delay between deletions to avoid triggering secondary rate limits
+                    if (i < commentsToDelete - 1) {
+                        try {
+                            Thread.sleep(COMMENT_DELETE_DELAY_MILLIS);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new RuntimeException("Interrupted while packing comments", e);
+                        }
                     }
                 }
             }
