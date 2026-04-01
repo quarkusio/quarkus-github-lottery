@@ -368,6 +368,15 @@ public class GitHubRepository implements AutoCloseable {
                 if (GHIssueState.CLOSED.equals(issue.getState())) {
                     issue.reopen();
                 }
+
+                // Pack comments to avoid hitting GitHub's 2500 comment limit per issue
+                try {
+                    pack(issue);
+                } catch (Exception e) {
+                    Log.errorf(e, "Failed to pack comments for issue %s#%s",
+                            GitHubRepository.this.ref.repositoryName(), issue.getNumber());
+                }
+
                 try {
                     // We try to minimize the last comment on a best-effort basis,
                     // taking into account only recent comments,
@@ -393,6 +402,41 @@ public class GitHubRepository implements AutoCloseable {
 
             if (comment) {
                 issue.comment(markdownBody);
+            }
+        }
+
+        /**
+         * Packs (reduces) the number of comments on an issue to avoid hitting GitHub's limit.
+         * <p>
+         * GitHub does not allow more than 2500 comments on a given issue.
+         * To prevent hitting this limit, we delete old comments when the count exceeds 50,
+         * keeping only the 10 most recent comments.
+         *
+         * @param issue The issue to pack
+         * @throws IOException If a GitHub API call fails
+         */
+        private void pack(GHIssue issue) throws IOException {
+            int commentCount = issue.getCommentsCount();
+
+            // If we have more than 50 comments, delete the older ones to keep only 10
+            // This helps us stay well below GitHub's 2500 comment limit per issue
+            if (commentCount > 50) {
+                int commentsToDelete = commentCount - 10;
+                Log.infof("Packing issue %s#%s: deleting %d old comments (keeping 10 most recent)",
+                        GitHubRepository.this.ref.repositoryName(), issue.getNumber(), commentsToDelete);
+
+                // Only fetch comments when we actually need to delete them
+                var comments = toStreamWithoutPageSize(issue.queryComments().list()).toList();
+                for (int i = 0; i < commentsToDelete; i++) {
+                    try {
+                        comments.get(i).delete();
+                    } catch (Exception e) {
+                        Log.errorf(e, "Failed to delete comment %s from issue %s#%s",
+                                comments.get(i).getId(),
+                                GitHubRepository.this.ref.repositoryName(),
+                                issue.getNumber());
+                    }
+                }
             }
         }
 
