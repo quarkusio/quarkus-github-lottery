@@ -156,7 +156,8 @@
             <maven.home>${maven.home}</maven.home>
             <!-- Use shorter delays in tests for faster execution -->
             <github.lottery.github-api.retry-wait-millis>100</github.lottery.github-api.retry-wait-millis>
-            <github.lottery.github-api.comment-delete-delay-millis>10</github.lottery.github-api.comment-delete-delay-millis>
+            <github.lottery.github-api.mutation-throttle-millis>10</github.lottery.github-api.mutation-throttle-millis>
+            <github.lottery.github-api.read-throttle-millis>10</github.lottery.github-api.read-throttle-millis>
           </systemPropertyVariables>
         </configuration>
       </plugin>
