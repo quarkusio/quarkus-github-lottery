@@ -1726,15 +1726,15 @@ public class GitHubServiceTest {
                             "yrodiere's report for quarkusio/quarkus (updated 2017-11-05T06:00:00Z)");
                     when(issue2Mock.getNumber()).thenReturn(2);
                     when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
-                    // Mock 60 comments to trigger packing
-                    when(issue2Mock.getCommentsCount()).thenReturn(60);
+                    // Mock 16 comments to trigger packing (threshold 15, retain 10)
+                    when(issue2Mock.getCommentsCount()).thenReturn(16);
                     when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
 
-                    // Create 60 comment mocks for packing (first 50 should be deleted)
-                    var allCommentMocks = new GHIssueComment[60];
-                    for (int i = 0; i < 60; i++) {
-                        allCommentMocks[i] = mockIssueComment(mocks, 200 + i, i < 59 ? mySelfMock : someoneElseMock);
-                        if (i == 58) {
+                    // Create 16 comment mocks for packing (first 6 should be deleted, last 10 retained)
+                    var allCommentMocks = new GHIssueComment[16];
+                    for (int i = 0; i < 16; i++) {
+                        allCommentMocks[i] = mockIssueComment(mocks, 200 + i, i < 15 ? mySelfMock : someoneElseMock);
+                        if (i == 14) {
                             // The second-to-last comment will be minimized
                             when(allCommentMocks[i].getNodeId()).thenReturn(commentToMinimizeNodeId);
                         }
@@ -1765,12 +1765,12 @@ public class GitHubServiceTest {
                     // Verify getCommentsCount was called for pack check
                     verify(mocks.issue(2)).getCommentsCount();
 
-                    // Verify that 50 old comments were deleted (60 - 10 = 50)
-                    for (int i = 0; i < 50; i++) {
+                    // Verify that 6 old comments were deleted (16 - 10 = 6)
+                    for (int i = 0; i < 6; i++) {
                         verify(mocks.issueComment(200 + i)).delete();
                     }
                     // Verify that the 10 most recent comments were NOT deleted
-                    for (int i = 50; i < 60; i++) {
+                    for (int i = 6; i < 16; i++) {
                         verify(mocks.issueComment(200 + i), never()).delete();
                     }
 
@@ -1784,6 +1784,95 @@ public class GitHubServiceTest {
                     verify(mocks.issue(2)).comment("Some content");
 
                     verifyNoMoreInteractions(searchIssuesBuilderMock);
+                    verifyNoMoreInteractions(mocks.ghObjects());
+
+                    assertThat(mapCaptor.getValue()).containsValue(commentToMinimizeNodeId);
+                });
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void topic_update_dedicatedIssueExists_packComments_history() throws Exception {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus-lottery-reports");
+        var commentToMinimizeNodeId = "MDM6Qm90NzUwNjg0Mzg=";
+
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        var clockMock = Clock.fixed(now, ZoneOffset.UTC);
+        QuarkusMock.installMockForType(clockMock, Clock.class);
+
+        var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        var queryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+
+        given()
+                .github(mocks -> {
+                    var clientMock = mocks.installationClient(installationRef.installationId());
+
+                    var mySelfMock = mocks.ghObject(GHUser.class, 1L);
+                    when(mySelfMock.getLogin()).thenReturn(installationRef.appLogin());
+
+                    var issue1Mock = mockIssueForNotification(mocks, 1, "An unrelated issue");
+
+                    var issue2Mock = mockIssueForNotification(mocks, 2, "Lottery history for quarkusio/quarkus");
+                    when(issue2Mock.getNumber()).thenReturn(2);
+                    when(issue2Mock.getState()).thenReturn(GHIssueState.OPEN);
+                    // Mock 151 comments to trigger packing for history (threshold 150, retain 100)
+                    when(issue2Mock.getCommentsCount()).thenReturn(151);
+                    when(issue2Mock.queryComments()).thenReturn(queryCommentsBuilderMock);
+
+                    // Create 151 comment mocks for packing (first 51 should be deleted, last 100 retained)
+                    var allCommentMocks = new GHIssueComment[151];
+                    for (int i = 0; i < 151; i++) {
+                        allCommentMocks[i] = mockIssueComment(mocks, 300 + i, mySelfMock);
+                        if (i == 150) {
+                            // The last app comment will be minimized
+                            when(allCommentMocks[i].getNodeId()).thenReturn(commentToMinimizeNodeId);
+                        }
+                    }
+                    var allCommentsMockPagedIterable = mockPagedIterable(allCommentMocks);
+                    when(queryCommentsBuilderMock.list()).thenReturn(allCommentsMockPagedIterable);
+
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
+
+                    when(messageFormatterMock.formatDedicatedIssueBodyMarkdown("Lottery history for quarkusio/quarkus",
+                            "Some content"))
+                            .thenReturn("Dedicated issue body");
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    repo.topic(TopicRef.history("Lottery history for quarkusio/quarkus"))
+                            .update("", "Some content", true);
+                })
+                .then().github(mocks -> {
+                    verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
+                    verify(searchIssuesBuilderMock).q("is:issue");
+                    verify(searchIssuesBuilderMock).q("author:" + installationRef.appLogin());
+
+                    // Verify getCommentsCount was called for pack check
+                    verify(mocks.issue(2)).getCommentsCount();
+
+                    // Verify that 51 old comments were deleted (151 - 100 = 51)
+                    for (int i = 0; i < 51; i++) {
+                        verify(mocks.issueComment(300 + i)).delete();
+                    }
+                    // Verify that the 100 most recent comments were NOT deleted
+                    for (int i = 51; i < 151; i++) {
+                        verify(mocks.issueComment(300 + i), never()).delete();
+                    }
+
+                    verify(queryCommentsBuilderMock).since(Date.from(now.minus(21, ChronoUnit.DAYS)));
+                    var mapCaptor = ArgumentCaptor.forClass(Map.class);
+                    verify(mocks.installationGraphQLClient(installationRef.installationId()))
+                            .executeSync(anyString(), mapCaptor.capture());
+
+                    verify(mocks.issue(2)).setBody("Dedicated issue body");
+                    verify(mocks.issue(2)).comment("Some content");
+
+                    verifyNoMoreInteractions(messageFormatterMock, searchIssuesBuilderMock);
                     verifyNoMoreInteractions(mocks.ghObjects());
 
                     assertThat(mapCaptor.getValue()).containsValue(commentToMinimizeNodeId);

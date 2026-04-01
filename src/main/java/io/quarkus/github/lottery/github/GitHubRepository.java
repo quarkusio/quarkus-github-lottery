@@ -371,7 +371,7 @@ public class GitHubRepository implements AutoCloseable {
 
                 // Pack comments to avoid hitting GitHub's 2500 comment limit per issue
                 try {
-                    pack(issue);
+                    pack(issue, ref.commentPackThreshold(), ref.commentPackRetained());
                 } catch (Exception e) {
                     Log.errorf(e, "Failed to pack comments for issue %s#%s",
                             GitHubRepository.this.ref.repositoryName(), issue.getNumber());
@@ -409,21 +409,23 @@ public class GitHubRepository implements AutoCloseable {
          * Packs (reduces) the number of comments on an issue to avoid hitting GitHub's limit.
          * <p>
          * GitHub does not allow more than 2500 comments on a given issue.
-         * To prevent hitting this limit, we delete old comments when the count exceeds 50,
-         * keeping only the 10 most recent comments.
+         * To prevent hitting this limit, we delete old comments when the count exceeds the threshold,
+         * keeping only the specified number of most recent comments.
          *
          * @param issue The issue to pack
+         * @param threshold The comment count threshold that triggers packing
+         * @param retainedComments The number of most recent comments to keep after packing
          * @throws IOException If a GitHub API call fails
          */
-        private void pack(GHIssue issue) throws IOException {
+        private void pack(GHIssue issue, int threshold, int retainedComments) throws IOException {
             int commentCount = issue.getCommentsCount();
 
-            // If we have more than 50 comments, delete the older ones to keep only 10
+            // If we have more than the threshold, delete the older ones to keep only the specified number
             // This helps us stay well below GitHub's 2500 comment limit per issue
-            if (commentCount > 50) {
-                int commentsToDelete = commentCount - 10;
-                Log.infof("Packing issue %s#%s: deleting %d old comments (keeping 10 most recent)",
-                        GitHubRepository.this.ref.repositoryName(), issue.getNumber(), commentsToDelete);
+            if (commentCount > threshold) {
+                int commentsToDelete = commentCount - retainedComments;
+                Log.infof("Packing issue %s#%s: deleting %d old comments (keeping %d most recent)",
+                        GitHubRepository.this.ref.repositoryName(), issue.getNumber(), commentsToDelete, retainedComments);
 
                 // Only fetch comments when we actually need to delete them
                 var comments = toStreamWithoutPageSize(issue.queryComments().list()).toList();
