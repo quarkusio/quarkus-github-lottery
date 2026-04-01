@@ -9,19 +9,31 @@ import org.kohsuke.github.GHException;
 import io.quarkus.logging.Log;
 
 /**
- * Utility for retrying GitHub API operations that may hit secondary rate limits.
+ * Utility for managing GitHub API rate limits and throttling.
+ * <p>
+ * Handles both secondary rate limit retries and proactive throttling to avoid hitting limits.
  */
-public final class GitHubApiRetry {
+public final class GitHubApiLimits {
 
     private static final int MAX_RETRY = 3;
 
-    // Wait for unambiguously over one minute per GitHub guidance
+    // Wait for unambiguously over one minute per GitHub guidance for secondary rate limit retries
     // Can be overridden via system property (e.g., for tests)
-    private static final long DEFAULT_WAIT_MILLIS = Long.getLong(
+    private static final long RETRY_WAIT_MILLIS = Long.getLong(
             "github.lottery.github-api.retry-wait-millis",
             61 * 1000);
 
-    private GitHubApiRetry() {
+    // Throttle mutations (writes/deletes) more conservatively
+    private static final long MUTATION_THROTTLE_MILLIS = Long.getLong(
+            "github.lottery.github-api.mutation-throttle-millis",
+            1000);
+
+    // Throttle reads less aggressively
+    private static final long READ_THROTTLE_MILLIS = Long.getLong(
+            "github.lottery.github-api.read-throttle-millis",
+            200);
+
+    private GitHubApiLimits() {
     }
 
     /**
@@ -75,11 +87,37 @@ public final class GitHubApiRetry {
     }
 
     private static void waitBeforeRetry() {
-        Log.infof("GitHub API reached a secondary rate limit; waiting %s ms before retrying...", DEFAULT_WAIT_MILLIS);
+        Log.infof("GitHub API reached a secondary rate limit; waiting %s ms before retrying...", RETRY_WAIT_MILLIS);
         try {
-            Thread.sleep(DEFAULT_WAIT_MILLIS);
+            Thread.sleep(RETRY_WAIT_MILLIS);
         } catch (InterruptedException ex) {
             throw new UncheckedIOException((InterruptedIOException) new InterruptedIOException().initCause(ex));
+        }
+    }
+
+    /**
+     * Sleeps for the mutation throttling delay to avoid triggering secondary rate limits.
+     * Should be called between mutation operations (writes, deletes).
+     */
+    public static void sleepForMutationThrottling() {
+        try {
+            Thread.sleep(MUTATION_THROTTLE_MILLIS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new UncheckedIOException((InterruptedIOException) new InterruptedIOException().initCause(e));
+        }
+    }
+
+    /**
+     * Sleeps for the read throttling delay to avoid triggering secondary rate limits.
+     * Should be called between read operations.
+     */
+    public static void sleepForReadThrottling() {
+        try {
+            Thread.sleep(READ_THROTTLE_MILLIS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new UncheckedIOException((InterruptedIOException) new InterruptedIOException().initCause(e));
         }
     }
 }

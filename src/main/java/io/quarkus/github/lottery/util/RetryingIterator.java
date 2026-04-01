@@ -1,6 +1,7 @@
 package io.quarkus.github.lottery.util;
 
-import static io.quarkus.github.lottery.util.GitHubApiRetry.executeWithRetry;
+import static io.quarkus.github.lottery.util.GitHubApiLimits.executeWithRetry;
+import static io.quarkus.github.lottery.util.GitHubApiLimits.sleepForReadThrottling;
 
 import java.util.Iterator;
 
@@ -22,6 +23,7 @@ class RetryingIterator<T> implements Iterator<T> {
 
     @Override
     public T next() {
+        sleepForReadThrottling();
         return executeWithRetry(delegate::next);
     }
 }
