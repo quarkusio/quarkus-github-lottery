@@ -7,6 +7,7 @@ import static io.quarkus.github.lottery.github.GitHubSearchClauses.commenter;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.created;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.isIssue;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.label;
+import static io.quarkus.github.lottery.github.GitHubSearchClauses.noLinkedPr;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.not;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.repo;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.updated;
@@ -232,6 +233,7 @@ public class GitHubRepository implements AutoCloseable {
                 .isOpen()
                 .q(label(filterLabel))
                 .q(not(anyLabel(ignoreLabels)))
+                .q(noLinkedPr())
                 .q(created(createdAfter, createdBefore))
                 .sort(GHIssueSearchBuilder.Sort.CREATED)
                 .order(GHDirection.ASC);
