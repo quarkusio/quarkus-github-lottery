@@ -1037,6 +1037,7 @@ public class GitHubServiceTest {
                     verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
                     verify(searchIssuesBuilderMock).q("created:2017-10-23T06:00..2017-11-06T06:00");
                     verify(searchIssuesBuilderMock).q("-label:triage/needs-feedback,triage/needs-reproducer,triage/on-ice");
+                    verify(searchIssuesBuilderMock).q("-linked:pr");
                     verify(searchIssuesBuilderMock).q("-commenter:yrodiere");
                     verifyNoMoreInteractions(searchIssuesBuilderMock);
 

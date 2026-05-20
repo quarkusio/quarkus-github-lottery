@@ -19,6 +19,10 @@ public final class GitHubSearchClauses {
         return "-" + clause;
     }
 
+    public static String noLinkedPr() {
+        return "-linked:pr";
+    }
+
     public static <T> String range(String field, T min, T max, Function<T, String> renderer) {
         if (min == null && max == null) {
             return " ";
