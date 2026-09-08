@@ -28,7 +28,7 @@
 
   <properties>
     <revision>999-SNAPSHOT</revision>
-    <compiler-plugin.version>3.15.0</compiler-plugin.version>
+    <compiler-plugin.version>3.16.0</compiler-plugin.version>
     <maven.compiler.release>25</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -38,7 +38,7 @@
     <assertj.version>3.27.1</assertj.version>
     <quarkus-github-app.version>2.15.1</quarkus-github-app.version>
     <skipITs>true</skipITs>
-    <surefire-plugin.version>3.5.6</surefire-plugin.version>
+    <surefire-plugin.version>3.6.0</surefire-plugin.version>
     <version.formatter.plugin>2.29.0</version.formatter.plugin>
   </properties>
   <dependencyManagement>
