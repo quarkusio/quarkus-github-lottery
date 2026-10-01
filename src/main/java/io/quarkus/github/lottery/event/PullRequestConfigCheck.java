@@ -6,7 +6,7 @@ import java.util.Date;
 
 import jakarta.inject.Inject;
 
-import io.quarkus.github.lottery.util.Streams;
+import io.quarkiverse.githubapp.GitHubApiUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.kohsuke.github.GHCheckRun;
 import org.kohsuke.github.GHCheckRunBuilder;
@@ -58,7 +58,7 @@ public class PullRequestConfigCheck {
     }
 
     private void checkLotteryConfig(GHRepository repository, GHPullRequest pullRequest) throws IOException {
-        if (shouldCheck(repository, pullRequest) && Streams.toStream(pullRequest.listFiles())
+        if (shouldCheck(repository, pullRequest) && GitHubApiUtil.toStream(pullRequest.listFiles())
                 .noneMatch(f -> f.getFilename().equals(CONFIG_FILE_ABSOLUTE_PATH))) {
             // Config did not change
             return;
