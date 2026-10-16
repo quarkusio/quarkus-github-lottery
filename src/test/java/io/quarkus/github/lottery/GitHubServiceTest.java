@@ -8,6 +8,7 @@ import static io.quarkus.github.lottery.util.MockHelper.mockIssueForLotteryFilte
 import static io.quarkus.github.lottery.util.MockHelper.mockIssueForNotification;
 import static io.quarkus.github.lottery.util.MockHelper.mockLabel;
 import static io.quarkus.github.lottery.util.MockHelper.mockPagedIterable;
+import static io.quarkus.github.lottery.util.MockHelper.mockReaction;
 import static io.quarkus.github.lottery.util.MockHelper.mockUserForInspectedComments;
 import static io.quarkus.github.lottery.util.MockHelper.stubIssue;
 import static io.quarkus.github.lottery.util.MockHelper.stubIssueList;
@@ -53,6 +54,7 @@ import org.kohsuke.github.GHIssueEvent;
 import org.kohsuke.github.GHIssueSearchBuilder;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHPermissionType;
+import org.kohsuke.github.GHReaction;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.PagedSearchIterable;
@@ -951,6 +953,8 @@ public class GitHubServiceTest {
                             withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue2Mock.queryComments()).thenReturn(issue2QueryCommentsBuilderMock);
                     when(issue2QueryCommentsBuilderMock.list()).thenReturn(issue2CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue2ReactionsMocks = mockPagedIterable();
+                    when(issue2Mock.listReactions()).thenReturn(issue2ReactionsMocks);
 
                     var issue3Mock = mockIssueForLottery(mocks, 3, randomReporterUser);
                     when(issue3Mock.isPullRequest()).thenReturn(false);
@@ -959,6 +963,8 @@ public class GitHubServiceTest {
                             withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue3Mock.queryComments()).thenReturn(issue3QueryCommentsBuilderMock);
                     when(issue3QueryCommentsBuilderMock.list()).thenReturn(issue3CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue3ReactionsMocks = mockPagedIterable();
+                    when(issue3Mock.listReactions()).thenReturn(issue3ReactionsMocks);
 
                     var issue4Mock = mockIssueForLottery(mocks, 4, noneUser);
                     when(issue4Mock.isPullRequest()).thenReturn(false);
@@ -967,6 +973,8 @@ public class GitHubServiceTest {
                             withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue4Mock.queryComments()).thenReturn(issue4QueryCommentsBuilderMock);
                     when(issue4QueryCommentsBuilderMock.list()).thenReturn(issue4CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue4ReactionsMocks = mockPagedIterable();
+                    when(issue4Mock.listReactions()).thenReturn(issue4ReactionsMocks);
 
                     var issue5Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 5, randomReporterUser);
                     when(issue5Mock.isPullRequest()).thenReturn(false);
@@ -986,6 +994,8 @@ public class GitHubServiceTest {
                             withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue7Mock.queryComments()).thenReturn(issue7QueryCommentsBuilderMock);
                     when(issue7QueryCommentsBuilderMock.list()).thenReturn(issue7CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue7ReactionsMocks = mockPagedIterable();
+                    when(issue7Mock.listReactions()).thenReturn(issue7ReactionsMocks);
 
                     // This is like issue 5, but the reporter is a team member -- so his comments should be considered as outsider comments.
                     var issue8Mock = mockIssueForLottery(mocks, 8, writeUser);
@@ -996,6 +1006,8 @@ public class GitHubServiceTest {
                             withSettings().defaultAnswer(Answers.RETURNS_SELF));
                     when(issue8Mock.queryComments()).thenReturn(issue8QueryCommentsBuilderMock);
                     when(issue8QueryCommentsBuilderMock.list()).thenReturn(issue8CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue8ReactionsMocks = mockPagedIterable();
+                    when(issue8Mock.listReactions()).thenReturn(issue8ReactionsMocks);
 
                     // This is like issue 2, but the reporter is a maintainer, and the issue is not a PR -- so the issue should be ignored.
                     var issue9Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 9, maintainerUser);
@@ -1037,6 +1049,140 @@ public class GitHubServiceTest {
                     verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
                     verify(searchIssuesBuilderMock).q("created:2017-10-23T06:00..2017-11-06T06:00");
                     verify(searchIssuesBuilderMock).q("-label:triage/needs-feedback,triage/needs-reproducer,triage/on-ice");
+                    verify(searchIssuesBuilderMock).q("-linked:pr");
+                    verify(searchIssuesBuilderMock).q("-commenter:yrodiere");
+                    verifyNoMoreInteractions(searchIssuesBuilderMock);
+
+                    verifyNoMoreInteractions(mocks.ghObjects());
+                });
+    }
+
+    @Test
+    void issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween_teamReaction() throws IOException {
+        var repoRef = new GitHubRepositoryRef(installationRef, "quarkusio/quarkus");
+
+        String maintainerUserName = "yrodiere";
+
+        Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
+        Instant minCutoff = now.minus(14, ChronoUnit.DAYS);
+        Instant maxCutoff = now.minus(0, ChronoUnit.DAYS);
+
+        var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
+                withSettings().defaultAnswer(Answers.RETURNS_SELF));
+        given()
+                .github(mocks -> {
+                    var clientMock = mocks.installationClient(installationRef.installationId());
+                    var repositoryMock = mocks.repository(repoRef.repositoryName());
+
+                    var adminUser = mockUserForInspectedComments(mocks, repositoryMock, 1L, adminUserName,
+                            GHPermissionType.ADMIN);
+                    var writeUser = mockUserForInspectedComments(mocks, repositoryMock, 2L, writeUserName,
+                            GHPermissionType.WRITE);
+                    var readUser = mockUserForInspectedComments(mocks, repositoryMock, 3L, readUserName,
+                            GHPermissionType.READ);
+                    var noneUser = mockUserForInspectedComments(mocks, repositoryMock, 4L, strangerUserName,
+                            GHPermissionType.NONE);
+                    var randomReporterUser = mockUserForInspectedComments(mocks, repositoryMock, 6L,
+                            randomReporterUserName);
+
+                    // Issue 1: no reactions at all -- should pass
+                    var issue1Mock = mockIssueForLottery(mocks, 1, randomReporterUser);
+                    when(issue1Mock.isPullRequest()).thenReturn(false);
+                    PagedSearchIterable<GHIssueComment> issue1CommentsMocks = mockPagedIterable();
+                    var issue1QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
+                    when(issue1Mock.queryComments()).thenReturn(issue1QueryCommentsBuilderMock);
+                    when(issue1QueryCommentsBuilderMock.list()).thenReturn(issue1CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue1ReactionsMocks = mockPagedIterable();
+                    when(issue1Mock.listReactions()).thenReturn(issue1ReactionsMocks);
+
+                    // Issue 2: reaction from outsider only -- should pass
+                    var issue2Mock = mockIssueForLottery(mocks, 2, randomReporterUser);
+                    when(issue2Mock.isPullRequest()).thenReturn(false);
+                    PagedSearchIterable<GHIssueComment> issue2CommentsMocks = mockPagedIterable();
+                    var issue2QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
+                    when(issue2Mock.queryComments()).thenReturn(issue2QueryCommentsBuilderMock);
+                    when(issue2QueryCommentsBuilderMock.list()).thenReturn(issue2CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue2ReactionsMocks = mockPagedIterable(
+                            mockReaction(readUser), mockReaction(noneUser));
+                    when(issue2Mock.listReactions()).thenReturn(issue2ReactionsMocks);
+
+                    // Issue 3: reaction from team member (admin) -- should be filtered out
+                    var issue3Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 3, randomReporterUser);
+                    when(issue3Mock.isPullRequest()).thenReturn(false);
+                    PagedSearchIterable<GHIssueComment> issue3CommentsMocks = mockPagedIterable();
+                    var issue3QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
+                    when(issue3Mock.queryComments()).thenReturn(issue3QueryCommentsBuilderMock);
+                    when(issue3QueryCommentsBuilderMock.list()).thenReturn(issue3CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue3ReactionsMocks = mockPagedIterable(
+                            mockReaction(noneUser), mockReaction(adminUser));
+                    when(issue3Mock.listReactions()).thenReturn(issue3ReactionsMocks);
+
+                    // Issue 4: reaction from team member (write) -- should be filtered out
+                    var issue4Mock = mockIssueForLotteryFilteredOutByRepository(mocks, 4, randomReporterUser);
+                    when(issue4Mock.isPullRequest()).thenReturn(false);
+                    PagedSearchIterable<GHIssueComment> issue4CommentsMocks = mockPagedIterable();
+                    var issue4QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
+                    when(issue4Mock.queryComments()).thenReturn(issue4QueryCommentsBuilderMock);
+                    when(issue4QueryCommentsBuilderMock.list()).thenReturn(issue4CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue4ReactionsMocks = mockPagedIterable(
+                            mockReaction(writeUser));
+                    when(issue4Mock.listReactions()).thenReturn(issue4ReactionsMocks);
+
+                    // Issue 5: PR with reaction from team member -- should pass (PRs bypass reaction check)
+                    var issue5Mock = mockIssueForLottery(mocks, 5, randomReporterUser);
+                    when(issue5Mock.isPullRequest()).thenReturn(true);
+                    PagedSearchIterable<GHIssueComment> issue5CommentsMocks = mockPagedIterable();
+                    var issue5QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
+                    when(issue5Mock.queryComments()).thenReturn(issue5QueryCommentsBuilderMock);
+                    when(issue5QueryCommentsBuilderMock.list()).thenReturn(issue5CommentsMocks);
+
+                    // Issue 7: reaction from reporter who is a team member -- should pass
+                    // (reporter reactions are ignored, same as for comments)
+                    var issue7Mock = mockIssueForLottery(mocks, 7, writeUser);
+                    when(issue7Mock.isPullRequest()).thenReturn(false);
+                    PagedSearchIterable<GHIssueComment> issue7CommentsMocks = mockPagedIterable();
+                    var issue7QueryCommentsBuilderMock = Mockito.mock(GHIssueCommentQueryBuilder.class,
+                            withSettings().defaultAnswer(Answers.RETURNS_SELF));
+                    when(issue7Mock.queryComments()).thenReturn(issue7QueryCommentsBuilderMock);
+                    when(issue7QueryCommentsBuilderMock.list()).thenReturn(issue7CommentsMocks);
+                    PagedSearchIterable<GHReaction> issue7ReactionsMocks = mockPagedIterable(
+                            mockReaction(writeUser));
+                    when(issue7Mock.listReactions()).thenReturn(issue7ReactionsMocks);
+
+                    var issuesMocks = mockPagedIterable(issue1Mock, issue2Mock, issue3Mock, issue4Mock,
+                            issue5Mock, issue7Mock);
+                    when(clientMock.searchIssues()).thenReturn(searchIssuesBuilderMock);
+                    when(searchIssuesBuilderMock.list()).thenReturn(issuesMocks);
+                })
+                .when(() -> {
+                    var repo = gitHubService.repository(repoRef);
+
+                    assertThat(repo.issuesOrPullRequestsNeverActedOnByTeamAndCreatedBetween(
+                            "area/hibernate-search",
+                            new LinkedHashSet<>(
+                                    List.of("triage/needs-feedback", "triage/needs-reproducer", "triage/on-ice")),
+                            Set.of(maintainerUserName),
+                            minCutoff, maxCutoff))
+                            .containsExactlyElementsOf(List.of(
+                                    stubIssue(1, randomReporterUserName),
+                                    stubIssue(2, randomReporterUserName),
+                                    stubIssue(5, randomReporterUserName),
+                                    stubIssue(7, writeUserName)));
+                })
+                .then().github(mocks -> {
+                    verify(searchIssuesBuilderMock).q("repo:" + repoRef.repositoryName());
+                    verify(searchIssuesBuilderMock).isOpen();
+                    verify(searchIssuesBuilderMock).sort(GHIssueSearchBuilder.Sort.CREATED);
+                    verify(searchIssuesBuilderMock).order(GHDirection.ASC);
+                    verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
+                    verify(searchIssuesBuilderMock).q("created:2017-10-23T06:00..2017-11-06T06:00");
+                    verify(searchIssuesBuilderMock)
+                            .q("-label:triage/needs-feedback,triage/needs-reproducer,triage/on-ice");
                     verify(searchIssuesBuilderMock).q("-linked:pr");
                     verify(searchIssuesBuilderMock).q("-commenter:yrodiere");
                     verifyNoMoreInteractions(searchIssuesBuilderMock);
