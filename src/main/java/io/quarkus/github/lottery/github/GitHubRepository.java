@@ -35,6 +35,7 @@ import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHIssueCommentQueryBuilder;
 import org.kohsuke.github.GHIssueEvent;
 import org.kohsuke.github.GHIssueSearchBuilder;
+import org.kohsuke.github.GHReaction;
 import org.kohsuke.github.GHIssueState;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GitHub;
@@ -250,6 +251,9 @@ public class GitHubRepository implements AutoCloseable {
                 // but we still need to have a closer look at issues afterward
                 // (to skip issues commented on by team members which are not in "ignoreCommentedBy").
                 .filter(this::hasNoTeamAction)
+                // A reaction from a team member on an issue (not a PR) signals that a maintainer
+                // has already seen and acknowledged the issue, so it no longer needs a first look.
+                .filter(uncheckedIO((GHIssue i) -> i.isPullRequest() || hasNoTeamReaction(i))::apply)
                 .map(toIssueRecord());
     }
 
@@ -277,6 +281,20 @@ public class GitHubRepository implements AutoCloseable {
         return getNonBotCommentsSince(ghIssue, null)
                 .map(uncheckedIO((GHIssueComment c) -> getIssueActionSide(ghIssue, c.getUser().getLogin())))
                 .noneMatch(Predicate.isEqual(IssueActionSide.TEAM));
+    }
+
+    private boolean hasNoTeamReaction(GHIssue ghIssue) throws IOException {
+        for (GHReaction reaction : ghIssue.listReactions()) {
+            String login = reaction.getUser().getLogin();
+            if (ghIssue.getUser().getLogin().equals(login)) {
+                // Ignore reactions from the reporter, same as for comments.
+                continue;
+            }
+            if (IssueActionSide.TEAM.equals(noContextIssueActionSideCache.get(login))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private IssueActionSide getIssueActionSide(GHIssue issue, String login) throws IOException {

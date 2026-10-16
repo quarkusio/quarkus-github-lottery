@@ -21,6 +21,7 @@ import org.kohsuke.github.GHIssueEvent;
 import org.kohsuke.github.GHLabel;
 import org.kohsuke.github.GHPermissionType;
 import org.kohsuke.github.GHPullRequestFileDetail;
+import org.kohsuke.github.GHReaction;
 import org.kohsuke.github.GHRepository;
 import org.kohsuke.github.GHUser;
 import org.kohsuke.github.PagedIterator;
@@ -251,6 +252,12 @@ public class MockHelper {
         if (permissionType != null) {
             when(repositoryMock.getPermission(login)).thenReturn(permissionType);
         }
+        return mock;
+    }
+
+    public static GHReaction mockReaction(GHUser user) {
+        GHReaction mock = Mockito.mock(GHReaction.class);
+        when(mock.getUser()).thenReturn(user);
         return mock;
     }
 
