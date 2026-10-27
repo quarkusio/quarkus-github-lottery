@@ -11,8 +11,7 @@ import static io.quarkus.github.lottery.github.GitHubSearchClauses.noLinkedPr;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.not;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.repo;
 import static io.quarkus.github.lottery.github.GitHubSearchClauses.updated;
-import static io.quarkus.github.lottery.util.GitHubApiLimits.executeWithRetry;
-import static io.quarkus.github.lottery.util.GitHubApiLimits.sleepForMutationThrottling;
+import static io.quarkiverse.githubapi.GitHubApiUtil.sleepForWriteThrottling;
 import static io.quarkus.github.lottery.util.UncheckedIOFunction.uncheckedIO;
 
 import java.io.IOException;
@@ -45,6 +44,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 
 import io.quarkiverse.githubapp.ConfigFile;
+import io.quarkiverse.githubapi.GitHubApiUtil;
 import io.quarkiverse.githubapp.GitHubClientProvider;
 import io.quarkiverse.githubapp.GitHubConfigFileProvider;
 import io.quarkus.github.lottery.config.DeploymentConfig;
@@ -454,13 +454,7 @@ public class GitHubRepository implements AutoCloseable {
                 for (int i = 0; i < commentsToDelete; i++) {
                     var comment = comments.get(i);
                     try {
-                        executeWithRetry(() -> {
-                            try {
-                                comment.delete();
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
+                        comment.delete();
                     } catch (Exception e) {
                         Log.errorf(e, "Failed to delete comment %s from issue %s#%s after retries",
                                 comment.getId(),
@@ -470,7 +464,7 @@ public class GitHubRepository implements AutoCloseable {
 
                     // Delay between deletions to avoid triggering secondary rate limits
                     if (i < commentsToDelete - 1) {
-                        sleepForMutationThrottling();
+                        sleepForWriteThrottling();
                     }
                 }
             }
@@ -552,12 +546,12 @@ public class GitHubRepository implements AutoCloseable {
     }
 
     private Stream<GHIssue> toStreamWithPageSize(PagedIterable<GHIssue> iterable) {
-        return Streams.toStream(iterable.withPageSize(deploymentConfig.pageSize()));
+        return GitHubApiUtil.toStream(iterable.withPageSize(deploymentConfig.pageSize()));
     }
 
     private <T> Stream<T> toStreamWithoutPageSize(PagedIterable<T> iterable) {
         // Don't apply page size here, that would be counter-productive as we generally don't need to fetch many items.
-        return Streams.toStream(iterable);
+        return GitHubApiUtil.toStream(iterable);
     }
 
 }
