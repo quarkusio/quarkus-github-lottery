@@ -598,7 +598,7 @@ public class GitHubServiceTest {
                     var issue1Event1Mock = mockIssueEvent("created");
                     var issue1Event2Mock = mockIssueEvent("labeled");
                     when(issue1Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue1Event2Mock.getCreatedAt()).thenReturn(issue1ActionLabelEvent);
+                    when(issue1Event2Mock.getCreatedAt()).thenReturn(issue1ActionLabelEvent.toInstant());
                     var issue1Event3Mock = mockIssueEvent("labeled");
                     when(issue1Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue1Event4Mock = mockIssueEvent("locked");
@@ -614,7 +614,7 @@ public class GitHubServiceTest {
                     var issue2Event1Mock = mockIssueEvent("created");
                     var issue2Event2Mock = mockIssueEvent("labeled");
                     when(issue2Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue2Event2Mock.getCreatedAt()).thenReturn(issue2ActionLabelEvent);
+                    when(issue2Event2Mock.getCreatedAt()).thenReturn(issue2ActionLabelEvent.toInstant());
                     var issue2Event3Mock = mockIssueEvent("labeled");
                     when(issue2Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue2Event4Mock = mockIssueEvent("locked");
@@ -660,7 +660,7 @@ public class GitHubServiceTest {
                     var issue7Event1Mock = mockIssueEvent("created");
                     var issue7Event2Mock = mockIssueEvent("labeled");
                     when(issue7Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent);
+                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent.toInstant());
                     var issue7Event3Mock = mockIssueEvent("labeled");
                     when(issue7Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue7Event4Mock = mockIssueEvent("locked");
@@ -678,7 +678,7 @@ public class GitHubServiceTest {
                     var issue8Event1Mock = mockIssueEvent("created");
                     var issue8Event2Mock = mockIssueEvent("labeled");
                     when(issue8Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue8Event2Mock.getCreatedAt()).thenReturn(issue8ActionLabelEvent);
+                    when(issue8Event2Mock.getCreatedAt()).thenReturn(issue8ActionLabelEvent.toInstant());
                     var issue8Event3Mock = mockIssueEvent("labeled");
                     when(issue8Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue8Event4Mock = mockIssueEvent("locked");
@@ -777,7 +777,7 @@ public class GitHubServiceTest {
                     var issue1Event1Mock = mockIssueEvent("created");
                     var issue1Event2Mock = mockIssueEvent("labeled");
                     when(issue1Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue1Event2Mock.getCreatedAt()).thenReturn(issue1ActionLabelEvent);
+                    when(issue1Event2Mock.getCreatedAt()).thenReturn(issue1ActionLabelEvent.toInstant());
                     var issue1Event3Mock = mockIssueEvent("labeled");
                     when(issue1Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue1Event4Mock = mockIssueEvent("locked");
@@ -793,7 +793,7 @@ public class GitHubServiceTest {
                     var issue2Event1Mock = mockIssueEvent("created");
                     var issue2Event2Mock = mockIssueEvent("labeled");
                     when(issue2Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue2Event2Mock.getCreatedAt()).thenReturn(issue2ActionLabelEvent);
+                    when(issue2Event2Mock.getCreatedAt()).thenReturn(issue2ActionLabelEvent.toInstant());
                     var issue2Event3Mock = mockIssueEvent("labeled");
                     when(issue2Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue2Event4Mock = mockIssueEvent("locked");
@@ -839,7 +839,7 @@ public class GitHubServiceTest {
                     var issue7Event1Mock = mockIssueEvent("created");
                     var issue7Event2Mock = mockIssueEvent("labeled");
                     when(issue7Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent);
+                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent.toInstant());
                     var issue7Event3Mock = mockIssueEvent("labeled");
                     when(issue7Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue7Event4Mock = mockIssueEvent("locked");
@@ -857,7 +857,7 @@ public class GitHubServiceTest {
                     var issue8Event1Mock = mockIssueEvent("created");
                     var issue8Event2Mock = mockIssueEvent("labeled");
                     when(issue8Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue8Event2Mock.getCreatedAt()).thenReturn(issue8ActionLabelEvent);
+                    when(issue8Event2Mock.getCreatedAt()).thenReturn(issue8ActionLabelEvent.toInstant());
                     var issue8Event3Mock = mockIssueEvent("labeled");
                     when(issue8Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue8Event4Mock = mockIssueEvent("locked");
