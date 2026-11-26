@@ -555,10 +555,10 @@ public class GitHubServiceTest {
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         Instant cutoff = now.minus(1, ChronoUnit.DAYS);
-        Date issue1ActionLabelEvent = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
-        Date issue2ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
-        Date issue7ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
-        Date issue8ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
+        Instant issue1ActionLabelEvent = cutoff.minus(1, ChronoUnit.DAYS);
+        Instant issue2ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
+        Instant issue7ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
+        Instant issue8ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
 
         var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -598,7 +598,7 @@ public class GitHubServiceTest {
                     var issue1Event1Mock = mockIssueEvent("created");
                     var issue1Event2Mock = mockIssueEvent("labeled");
                     when(issue1Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue1Event2Mock.getCreatedAt()).thenReturn(issue1ActionLabelEvent.toInstant());
+                    when(issue1Event2Mock.getCreatedAt()).thenReturn(issue1ActionLabelEvent);
                     var issue1Event3Mock = mockIssueEvent("labeled");
                     when(issue1Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue1Event4Mock = mockIssueEvent("locked");
@@ -614,7 +614,7 @@ public class GitHubServiceTest {
                     var issue2Event1Mock = mockIssueEvent("created");
                     var issue2Event2Mock = mockIssueEvent("labeled");
                     when(issue2Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue2Event2Mock.getCreatedAt()).thenReturn(issue2ActionLabelEvent.toInstant());
+                    when(issue2Event2Mock.getCreatedAt()).thenReturn(issue2ActionLabelEvent);
                     var issue2Event3Mock = mockIssueEvent("labeled");
                     when(issue2Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue2Event4Mock = mockIssueEvent("locked");
@@ -660,7 +660,7 @@ public class GitHubServiceTest {
                     var issue7Event1Mock = mockIssueEvent("created");
                     var issue7Event2Mock = mockIssueEvent("labeled");
                     when(issue7Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent.toInstant());
+                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent);
                     var issue7Event3Mock = mockIssueEvent("labeled");
                     when(issue7Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue7Event4Mock = mockIssueEvent("locked");
@@ -678,7 +678,7 @@ public class GitHubServiceTest {
                     var issue8Event1Mock = mockIssueEvent("created");
                     var issue8Event2Mock = mockIssueEvent("labeled");
                     when(issue8Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue8Event2Mock.getCreatedAt()).thenReturn(issue8ActionLabelEvent.toInstant());
+                    when(issue8Event2Mock.getCreatedAt()).thenReturn(issue8ActionLabelEvent);
                     var issue8Event3Mock = mockIssueEvent("labeled");
                     when(issue8Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue8Event4Mock = mockIssueEvent("locked");
@@ -718,10 +718,10 @@ public class GitHubServiceTest {
                     verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
                     verifyNoMoreInteractions(searchIssuesBuilderMock);
 
-                    verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
-                    verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
-                    verify(issue7QueryCommentsBuilderMock).since(issue7ActionLabelEvent);
-                    verify(issue8QueryCommentsBuilderMock).since(issue8ActionLabelEvent);
+                    verify(issue1QueryCommentsBuilderMock).since(Date.from(issue1ActionLabelEvent));
+                    verify(issue2QueryCommentsBuilderMock).since(Date.from(issue2ActionLabelEvent));
+                    verify(issue7QueryCommentsBuilderMock).since(Date.from(issue7ActionLabelEvent));
+                    verify(issue8QueryCommentsBuilderMock).since(Date.from(issue8ActionLabelEvent));
 
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
@@ -733,10 +733,10 @@ public class GitHubServiceTest {
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         Instant cutoff = now.minus(1, ChronoUnit.DAYS);
-        Date issue1ActionLabelEvent = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
-        Date issue2ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
-        Date issue7ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
-        Date issue8ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
+        Instant issue1ActionLabelEvent = cutoff.minus(1, ChronoUnit.DAYS);
+        Instant issue2ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
+        Instant issue7ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
+        Instant issue8ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
 
         var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -777,7 +777,7 @@ public class GitHubServiceTest {
                     var issue1Event1Mock = mockIssueEvent("created");
                     var issue1Event2Mock = mockIssueEvent("labeled");
                     when(issue1Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue1Event2Mock.getCreatedAt()).thenReturn(issue1ActionLabelEvent.toInstant());
+                    when(issue1Event2Mock.getCreatedAt()).thenReturn(issue1ActionLabelEvent);
                     var issue1Event3Mock = mockIssueEvent("labeled");
                     when(issue1Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue1Event4Mock = mockIssueEvent("locked");
@@ -793,7 +793,7 @@ public class GitHubServiceTest {
                     var issue2Event1Mock = mockIssueEvent("created");
                     var issue2Event2Mock = mockIssueEvent("labeled");
                     when(issue2Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue2Event2Mock.getCreatedAt()).thenReturn(issue2ActionLabelEvent.toInstant());
+                    when(issue2Event2Mock.getCreatedAt()).thenReturn(issue2ActionLabelEvent);
                     var issue2Event3Mock = mockIssueEvent("labeled");
                     when(issue2Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue2Event4Mock = mockIssueEvent("locked");
@@ -839,7 +839,7 @@ public class GitHubServiceTest {
                     var issue7Event1Mock = mockIssueEvent("created");
                     var issue7Event2Mock = mockIssueEvent("labeled");
                     when(issue7Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent.toInstant());
+                    when(issue7Event2Mock.getCreatedAt()).thenReturn(issue7ActionLabelEvent);
                     var issue7Event3Mock = mockIssueEvent("labeled");
                     when(issue7Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue7Event4Mock = mockIssueEvent("locked");
@@ -857,7 +857,7 @@ public class GitHubServiceTest {
                     var issue8Event1Mock = mockIssueEvent("created");
                     var issue8Event2Mock = mockIssueEvent("labeled");
                     when(issue8Event2Mock.getLabel()).thenReturn(needsReproducerLabelMock);
-                    when(issue8Event2Mock.getCreatedAt()).thenReturn(issue8ActionLabelEvent.toInstant());
+                    when(issue8Event2Mock.getCreatedAt()).thenReturn(issue8ActionLabelEvent);
                     var issue8Event3Mock = mockIssueEvent("labeled");
                     when(issue8Event3Mock.getLabel()).thenReturn(areaHibernateSearchLabelMock);
                     var issue8Event4Mock = mockIssueEvent("locked");
@@ -897,10 +897,10 @@ public class GitHubServiceTest {
                     verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
                     verifyNoMoreInteractions(searchIssuesBuilderMock);
 
-                    verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
-                    verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
-                    verify(issue7QueryCommentsBuilderMock).since(issue7ActionLabelEvent);
-                    verify(issue8QueryCommentsBuilderMock).since(issue8ActionLabelEvent);
+                    verify(issue1QueryCommentsBuilderMock).since(Date.from(issue1ActionLabelEvent));
+                    verify(issue2QueryCommentsBuilderMock).since(Date.from(issue2ActionLabelEvent));
+                    verify(issue7QueryCommentsBuilderMock).since(Date.from(issue7ActionLabelEvent));
+                    verify(issue8QueryCommentsBuilderMock).since(Date.from(issue8ActionLabelEvent));
 
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
