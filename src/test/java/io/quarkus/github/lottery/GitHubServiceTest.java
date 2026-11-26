@@ -555,10 +555,10 @@ public class GitHubServiceTest {
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         Instant cutoff = now.minus(1, ChronoUnit.DAYS);
-        Date issue1ActionLabelEvent = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
-        Date issue2ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
-        Date issue7ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
-        Date issue8ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
+        Instant issue1ActionLabelEvent = cutoff.minus(1, ChronoUnit.DAYS);
+        Instant issue2ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
+        Instant issue7ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
+        Instant issue8ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
 
         var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -718,10 +718,10 @@ public class GitHubServiceTest {
                     verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
                     verifyNoMoreInteractions(searchIssuesBuilderMock);
 
-                    verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
-                    verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
-                    verify(issue7QueryCommentsBuilderMock).since(issue7ActionLabelEvent);
-                    verify(issue8QueryCommentsBuilderMock).since(issue8ActionLabelEvent);
+                    verify(issue1QueryCommentsBuilderMock).since(Date.from(issue1ActionLabelEvent));
+                    verify(issue2QueryCommentsBuilderMock).since(Date.from(issue2ActionLabelEvent));
+                    verify(issue7QueryCommentsBuilderMock).since(Date.from(issue7ActionLabelEvent));
+                    verify(issue8QueryCommentsBuilderMock).since(Date.from(issue8ActionLabelEvent));
 
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });
@@ -733,10 +733,10 @@ public class GitHubServiceTest {
 
         Instant now = LocalDateTime.of(2017, 11, 6, 6, 0).toInstant(ZoneOffset.UTC);
         Instant cutoff = now.minus(1, ChronoUnit.DAYS);
-        Date issue1ActionLabelEvent = Date.from(cutoff.minus(1, ChronoUnit.DAYS));
-        Date issue2ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
-        Date issue7ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
-        Date issue8ActionLabelEvent = Date.from(cutoff.minus(2, ChronoUnit.DAYS));
+        Instant issue1ActionLabelEvent = cutoff.minus(1, ChronoUnit.DAYS);
+        Instant issue2ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
+        Instant issue7ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
+        Instant issue8ActionLabelEvent = cutoff.minus(2, ChronoUnit.DAYS);
 
         var searchIssuesBuilderMock = Mockito.mock(GHIssueSearchBuilder.class,
                 withSettings().defaultAnswer(Answers.RETURNS_SELF));
@@ -897,10 +897,10 @@ public class GitHubServiceTest {
                     verify(searchIssuesBuilderMock).q("label:area/hibernate-search");
                     verifyNoMoreInteractions(searchIssuesBuilderMock);
 
-                    verify(issue1QueryCommentsBuilderMock).since(issue1ActionLabelEvent);
-                    verify(issue2QueryCommentsBuilderMock).since(issue2ActionLabelEvent);
-                    verify(issue7QueryCommentsBuilderMock).since(issue7ActionLabelEvent);
-                    verify(issue8QueryCommentsBuilderMock).since(issue8ActionLabelEvent);
+                    verify(issue1QueryCommentsBuilderMock).since(Date.from(issue1ActionLabelEvent));
+                    verify(issue2QueryCommentsBuilderMock).since(Date.from(issue2ActionLabelEvent));
+                    verify(issue7QueryCommentsBuilderMock).since(Date.from(issue7ActionLabelEvent));
+                    verify(issue8QueryCommentsBuilderMock).since(Date.from(issue8ActionLabelEvent));
 
                     verifyNoMoreInteractions(mocks.ghObjects());
                 });

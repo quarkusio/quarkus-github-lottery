@@ -264,7 +264,7 @@ public class GitHubRepository implements AutoCloseable {
         for (GHIssueEvent event : ghIssue.listEvents()) {
             if (io.quarkiverse.githubapp.event.Issue.Labeled.NAME.equals(event.getEvent())
                     && initialActionLabels.contains(event.getLabel().getName())) {
-                lastEventActionSideInstant = event.getCreatedAt().toInstant();
+                lastEventActionSideInstant = event.getCreatedAt();
             }
         }
 

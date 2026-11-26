@@ -7,11 +7,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jakarta.enterprise.context.ApplicationScoped;
+
 import jakarta.inject.Inject;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 import io.quarkus.github.lottery.config.LotteryConfig;
 import io.quarkus.github.lottery.draw.DrawRef;
@@ -56,14 +56,13 @@ public class MessageFormatter {
         return Qute.fmt("Lottery history for {}", drawRef.repositoryRef().repositoryName());
     }
 
-    public String formatHistoryBodyMarkdown(DrawRef drawRef, List<LotteryReport.Serialized> reports)
-            throws JsonProcessingException {
+    public String formatHistoryBodyMarkdown(DrawRef drawRef, List<LotteryReport.Serialized> reports) {
         return Templates.historyBody(drawRef, reports,
                 PAYLOAD_BEGIN + jsonObjectMapper.writeValueAsString(reports) + PAYLOAD_END)
                 .render();
     }
 
-    public List<LotteryReport.Serialized> extractPayloadFromHistoryBodyMarkdown(String body) throws JsonProcessingException {
+    public List<LotteryReport.Serialized> extractPayloadFromHistoryBodyMarkdown(String body) {
         int beginIndex = body.indexOf(PAYLOAD_BEGIN);
         int endIndex = body.lastIndexOf(PAYLOAD_END);
         if (beginIndex < 0 || endIndex < 0) {
